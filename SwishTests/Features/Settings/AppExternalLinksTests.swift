@@ -7,7 +7,7 @@ struct AppExternalLinksTests {
     func readsReleaseConfiguration() {
         #expect(
             AppExternalLinks.supportURL
-                == URL(string: "https://github.com/greengnome/swish/issues")
+                == URL(string: "https://github.com/greengnome/ritli/issues")
         )
         #expect(AppExternalLinks.privacyPolicyURL == nil)
     }

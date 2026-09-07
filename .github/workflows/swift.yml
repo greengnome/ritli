@@ -87,7 +87,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: Swish-test-results
+          name: Ritli-test-results
           path: |
             ${{ runner.temp }}/SwishTests.xcresult
             ${{ runner.temp }}/SwishLiveActivityUITests-attempt-*.xcresult
