@@ -3,4 +3,4 @@
 DerivedData/
 *.xcresult
 *.xcarchive
-Swish.xcodeproj/xcuserdata/
+**/xcuserdata/

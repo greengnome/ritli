@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>RITLI_PRIVACY_POLICY_URL</key>
+	<string></string>
+	<key>RITLI_SUPPORT_URL</key>
+	<string>https://github.com/greengnome/ritli/issues</string>
+</dict>
+</plist>
