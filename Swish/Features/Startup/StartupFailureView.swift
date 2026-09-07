@@ -6,7 +6,7 @@ struct StartupFailureView: View {
             Label(
                 String(
                     localized: "startup.failure.title",
-                    defaultValue: "Swish couldn't start"
+                    defaultValue: "Ritli couldn't start"
                 ),
                 systemImage: "exclamationmark.triangle"
             )

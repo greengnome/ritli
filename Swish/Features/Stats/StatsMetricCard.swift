@@ -29,8 +29,8 @@ struct StatsMetricCard<Content: View>: View {
         }
         .padding(18)
         .background(
-            SwishTheme.surface,
-            in: RoundedRectangle(cornerRadius: SwishTheme.cardRadius)
+            RitliTheme.surface,
+            in: RoundedRectangle(cornerRadius: RitliTheme.cardRadius)
         )
         .shadow(color: .black.opacity(0.045), radius: 16, y: 7)
     }
@@ -38,9 +38,9 @@ struct StatsMetricCard<Content: View>: View {
     private var comparisonColor: Color {
         switch comparison.tone {
         case .positive:
-            SwishTheme.success
+            RitliTheme.success
         case .negative:
-            SwishTheme.accent
+            RitliTheme.accent
         case .neutral:
             .secondary
         }

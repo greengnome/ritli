@@ -33,18 +33,18 @@ struct WelcomeView: View {
             .frame(height: 58)
             .background(
                 LinearGradient(
-                    colors: [SwishTheme.accent, .orange],
+                    colors: [RitliTheme.accent, .orange],
                     startPoint: .leading,
                     endPoint: .trailing
                 ),
                 in: RoundedRectangle(cornerRadius: 16)
             )
-            .padding(.horizontal, SwishTheme.screenPadding)
+            .padding(.horizontal, RitliTheme.screenPadding)
             .padding(.top, 30)
             .accessibilityIdentifier("onboarding.continue")
         }
         .padding(.bottom, 28)
-        .background(SwishTheme.background)
+        .background(RitliTheme.background)
     }
 
     private var pageIndicator: some View {
@@ -58,7 +58,7 @@ struct WelcomeView: View {
                     Capsule()
                         .fill(
                             index == selectedPage
-                                ? SwishTheme.accent
+                                ? RitliTheme.accent
                                 : .secondary.opacity(0.18)
                         )
                         .frame(
@@ -181,7 +181,7 @@ private struct OnboardingArtwork: View {
             Ellipse()
                 .trim(from: 0.08, to: 0.82)
                 .stroke(
-                    SwishTheme.accentSoft.opacity(0.55),
+                    RitliTheme.accentSoft.opacity(0.55),
                     style: StrokeStyle(lineWidth: 7, lineCap: .round)
                 )
                 .frame(width: 230, height: 135)
@@ -190,15 +190,15 @@ private struct OnboardingArtwork: View {
             Circle()
                 .fill(
                     LinearGradient(
-                        colors: [SwishTheme.accent, .orange],
+                        colors: [RitliTheme.accent, .orange],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
                 .frame(width: 132, height: 132)
-                .shadow(color: SwishTheme.accent.opacity(0.2), radius: 20, y: 12)
+                .shadow(color: RitliTheme.accent.opacity(0.2), radius: 20, y: 12)
                 .overlay {
-                    Text(verbatim: "S")
+                    Text(verbatim: "R")
                         .font(.system(size: 66, weight: .semibold, design: .rounded))
                         .foregroundStyle(.white)
                 }
@@ -212,14 +212,14 @@ private struct OnboardingArtwork: View {
             taskCard(
                 title: .onboardingTasksProjectRoadmap,
                 progress: Text(verbatim: "2 / 4"),
-                color: SwishTheme.accent
+                color: RitliTheme.accent
             )
             .offset(x: -8)
 
             taskCard(
                 title: .onboardingTasksReadPages,
                 progress: Text(.onboardingTasksDone),
-                color: SwishTheme.success
+                color: RitliTheme.success
             )
             .offset(x: 10)
 
@@ -236,11 +236,11 @@ private struct OnboardingArtwork: View {
     private var insightsArtwork: some View {
         VStack(spacing: 22) {
             HStack(alignment: .bottom, spacing: 13) {
-                bar(height: 48, color: SwishTheme.accentSoft)
-                bar(height: 72, color: SwishTheme.accentSoft)
-                bar(height: 102, color: SwishTheme.accent)
-                bar(height: 64, color: SwishTheme.accentSoft)
-                bar(height: 88, color: SwishTheme.accentSoft)
+                bar(height: 48, color: RitliTheme.accentSoft)
+                bar(height: 72, color: RitliTheme.accentSoft)
+                bar(height: 102, color: RitliTheme.accent)
+                bar(height: 64, color: RitliTheme.accentSoft)
+                bar(height: 88, color: RitliTheme.accentSoft)
             }
             .frame(height: 112, alignment: .bottom)
 
@@ -256,7 +256,7 @@ private struct OnboardingArtwork: View {
             }
         }
         .padding(24)
-        .background(SwishTheme.surface, in: RoundedRectangle(cornerRadius: 28))
+        .background(RitliTheme.surface, in: RoundedRectangle(cornerRadius: 28))
         .shadow(color: .black.opacity(0.06), radius: 20, y: 10)
         .padding(10)
     }
@@ -274,7 +274,7 @@ private struct OnboardingArtwork: View {
                 .offset(x: -107, y: 78)
 
             Circle()
-                .fill(SwishTheme.success.opacity(0.85))
+                .fill(RitliTheme.success.opacity(0.85))
                 .frame(width: 15, height: 15)
                 .offset(x: 93, y: 102)
         }
@@ -300,7 +300,7 @@ private struct OnboardingArtwork: View {
                 .foregroundStyle(color)
         }
         .padding(17)
-        .background(SwishTheme.surface, in: RoundedRectangle(cornerRadius: 18))
+        .background(RitliTheme.surface, in: RoundedRectangle(cornerRadius: 18))
         .overlay(alignment: .leading) {
             RoundedRectangle(cornerRadius: 3)
                 .fill(color)

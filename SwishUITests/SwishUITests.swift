@@ -19,7 +19,7 @@ final class SwishUITests: XCTestCase {
         let app = makeApp()
         app.launch()
 
-        XCTAssertTrue(app.staticTexts["Swish"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["Ritli"].waitForExistence(timeout: 2))
         XCTAssertTrue(app.staticTexts["home.timer.countdown"].exists)
     }
 
@@ -257,7 +257,7 @@ final class SwishUITests: XCTestCase {
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         XCTAssertTrue(
             springboard.wait(for: .runningForeground, timeout: 3),
-            "Starting a timer should leave a running Live Activity visible outside Swish."
+            "Starting a timer should leave a running Live Activity visible outside Ritli."
         )
         let activityContainer = springboard.descendants(matching: .any)
             .matching(
@@ -783,7 +783,7 @@ final class SwishUITests: XCTestCase {
 
         XCTAssertTrue(
             systemSettings.wait(for: .runningForeground, timeout: 3),
-            "The Language row should open Swish's page in iOS Settings"
+            "The Language row should open Ritli's page in iOS Settings"
         )
     }
 

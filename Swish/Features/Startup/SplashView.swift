@@ -11,7 +11,7 @@ struct SplashView: View {
 
     var body: some View {
         ZStack {
-            SwishTheme.background
+            RitliTheme.background
                 .ignoresSafeArea()
 
             SplashMark(isAnimating: isAnimating && !reduceMotion)
@@ -19,7 +19,7 @@ struct SplashView: View {
                 .accessibilityHidden(true)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: "Swish"))
+        .accessibilityLabel(Text(verbatim: "Ritli"))
         .accessibilityIdentifier("startup.splash")
         .task {
             await presentSplash()
@@ -53,7 +53,7 @@ private struct SplashMark: View {
             Circle()
                 .trim(from: 0.08, to: 0.83)
                 .stroke(
-                    SwishTheme.accent,
+                    RitliTheme.accent,
                     style: StrokeStyle(lineWidth: 12, lineCap: .round)
                 )
                 .rotationEffect(.degrees(isAnimating ? -20 : -38))
@@ -61,7 +61,7 @@ private struct SplashMark: View {
             Circle()
                 .trim(from: 0.10, to: 0.78)
                 .stroke(
-                    SwishTheme.accent,
+                    RitliTheme.accent,
                     style: StrokeStyle(lineWidth: 12, lineCap: .round)
                 )
                 .padding(22)
@@ -70,7 +70,7 @@ private struct SplashMark: View {
             Capsule()
                 .fill(
                     LinearGradient(
-                        colors: [SwishTheme.accent, .orange],
+                        colors: [RitliTheme.accent, .orange],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -81,6 +81,6 @@ private struct SplashMark: View {
                 .scaleEffect(isAnimating ? 1.08 : 1)
         }
         .scaleEffect(isAnimating ? 1.04 : 1)
-        .shadow(color: SwishTheme.accent.opacity(0.14), radius: 18)
+        .shadow(color: RitliTheme.accent.opacity(0.14), radius: 18)
     }
 }

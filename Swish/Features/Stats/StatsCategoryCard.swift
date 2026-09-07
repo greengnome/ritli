@@ -29,7 +29,7 @@ struct StatsCategoryCard: View {
                             angularInset: 1.5
                         )
                         .foregroundStyle(
-                            SwishTheme.categoryColor(for: category.colorToken)
+                            RitliTheme.categoryColor(for: category.colorToken)
                         )
                         .cornerRadius(4)
                     }
@@ -42,7 +42,7 @@ struct StatsCategoryCard: View {
                             HStack(spacing: 8) {
                                 Circle()
                                     .fill(
-                                        SwishTheme.categoryColor(
+                                        RitliTheme.categoryColor(
                                             for: category.colorToken
                                         )
                                     )
@@ -69,8 +69,8 @@ struct StatsCategoryCard: View {
         }
         .padding(18)
         .background(
-            SwishTheme.surface,
-            in: RoundedRectangle(cornerRadius: SwishTheme.cardRadius)
+            RitliTheme.surface,
+            in: RoundedRectangle(cornerRadius: RitliTheme.cardRadius)
         )
         .shadow(color: .black.opacity(0.045), radius: 16, y: 7)
     }

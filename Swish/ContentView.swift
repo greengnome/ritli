@@ -73,7 +73,7 @@ struct ContentView: View {
                 }
                 .tag(AppTab.settings)
         }
-        .tint(SwishTheme.accent)
+        .tint(RitliTheme.accent)
         .preferredColorScheme(timerEngine.settings.appearance.preferredColorScheme)
         .alert(
             String(

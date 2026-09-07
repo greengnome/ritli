@@ -1,6 +1,6 @@
 //
-//  SwishApp.swift
-//  Swish
+//  RitliApp.swift
+//  Ritli
 //
 //  Created by Kirill Gladkov on 14/08/2026.
 //
@@ -10,7 +10,7 @@ import SwiftUI
 
 @main
 @MainActor
-struct SwishApp: App {
+struct RitliApp: App {
     @UIApplicationDelegateAdaptor(AppNotificationDelegate.self)
     private var appDelegate
     private let dependencies: AppDependencies?

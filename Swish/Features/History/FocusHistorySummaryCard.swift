@@ -9,7 +9,7 @@ struct FocusHistorySummaryCard: View {
                 value: TimerDisplayFormatter.focusedTime(day.focusTime),
                 title: String(localized: .historySummaryFocused),
                 systemImage: "scope",
-                color: SwishTheme.accent,
+                color: RitliTheme.accent,
                 identifier: "history.focusTime.value"
             )
 
@@ -31,15 +31,15 @@ struct FocusHistorySummaryCard: View {
                 value: "\(day.completedTasks)",
                 title: String(localized: .appTabTasks),
                 systemImage: "checkmark.circle",
-                color: SwishTheme.success,
+                color: RitliTheme.success,
                 identifier: "history.tasks.value"
             )
         }
         .padding(.vertical, 18)
         .padding(.horizontal, 12)
         .background(
-            SwishTheme.surface,
-            in: RoundedRectangle(cornerRadius: SwishTheme.cardRadius)
+            RitliTheme.surface,
+            in: RoundedRectangle(cornerRadius: RitliTheme.cardRadius)
         )
         .shadow(color: .black.opacity(0.045), radius: 16, y: 7)
     }

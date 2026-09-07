@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-enum SwishTheme {
+enum RitliTheme {
     static let accent = Color(red: 1, green: 0.36, blue: 0.29)
     static let accentSoft = Color(red: 1, green: 0.75, blue: 0.70)
     static let background = adaptiveColor(

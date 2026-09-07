@@ -4,11 +4,11 @@ import UIKit
 
 @testable import Swish
 
-struct SwishThemeTests {
+struct RitliThemeTests {
     @Test
     func backgroundAdaptsToInterfaceStyle() {
-        let light = resolvedColor(SwishTheme.background, style: .light)
-        let dark = resolvedColor(SwishTheme.background, style: .dark)
+        let light = resolvedColor(RitliTheme.background, style: .light)
+        let dark = resolvedColor(RitliTheme.background, style: .dark)
 
         #expect(relativeLuminance(of: light) > 0.9)
         #expect(relativeLuminance(of: dark) < 0.1)
@@ -16,9 +16,9 @@ struct SwishThemeTests {
 
     @Test
     func surfaceAdaptsToInterfaceStyleAndRemainsAboveBackground() {
-        let light = resolvedColor(SwishTheme.surface, style: .light)
-        let dark = resolvedColor(SwishTheme.surface, style: .dark)
-        let darkBackground = resolvedColor(SwishTheme.background, style: .dark)
+        let light = resolvedColor(RitliTheme.surface, style: .light)
+        let dark = resolvedColor(RitliTheme.surface, style: .dark)
+        let darkBackground = resolvedColor(RitliTheme.background, style: .dark)
 
         #expect(relativeLuminance(of: light) > 0.9)
         #expect(relativeLuminance(of: dark) < 0.2)

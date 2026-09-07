@@ -40,7 +40,7 @@ struct HomeTaskPickerView: View {
                                     title: Text(verbatim: task.title),
                                     subtitle: Text(verbatim: taskSubtitle(task)),
                                     iconName: task.category?.iconName ?? "checkmark.circle",
-                                    color: task.category?.presentationColor ?? SwishTheme.accent,
+                                    color: task.category?.presentationColor ?? RitliTheme.accent,
                                     isSelected: selectedTaskID == task.id
                                 )
                             }
@@ -99,7 +99,7 @@ struct HomeTaskPickerView: View {
             if isSelected {
                 Image(systemName: "checkmark")
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(SwishTheme.accent)
+                    .foregroundStyle(RitliTheme.accent)
             }
         }
         .contentShape(Rectangle())

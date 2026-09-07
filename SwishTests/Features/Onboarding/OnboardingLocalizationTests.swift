@@ -10,8 +10,8 @@ struct OnboardingLocalizationTests {
         ("onboarding.focus.title", "Focus deeply", "Зосереджуйтеся глибше"),
         (
             "onboarding.focus.message",
-            "Accurate focus and break timers keep going when Swish is in the background.",
-            "Точні таймери фокусу й перерв продовжують працювати, навіть коли Swish у фоновому режимі."
+            "Accurate focus and break timers keep going when Ritli is in the background.",
+            "Точні таймери фокусу й перерв продовжують працювати, навіть коли Ritli у фоновому режимі."
         ),
         (
             "onboarding.tasks.title",

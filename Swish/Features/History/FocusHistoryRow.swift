@@ -11,7 +11,7 @@ struct FocusHistoryRow: View {
                 .frame(width: 56, alignment: .leading)
 
             Circle()
-                .fill(SwishTheme.categoryColor(for: entry.categoryColorToken))
+                .fill(RitliTheme.categoryColor(for: entry.categoryColorToken))
                 .frame(width: 10, height: 10)
 
             VStack(alignment: .leading, spacing: 3) {

@@ -13,7 +13,7 @@ struct TaskRow: View {
             Button(action: onToggleCompletion) {
                 Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
-                    .foregroundStyle(task.isCompleted ? .green : SwishTheme.accent)
+                    .foregroundStyle(task.isCompleted ? .green : RitliTheme.accent)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(
@@ -42,7 +42,7 @@ struct TaskRow: View {
 
                         if task.priority == .high {
                             Image(systemName: "flag.fill")
-                                .foregroundStyle(SwishTheme.accent)
+                                .foregroundStyle(RitliTheme.accent)
                                 .accessibilityLabel(Text(.tasksPriorityHighAccessibility))
                         }
                     }
@@ -96,7 +96,7 @@ struct TaskRow: View {
                 Button(action: onStartFocus) {
                     Image(systemName: "play.circle.fill")
                         .font(.title2)
-                        .foregroundStyle(canStartFocus ? SwishTheme.accent : Color.secondary)
+                        .foregroundStyle(canStartFocus ? RitliTheme.accent : Color.secondary)
                 }
                 .buttonStyle(.plain)
                 .disabled(!canStartFocus)

@@ -27,14 +27,14 @@ struct HomeTimerCard: View {
                 } label: {
                     HStack(spacing: 8) {
                         Circle()
-                            .fill(SwishTheme.accent)
+                            .fill(RitliTheme.accent)
                             .frame(width: 9, height: 9)
                         Text(kind.title)
                             .font(.subheadline.weight(.semibold))
                         Image(systemName: "chevron.down")
                             .font(.caption2.weight(.bold))
                     }
-                    .foregroundStyle(SwishTheme.accent)
+                    .foregroundStyle(RitliTheme.accent)
                 }
                 .disabled(!isModeSelectionEnabled)
                 .accessibilityIdentifier("home.timer.mode")
@@ -51,12 +51,12 @@ struct HomeTimerCard: View {
 
             ZStack {
                 Circle()
-                    .stroke(SwishTheme.accentSoft.opacity(0.45), lineWidth: 7)
+                    .stroke(RitliTheme.accentSoft.opacity(0.45), lineWidth: 7)
 
                 Circle()
                     .trim(from: 0, to: max(0.002, progress))
                     .stroke(
-                        SwishTheme.accent,
+                        RitliTheme.accent,
                         style: StrokeStyle(lineWidth: 7, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
@@ -112,7 +112,7 @@ struct HomeTimerCard: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.white)
-                .background(SwishTheme.accent, in: Capsule())
+                .background(RitliTheme.accent, in: Capsule())
                 .contentShape(Capsule())
                 .accessibilityIdentifier("home.timer.primary")
 
@@ -139,8 +139,8 @@ struct HomeTimerCard: View {
         }
         .padding(22)
         .background(
-            SwishTheme.surface,
-            in: RoundedRectangle(cornerRadius: SwishTheme.cardRadius)
+            RitliTheme.surface,
+            in: RoundedRectangle(cornerRadius: RitliTheme.cardRadius)
         )
         .shadow(color: .black.opacity(0.055), radius: 18, y: 8)
     }

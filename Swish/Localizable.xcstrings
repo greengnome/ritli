@@ -1286,19 +1286,19 @@
       }
     },
     "onboarding.focus.message" : {
-      "comment" : "Description of Swish's background-safe focus and break timers.",
+      "comment" : "Description of Ritli's background-safe focus and break timers.",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Accurate focus and break timers keep going when Swish is in the background."
+            "value" : "Accurate focus and break timers keep going when Ritli is in the background."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Точні таймери фокусу й перерв продовжують працювати, навіть коли Swish у фоновому режимі."
+            "value" : "Точні таймери фокусу й перерв продовжують працювати, навіть коли Ritli у фоновому режимі."
           }
         }
       }
@@ -1358,7 +1358,7 @@
       }
     },
     "onboarding.insights.message" : {
-      "comment" : "Description of Swish's statistics and history features.",
+      "comment" : "Description of Ritli's statistics and history features.",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -2139,13 +2139,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enable notifications for Swish in System Settings to receive timer alerts."
+            "value" : "Enable notifications for Ritli in System Settings to receive timer alerts."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Увімкніть сповіщення для Swish у системних налаштуваннях, щоб отримувати сповіщення таймера."
+            "value" : "Увімкніть сповіщення для Ritli у системних налаштуваннях, щоб отримувати сповіщення таймера."
           }
         }
       }
@@ -3769,13 +3769,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Swish couldn't start"
+            "value" : "Ritli couldn't start"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не вдалося запустити Swish"
+            "value" : "Не вдалося запустити Ritli"
           }
         }
       }

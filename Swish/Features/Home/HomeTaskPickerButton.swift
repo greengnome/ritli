@@ -9,7 +9,7 @@ struct HomeTaskPickerButton: View {
             HStack(spacing: 12) {
                 Image(systemName: task?.category?.iconName ?? "checklist")
                     .font(.title3)
-                    .foregroundStyle(task?.category?.presentationColor ?? SwishTheme.accent)
+                    .foregroundStyle(task?.category?.presentationColor ?? RitliTheme.accent)
                     .frame(width: 38, height: 38)
                     .background(Color.secondary.opacity(0.1))
                     .clipShape(Circle())

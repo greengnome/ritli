@@ -19,11 +19,11 @@ struct FocusHistoryView: View {
                     displayedComponents: .date
                 )
                 .datePickerStyle(.graphical)
-                .tint(SwishTheme.accent)
+                .tint(RitliTheme.accent)
                 .padding(10)
                 .background(
-                    SwishTheme.surface,
-                    in: RoundedRectangle(cornerRadius: SwishTheme.cardRadius)
+                    RitliTheme.surface,
+                    in: RoundedRectangle(cornerRadius: RitliTheme.cardRadius)
                 )
                 .accessibilityIdentifier("history.calendar")
 
@@ -36,10 +36,10 @@ struct FocusHistoryView: View {
 
                 sessionSection
             }
-            .padding(.horizontal, SwishTheme.screenPadding)
+            .padding(.horizontal, RitliTheme.screenPadding)
             .padding(.bottom, 24)
         }
-        .background(SwishTheme.background)
+        .background(RitliTheme.background)
         .navigationTitle(Text(.historyTitle))
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("history.screen")
@@ -79,8 +79,8 @@ struct FocusHistoryView: View {
                 )
                 .frame(maxWidth: .infinity, minHeight: 180)
                 .background(
-                    SwishTheme.surface,
-                    in: RoundedRectangle(cornerRadius: SwishTheme.cardRadius)
+                    RitliTheme.surface,
+                    in: RoundedRectangle(cornerRadius: RitliTheme.cardRadius)
                 )
                 .accessibilityIdentifier("history.empty")
             } else {
@@ -98,8 +98,8 @@ struct FocusHistoryView: View {
                 }
                 .padding(.horizontal, 16)
                 .background(
-                    SwishTheme.surface,
-                    in: RoundedRectangle(cornerRadius: SwishTheme.cardRadius)
+                    RitliTheme.surface,
+                    in: RoundedRectangle(cornerRadius: RitliTheme.cardRadius)
                 )
                 .shadow(color: .black.opacity(0.045), radius: 16, y: 7)
             }

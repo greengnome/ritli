@@ -71,7 +71,7 @@ struct SettingsView: View {
             Text(
                 String(
                     localized: "settings.notifications.permission_required",
-                    defaultValue: "Enable notifications for Swish in System Settings to receive timer alerts."
+                    defaultValue: "Enable notifications for Ritli in System Settings to receive timer alerts."
                 )
             )
         }

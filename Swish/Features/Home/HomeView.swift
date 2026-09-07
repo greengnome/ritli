@@ -48,11 +48,11 @@ struct HomeView: View {
                         onViewAll: { isHistoryPresented = true }
                     )
                 }
-                .padding(.horizontal, SwishTheme.screenPadding)
+                .padding(.horizontal, RitliTheme.screenPadding)
                 .padding(.bottom, 24)
             }
-            .background(SwishTheme.background)
-            .navigationTitle(Text(verbatim: "Swish"))
+            .background(RitliTheme.background)
+            .navigationTitle(Text(verbatim: "Ritli"))
             .navigationDestination(isPresented: $isHistoryPresented) {
                 FocusHistoryView()
             }
@@ -214,7 +214,7 @@ struct HomeView: View {
                 try timerEngine.setNotificationsEnabled(false)
                 errorMessage = String(
                     localized: "settings.notifications.permission_required",
-                    defaultValue: "Enable notifications for Swish in System Settings to receive timer alerts."
+                    defaultValue: "Enable notifications for Ritli in System Settings to receive timer alerts."
                 )
             }
         } catch {

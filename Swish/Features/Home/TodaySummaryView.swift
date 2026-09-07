@@ -23,7 +23,7 @@ struct TodaySummaryView: View {
                     value: "\(summary.completedSessions)",
                     title: .homeSummarySessions,
                     systemImage: "clock",
-                    color: SwishTheme.accent,
+                    color: RitliTheme.accent,
                     identifier: "home.summary.sessions"
                 )
                 metric(
@@ -37,7 +37,7 @@ struct TodaySummaryView: View {
                     value: "\(summary.completedTasks)",
                     title: .homeSummaryTasksDone,
                     systemImage: "checkmark.circle",
-                    color: SwishTheme.success,
+                    color: RitliTheme.success,
                     identifier: "home.summary.tasks"
                 )
             }

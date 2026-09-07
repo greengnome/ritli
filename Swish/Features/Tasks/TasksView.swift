@@ -38,7 +38,7 @@ struct TasksView: View {
                     .scrollContentBackground(.hidden)
                 }
             }
-            .background(SwishTheme.background)
+            .background(RitliTheme.background)
             .navigationTitle(Text(.appTabTasks))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -113,7 +113,7 @@ struct TasksView: View {
                     title: String(localized: .tasksFilterAll),
                     identifier: "tasks.filter.all",
                     filter: .all,
-                    color: SwishTheme.accent
+                    color: RitliTheme.accent
                 )
 
                 ForEach(activeCategories) { category in
@@ -125,7 +125,7 @@ struct TasksView: View {
                     )
                 }
             }
-            .padding(.horizontal, SwishTheme.screenPadding)
+            .padding(.horizontal, RitliTheme.screenPadding)
             .padding(.vertical, 12)
         }
         .background(.background)
@@ -143,7 +143,7 @@ struct TasksView: View {
                 Text(.tasksActionCreate)
             }
             .buttonStyle(.borderedProminent)
-            .tint(SwishTheme.accent)
+            .tint(RitliTheme.accent)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityIdentifier("tasks.empty")

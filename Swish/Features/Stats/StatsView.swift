@@ -20,10 +20,10 @@ struct StatsView: View {
                     tasksCard
                     StatsCategoryCard(categories: snapshot.categories)
                 }
-                .padding(.horizontal, SwishTheme.screenPadding)
+                .padding(.horizontal, RitliTheme.screenPadding)
                 .padding(.bottom, 24)
             }
-            .background(SwishTheme.background)
+            .background(RitliTheme.background)
             .navigationTitle(Text(.appTabStats))
             .accessibilityIdentifier("stats.screen")
             .toolbar {
@@ -84,7 +84,7 @@ struct StatsView: View {
                 )
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [SwishTheme.accentSoft, SwishTheme.accent],
+                        colors: [RitliTheme.accentSoft, RitliTheme.accent],
                         startPoint: .bottom,
                         endPoint: .top
                     )
@@ -128,7 +128,7 @@ struct StatsView: View {
                 )
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [SwishTheme.success.opacity(0.3), .clear],
+                        colors: [RitliTheme.success.opacity(0.3), .clear],
                         startPoint: .top,
                         endPoint: .bottom
                     )
@@ -144,7 +144,7 @@ struct StatsView: View {
                         bucket.completedSessions
                     )
                 )
-                .foregroundStyle(SwishTheme.success)
+                .foregroundStyle(RitliTheme.success)
                 .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round))
 
                 PointMark(
@@ -157,7 +157,7 @@ struct StatsView: View {
                         bucket.completedSessions
                     )
                 )
-                .foregroundStyle(SwishTheme.success)
+                .foregroundStyle(RitliTheme.success)
                 .symbolSize(22)
             }
             .chartXAxis { chartXAxis }
@@ -180,7 +180,7 @@ struct StatsView: View {
             VStack(spacing: 12) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 48))
-                    .foregroundStyle(SwishTheme.success)
+                    .foregroundStyle(RitliTheme.success)
 
                 Text(verbatim: selectedPeriod.completedTasksDescription())
                     .font(.subheadline)
