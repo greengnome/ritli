@@ -3,8 +3,7 @@ import UserNotifications
 
 @MainActor
 final class LocalTimerNotificationScheduler: TimerNotificationScheduling {
-    // Keep the original identifiers so pending notifications survive app updates.
-    static let identifierPrefix = "swish.timer.session"
+    static let identifierPrefix = "ritli.timer.session"
 
     private let center: any UserNotificationCenterClient
     private let dateProvider: any DateProviding
@@ -43,7 +42,7 @@ final class LocalTimerNotificationScheduler: TimerNotificationScheduling {
         content.title = notificationTitle(for: kind)
         content.body = notificationBody(for: kind)
         content.sound = soundEnabled ? .default : nil
-        content.threadIdentifier = "swish.timer"
+        content.threadIdentifier = "ritli.timer"
         content.userInfo = ["sessionID": id.uuidString]
 
         let trigger = UNTimeIntervalNotificationTrigger(

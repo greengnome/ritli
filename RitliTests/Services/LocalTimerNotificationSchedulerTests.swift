@@ -26,11 +26,11 @@ struct LocalTimerNotificationSchedulerTests {
         let trigger = try #require(
             request.trigger as? UNTimeIntervalNotificationTrigger
         )
-        #expect(request.identifier == "swish.timer.session.\(id.uuidString)")
+        #expect(request.identifier == "ritli.timer.session.\(id.uuidString)")
         #expect(request.content.title == "Focus complete")
         #expect(request.content.body == "Great work. Time for a break.")
         #expect(request.content.sound != nil)
-        #expect(request.content.threadIdentifier == "swish.timer")
+        #expect(request.content.threadIdentifier == "ritli.timer")
         #expect(request.content.userInfo["sessionID"] as? String == id.uuidString)
         #expect(trigger.timeInterval == 90)
         #expect(!trigger.repeats)
@@ -154,7 +154,7 @@ struct LocalTimerNotificationSchedulerTests {
         scheduler.cancelSessionEnd(id: id)
 
         #expect(center.removedIdentifierGroups == [[
-            "swish.timer.session.\(id.uuidString)"
+            "ritli.timer.session.\(id.uuidString)"
         ]])
     }
 
