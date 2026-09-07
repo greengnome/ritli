@@ -36,8 +36,8 @@ jobs:
       - name: Build for testing
         run: |
           xcodebuild \
-            -project Swish.xcodeproj \
-            -scheme Swish \
+            -project Ritli.xcodeproj \
+            -scheme Ritli \
             -configuration Debug \
             -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
@@ -48,29 +48,29 @@ jobs:
       - name: Run tests
         run: |
           xcodebuild \
-            -project Swish.xcodeproj \
-            -scheme Swish \
+            -project Ritli.xcodeproj \
+            -scheme Ritli \
             -configuration Debug \
             -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
-            -resultBundlePath "$RUNNER_TEMP/SwishTests.xcresult" \
+            -resultBundlePath "$RUNNER_TEMP/RitliTests.xcresult" \
             -parallel-testing-enabled NO \
-            -skip-testing:SwishUITests/SwishUITests/testDisplaysRunningTimerOutsideApp \
-            -skip-testing:SwishUITests/SwishUITests/testOpensAppLanguageSettings \
+            -skip-testing:RitliUITests/RitliUITests/testDisplaysRunningTimerOutsideApp \
+            -skip-testing:RitliUITests/RitliUITests/testOpensAppLanguageSettings \
             test-without-building
 
       - name: Run Live Activity system UI test in isolation
         run: |
           for attempt in 1 2; do
             if xcodebuild \
-              -project Swish.xcodeproj \
-              -scheme Swish \
+              -project Ritli.xcodeproj \
+              -scheme Ritli \
               -configuration Debug \
               -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
               -derivedDataPath "$RUNNER_TEMP/DerivedData" \
-              -resultBundlePath "$RUNNER_TEMP/SwishLiveActivityUITests-attempt-${attempt}.xcresult" \
+              -resultBundlePath "$RUNNER_TEMP/RitliLiveActivityUITests-attempt-${attempt}.xcresult" \
               -parallel-testing-enabled NO \
-              -only-testing:SwishUITests/SwishUITests/testDisplaysRunningTimerOutsideApp \
+              -only-testing:RitliUITests/RitliUITests/testDisplaysRunningTimerOutsideApp \
               test-without-building; then
               exit 0
             fi
@@ -89,7 +89,7 @@ jobs:
         with:
           name: Ritli-test-results
           path: |
-            ${{ runner.temp }}/SwishTests.xcresult
-            ${{ runner.temp }}/SwishLiveActivityUITests-attempt-*.xcresult
+            ${{ runner.temp }}/RitliTests.xcresult
+            ${{ runner.temp }}/RitliLiveActivityUITests-attempt-*.xcresult
           if-no-files-found: ignore
           retention-days: 7
