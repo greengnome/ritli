@@ -1,15 +1,18 @@
 import SwiftUI
 
 struct TodaySummaryView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let summary: TodaySummary
     let onViewAll: () -> Void
 
     var body: some View {
         VStack(spacing: 18) {
-            HStack {
+            contentLayout {
                 Text(.homeSummaryToday)
                     .font(.headline)
-                Spacer()
+                if !dynamicTypeSize.isAccessibilitySize {
+                    Spacer()
+                }
                 Button(action: onViewAll) {
                     Text(.homeSummaryViewAll)
                 }
@@ -18,7 +21,7 @@ struct TodaySummaryView: View {
                 .accessibilityIdentifier("home.summary.viewAll")
             }
 
-            HStack {
+            contentLayout {
                 metric(
                     value: "\(summary.completedSessions)",
                     title: .homeSummarySessions,
@@ -42,6 +45,12 @@ struct TodaySummaryView: View {
                 )
             }
         }
+    }
+
+    private var contentLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 18))
+            : AnyLayout(HStackLayout())
     }
 
     private func metric(

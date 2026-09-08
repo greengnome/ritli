@@ -7,6 +7,7 @@ struct SplashPresentationTests {
         #expect(SplashPresentation.shouldShow(arguments: []))
     }
 
+    #if DEBUG
     @Test("Regular UI tests skip the splash")
     func skipsSplashForUITests() {
         #expect(
@@ -29,4 +30,20 @@ struct SplashPresentationTests {
                 == .seconds(5)
         )
     }
+    #else
+    @Test("Release ignores UI-test splash overrides")
+    func releaseIgnoresSplashOverrides() {
+        for arguments in [
+            [SplashPresentation.uiTestingArgument],
+            [SplashPresentation.showInUITestsArgument],
+            [SplashPresentation.uiTestingArgument, SplashPresentation.showInUITestsArgument]
+        ] {
+            #expect(SplashPresentation.shouldShow(arguments: arguments))
+            #expect(
+                SplashPresentation.minimumDisplayDuration(arguments: arguments)
+                    == .milliseconds(850)
+            )
+        }
+    }
+    #endif
 }

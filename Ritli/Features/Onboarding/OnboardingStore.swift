@@ -19,11 +19,13 @@ final class OnboardingStore {
     ) {
         self.defaults = defaults
 
+        #if DEBUG
         if arguments.contains(Self.resetLaunchArgument) {
             defaults.set(false, forKey: Self.completionKey)
         } else if arguments.contains(Self.skipLaunchArgument) {
             defaults.set(true, forKey: Self.completionKey)
         }
+        #endif
 
         hasCompletedOnboarding = defaults.bool(forKey: Self.completionKey)
     }

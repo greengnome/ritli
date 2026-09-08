@@ -21,6 +21,7 @@ struct OnboardingStoreTests {
         )
     }
 
+    #if DEBUG
     @Test("UI-test launch arguments provide deterministic onboarding state")
     func launchArgumentsOverridePersistedState() {
         let defaults = makeDefaults()
@@ -38,6 +39,20 @@ struct OnboardingStoreTests {
         )
         #expect(skippedStore.hasCompletedOnboarding)
     }
+    #else
+    @Test("Release ignores onboarding overrides and preserves stored completion")
+    func releaseIgnoresOnboardingOverrides() {
+        let defaults = makeDefaults()
+        for completed in [false, true] {
+            for argument in [OnboardingStore.resetLaunchArgument, OnboardingStore.skipLaunchArgument] {
+                defaults.set(completed, forKey: OnboardingStore.completionKey)
+                let store = OnboardingStore(defaults: defaults, arguments: [argument])
+                #expect(store.hasCompletedOnboarding == completed)
+                #expect(defaults.bool(forKey: OnboardingStore.completionKey) == completed)
+            }
+        }
+    }
+    #endif
 
     private func makeDefaults() -> UserDefaults {
         let suiteName = "OnboardingStoreTests.\(UUID().uuidString)"

@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import UIKit
 
 final class RitliUITests: XCTestCase {
 
@@ -233,6 +234,38 @@ final class RitliUITests: XCTestCase {
 
         XCTAssertTrue(app.buttons["Pause"].waitForExistence(timeout: 2))
         XCTAssertTrue(app.buttons["Cancel timer"].exists)
+    }
+
+    @MainActor
+    func testTimerControlsRemainUsableAtLargestTextSize() throws {
+        let app = makeApp(language: "en", locale: "en_US")
+        app.launchArguments += [
+            "-UIPreferredContentSizeCategoryName",
+            UIContentSizeCategory.accessibilityExtraExtraExtraLarge.rawValue
+        ]
+        app.launch()
+
+        let primary = app.buttons["home.timer.primary"]
+        XCTAssertTrue(scrollToElement(primary, in: app))
+        XCTAssertGreaterThan(primary.frame.height, 52)
+        XCTAssertTrue(app.buttons["Start focus"].exists)
+        addScreenshot(named: "Home timer — largest Dynamic Type")
+        primary.tap()
+
+        let pause = app.buttons["Pause"]
+        XCTAssertTrue(pause.waitForExistence(timeout: 3))
+        XCTAssertTrue(scrollToElement(pause, in: app))
+        pause.tap()
+        let resume = app.buttons["Resume"]
+        XCTAssertTrue(resume.waitForExistence(timeout: 3))
+        resume.tap()
+        XCTAssertTrue(pause.waitForExistence(timeout: 3))
+
+        let cancel = app.buttons["home.timer.cancel"]
+        if !cancel.isHittable { app.swipeDown() }
+        XCTAssertTrue(cancel.isHittable)
+        cancel.tap()
+        XCTAssertTrue(app.buttons["Start focus"].waitForExistence(timeout: 3))
     }
 
     @MainActor
@@ -765,7 +798,13 @@ final class RitliUITests: XCTestCase {
             scrollToElement(app.staticTexts["Про застосунок"], in: app),
             "Розділ про застосунок має бути доступним після прокручування"
         )
-        XCTAssertTrue(app.staticTexts["Версія"].exists)
+        // The read-only title is not hittable on iOS 18 because the combined
+        // title/value accessibility element covers it. Verify its visible bounds.
+        app.swipeUp()
+        let version = app.staticTexts["Версія"]
+        XCTAssertTrue(version.exists)
+        XCTAssertGreaterThanOrEqual(version.frame.minY, app.navigationBars.firstMatch.frame.maxY)
+        XCTAssertLessThanOrEqual(version.frame.maxY, app.tabBars.firstMatch.frame.minY)
     }
 
     @MainActor
@@ -885,11 +924,59 @@ final class RitliUITests: XCTestCase {
         maxSwipes: Int = 5
     ) -> Bool {
         for attempt in 0...maxSwipes {
-            if element.exists && element.isHittable {
+            let containers = app.scrollViews.allElementsBoundByIndex
+                + app.collectionViews.allElementsBoundByIndex
+                + app.tables.allElementsBoundByIndex
+            let scrollView = containers.filter(\.isHittable).max {
+                $0.frame.width * $0.frame.height < $1.frame.width * $1.frame.height
+            }
+            var visibleFrame = scrollView?.frame.intersection(app.frame) ?? app.frame
+            let navigationBar = app.navigationBars.firstMatch
+            if navigationBar.exists && navigationBar.isHittable {
+                let top = max(visibleFrame.minY, navigationBar.frame.maxY)
+                visibleFrame = CGRect(
+                    x: visibleFrame.minX, y: top,
+                    width: visibleFrame.width, height: max(0, visibleFrame.maxY - top)
+                )
+            }
+            let tabBar = app.tabBars.firstMatch
+            if tabBar.exists && tabBar.isHittable {
+                visibleFrame.size.height = max(
+                    0, min(visibleFrame.maxY, tabBar.frame.minY) - visibleFrame.minY
+                )
+            }
+            let keyboard = app.keyboards.firstMatch
+            if keyboard.exists {
+                visibleFrame.size.height = max(
+                    0,
+                    min(visibleFrame.maxY, keyboard.frame.minY) - visibleFrame.minY
+                )
+            }
+            guard visibleFrame.height > 40 else { return false }
+            // XCTest can report a partially obscured button as hittable even
+            // when its tap point lies behind a navigation or tab bar.
+            if element.exists && element.isHittable
+                && visibleFrame.insetBy(dx: 2, dy: 2).contains(
+                    CGPoint(x: element.frame.midX, y: element.frame.midY)
+                ) {
                 return true
             }
             guard attempt < maxSwipes else { break }
-            app.swipeUp()
+
+            let origin = app.coordinate(withNormalizedOffset: .zero)
+            let upper = origin.withOffset(CGVector(
+                dx: visibleFrame.midX - app.frame.minX,
+                dy: visibleFrame.minY + visibleFrame.height * 0.2 - app.frame.minY
+            ))
+            let lower = origin.withOffset(CGVector(
+                dx: visibleFrame.midX - app.frame.minX,
+                dy: visibleFrame.minY + visibleFrame.height * 0.8 - app.frame.minY
+            ))
+            if element.exists && element.frame.midY < visibleFrame.midY {
+                upper.press(forDuration: 0.05, thenDragTo: lower)
+            } else {
+                lower.press(forDuration: 0.05, thenDragTo: upper)
+            }
         }
         return false
     }
