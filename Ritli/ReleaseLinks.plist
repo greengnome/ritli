@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>RITLI_PRIVACY_POLICY_URL</key>
-	<string></string>
+	<string>https://www.ritli.app/privacy</string>
 	<key>RITLI_SUPPORT_URL</key>
 	<string>https://github.com/greengnome/ritli/issues</string>
 </dict>

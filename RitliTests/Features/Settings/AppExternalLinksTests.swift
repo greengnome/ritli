@@ -3,13 +3,16 @@ import Testing
 @testable import Ritli
 
 struct AppExternalLinksTests {
-    @Test("The release bundle exposes support and waits for a privacy-policy URL")
+    @Test("The release bundle exposes support and privacy-policy URLs")
     func readsReleaseConfiguration() {
         #expect(
             AppExternalLinks.supportURL
                 == URL(string: "https://github.com/greengnome/ritli/issues")
         )
-        #expect(AppExternalLinks.privacyPolicyURL == nil)
+        #expect(
+            AppExternalLinks.privacyPolicyURL
+                == URL(string: "https://www.ritli.app/privacy")
+        )
     }
 
     @Test("External links accept only complete HTTPS URLs")
