@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ritli — App Store Release Checklist</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f6f4ef;
+      --panel: rgba(255,255,255,.86);
+      --text: #171411;
+      --muted: #726d67;
+      --line: rgba(25,20,15,.1);
+      --coral: #ff6250;
+      --orange: #ff9c42;
+      --green: #2e9b64;
+      --amber: #c77a18;
+      --red: #c64d40;
+      --shadow: 0 18px 52px rgba(52,38,24,.08);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #11100f;
+        --panel: rgba(31,29,27,.9);
+        --text: #f7f2ec;
+        --muted: #aba39b;
+        --line: rgba(255,255,255,.1);
+        --shadow: 0 18px 52px rgba(0,0,0,.3);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 8% 3%, rgba(255,98,80,.16), transparent 34rem),
+        radial-gradient(circle at 92% 16%, rgba(255,156,66,.13), transparent 30rem),
+        var(--bg);
+    }
+
+    main { width: min(1040px, calc(100% - 32px)); margin: auto; padding: 52px 0 80px; }
+
+    header {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) auto;
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--coral);
+      font-size: 13px;
+      font-weight: 850;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    h1 { margin: 0; font-size: clamp(36px,7vw,66px); line-height: .97; letter-spacing: -.06em; }
+    .lede { max-width: 690px; margin: 17px 0 0; color: var(--muted); font-size: 17px; line-height: 1.55; }
+
+    button, .quick-links a {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--text);
+      background: var(--panel);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 750;
+      text-decoration: none;
+    }
+
+    button { padding: 10px 16px; cursor: pointer; }
+    button:hover, .quick-links a:hover { border-color: var(--coral); color: var(--coral); }
+
+    .overview {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .card, section {
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .card { padding: 22px; }
+    .progress-row { display: flex; justify-content: space-between; gap: 16px; font-weight: 800; }
+    #progressText { color: var(--muted); }
+    .track { height: 12px; margin-top: 13px; overflow: hidden; border-radius: 999px; background: var(--line); }
+    #progressFill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg,var(--coral),var(--orange)); transition: width .25s ease; }
+
+    .gate-title { margin: 0 0 11px; font-size: 15px; }
+    .gate { display: flex; gap: 9px; align-items: flex-start; margin-top: 8px; color: var(--muted); font-size: 13px; line-height: 1.35; }
+    .gate::before { content: ""; width: 9px; height: 9px; flex: none; margin-top: 4px; border-radius: 50%; background: var(--amber); }
+    .gate.done::before { background: var(--green); }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 28px; }
+    .pill, .tag { display: inline-flex; align-items: center; border-radius: 999px; font-size: 11px; font-weight: 850; text-transform: uppercase; }
+    .pill { gap: 7px; padding: 7px 10px; color: var(--muted); background: var(--panel); border: 1px solid var(--line); }
+    .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+    .pill.blocker::before { background: var(--red); }
+    .pill.important::before { background: var(--amber); }
+
+    section { margin-top: 20px; overflow: hidden; }
+    .section-head { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 20px 22px; border-bottom: 1px solid var(--line); }
+    h2 { margin: 0; font-size: 21px; letter-spacing: -.025em; }
+    .counter { padding: 5px 10px; border-radius: 999px; color: var(--coral); background: color-mix(in srgb,var(--coral) 11%,transparent); font-size: 12px; font-weight: 850; }
+    .audit {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--line);
+      background: color-mix(in srgb,var(--green) 5%,transparent);
+    }
+    .audit-title { margin: 0 0 12px; font-size: 13px; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
+    .audit-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+    .audit-item { padding: 12px 13px; border: 1px solid var(--line); border-radius: 14px; color: var(--muted); background: var(--panel); font-size: 13px; line-height: 1.4; }
+    .audit-item strong { display: block; margin-bottom: 3px; color: var(--text); }
+    .audit-item.pass strong { color: var(--green); }
+    .audit-item.action strong { color: var(--amber); }
+    ul { margin: 0; padding: 0; list-style: none; }
+
+    .todo { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 15px; align-items: start; padding: 17px 22px; border-bottom: 1px solid var(--line); }
+    .todo:last-child { border-bottom: 0; }
+    input[type="checkbox"] { width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--coral); cursor: pointer; }
+    label { cursor: pointer; }
+    .title { display: block; margin-bottom: 4px; font-weight: 760; line-height: 1.35; }
+    .note { display: block; color: var(--muted); font-size: 14px; line-height: 1.45; }
+    .todo:has(input:checked) .title { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1.5px; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .92em; }
+
+    .tag { padding: 5px 8px; color: var(--muted); background: var(--line); white-space: nowrap; }
+    .tag.blocker { color: var(--red); background: color-mix(in srgb,var(--red) 12%,transparent); }
+    .tag.important { color: var(--amber); background: color-mix(in srgb,var(--amber) 13%,transparent); }
+    .tag.known { color: var(--green); background: color-mix(in srgb,var(--green) 12%,transparent); }
+
+    .quick-links { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 24px; }
+    .quick-links a { padding: 10px 14px; }
+    footer { margin-top: 24px; color: var(--muted); font-size: 13px; text-align: center; }
+
+    @media (max-width: 720px) {
+      main { padding-top: 32px; }
+      header, .overview { grid-template-columns: 1fr; }
+      header button { justify-self: start; }
+      .audit-grid { grid-template-columns: 1fr; }
+      .todo { grid-template-columns: auto minmax(0,1fr); }
+      .tag { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="eyebrow">Ritli · production release</p>
+        <h1>App Store launch checklist</h1>
+        <p class="lede">The complete path from developer-account setup and product-page assets through App Review, release, and post-launch monitoring.</p>
+      </div>
+      <button id="reset" type="button">Reset progress</button>
+    </header>
+
+    <div class="overview">
+      <div class="card" aria-live="polite">
+        <div class="progress-row"><span>Overall readiness</span><span id="progressText">0 of 0 complete</span></div>
+        <div class="track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progressFill"></div></div>
+      </div>
+      <div class="card">
+        <p class="gate-title"><strong>Known Ritli status</strong></p>
+        <div class="gate done">Bundle IDs, privacy manifest, app icon, launch screen and Xcode 26 configuration exist.</div>
+        <div class="gate">The owner confirmed YY9396KB75 is not the intended release team; the correct team ID is pending. The export attempt under the current setup failed. Reconfigure signing and rebuild after the correct team is provided.</div>
+        <div class="gate">Privacy policy draft prepared; owner/contact details and publication URL remain pending.</div>
+      </div>
+    </div>
+
+    <div class="legend" aria-label="Priority legend">
+      <span class="pill blocker">Release blocker</span>
+      <span class="pill important">Important</span>
+      <span class="pill">Recommended</span>
+    </div>
+
+    <section>
+      <div class="section-head"><h2>1. Ownership, legal and business</h2><span class="counter"></span></div>
+      <ul>
+        <li class="todo"><input id="membership" type="checkbox"><label for="membership"><span class="title">Activate the Apple Developer Program membership</span><span class="note">The Account Holder must maintain the paid membership for distribution.</span></label><span class="tag blocker">Blocker</span></li>
+        <li class="todo"><input id="agreements" type="checkbox"><label for="agreements"><span class="title">Accept current Apple agreements</span><span class="note">Check App Store Connect → Agreements, Tax, and Banking for outstanding agreements.</span></label><span class="tag blocker">Blocker</span></li>
+        <li class="todo"><input id="tax-banking" type="checkbox"><label for="tax-banking"><span class="title">Complete tax and banking information if the app will be paid</span><span class="note">For a permanently free app with no paid content, banking may not be needed immediately.</span></label><span class="tag important">If paid</span></li>
+        <li class="todo"><input id="name-rights" type="checkbox"><label for="name-rights"><span class="title">Confirm rights to the “Ritli” name, icon and all included content</span><span class="note">Search for naming conflicts and avoid third-party trademarks, copied artwork or unlicensed media.</span></label><span class="tag important">Important</span></li>
+        <li class="todo"><input id="support-contact" type="checkbox"><label for="support-contact"><span class="title">Prepare a public support contact and support URL</span><span class="note">The configured GitHub issues page was publicly reachable on September 7. Posting requires a GitHub account; add a monitored private contact for sensitive support and privacy requests.</span></label><span class="tag blocker">Blocker</span></li>
+        <li class="todo"><input id="privacy-policy" type="checkbox"><label for="privacy-policy"><span class="title">Publish a public Privacy Policy</span><span class="note">A source-audited <a href="release/Privacy-Policy-Draft.md">policy draft</a> and <a href="release/Privacy-Audit.md">privacy audit</a> were prepared September 7. Complete owner/contact/support-retention details, publish the policy, then set the public URL in ReleaseLinks.plist and App Store Connect. This item remains incomplete until publication and in-app verification.</span></label><span class="tag blocker">Blocker</span></li>
+        <li class="todo"><input id="terms" type="checkbox"><label for="terms"><span class="title">Decide whether Ritli needs custom Terms of Use</span><span class="note">Apple’s standard EULA can be used when no custom terms are needed.</span></label><span class="tag">Decision</span></li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>2. Technical release readiness</h2><span class="counter"></span></div>
+      <div class="audit">
+        <p class="audit-title">Local validation September 7, 2026 · ac56de3 + local debug-hook, accessibility and test changes · <a href="release/Validation-2026-09-07.md">evidence and limits</a></p>
+        <div class="audit-grid">
+          <div class="audit-item action"><strong>Pending · Current CI</strong>Historical CI passed for 9bc04a8. The release-readiness changes still need CI on the final candidate commit and code review.</div>
+          <div class="audit-item pass"><strong>Passed · Release compile</strong>Both Ritli and its Live Activity extension compile in Release configuration with signing disabled.</div>
+          <div class="audit-item pass"><strong>Passed · Local tests</strong>148 Debug unit tests, 4 Release startup tests and the full 28-test Debug UI suite passed. Physical-device and release-candidate checks remain open.</div>
+          <div class="audit-item action"><strong>Action · Device matrix</strong>Target support starts with iPhone 14 and newer; minimum iOS remains 17. Verify the base iPhone 14, a Pro model with Dynamic Island, and a large Plus/Pro Max layout. Physical-device checks remain open.</div>
+          <div class="audit-item action"><strong>Action · Clean tree</strong>Verify that the debug-hook fix, accessibility changes, regression tests and release preparation are committed, reviewed and green in CI before freezing the candidate.</div>
+          <div class="audit-item pass"><strong>Passed · Test hooks · September 7</strong>UI-test startup overrides are gated behind DEBUG. The unsigned Release archive contains no UI-test argument strings; Debug and Release startup regression tests pass.</div>
+        </div>
+      </div>
+      <ul>
+        <li class="todo"><input id="sync-main" type="checkbox"><label for="sync-main"><span class="title">Synchronize local <code>main</code> with <code>origin/main</code></span><span class="note">Verify local and remote branch state, review/commit the debug-hook fix and tests, and decide which checklist and release-draft files to track before freezing the release candidate.</span></label><span class="tag important">Tree not clean</span></li>
+        <li class="todo"><input id="ci-green" type="checkbox"><label for="ci-green"><span class="title">Confirm build and tests are green in CI</span><span class="note">Historical run <code>33413391796</code> covered <code>9bc04a8</code>. The release-readiness changes passed local validation but need CI on the final candidate commit.</span></label><span class="tag important">Pending current CI</span></li>
+        <li class="todo"><input id="no-critical" type="checkbox"><label for="no-critical"><span class="title">Confirm there are no known critical or high-severity bugs</span><span class="note">Local unit and UI validation passed September 7. Recheck current issues and complete product-owner and physical-device sign-off; historical issue counts do not establish the current release state.</span></label><span class="tag important">Manual sign-off</span></li>
+        <li class="todo"><input id="physical-devices" type="checkbox"><label for="physical-devices"><span class="title">Test on supported physical iPhones</span><span class="note">Target support: iPhone 14 and newer, running iOS 17 or newer. Verify base iPhone 14, a Pro model with Dynamic Island, and a large Plus/Pro Max layout. Six targeted iPhone 14/iOS 18.1 simulator tests passed, including largest-text controls, onboarding and localized task/settings flows; iPhone 17 Pro/iOS 26.5 coverage is also recorded. iPhone SE results are supplementary stress tests. Physical devices and iOS 17 still need verification. This test baseline does not enforce an App Store model cutoff; installation eligibility follows OS and required hardware capabilities.</span></label><span class="tag important">Important</span></li>
+        <li class="todo"><input id="timer-lifecycle" type="checkbox"><label for="timer-lifecycle"><span class="title">Verify the complete focus/break lifecycle</span><span class="note">Start, pause, resume, reset, app termination, device lock, background transition, automatic break/focus and long break.</span></label><span class="tag blocker">Core flow</span></li>
+        <li class="todo"><input id="notifications" type="checkbox"><label for="notifications"><span class="title">Verify notification permissions, sound and haptics</span><span class="note">Test first denial, later enablement in Settings, foreground/background behavior and Focus modes.</span></label><span class="tag blocker">Core flow</span></li>
+        <li class="todo"><input id="live-activities" type="checkbox"><label for="live-activities"><span class="title">Verify Live Activities and Dynamic Island</span><span class="note">Check running and paused states, task-name visibility setting, contrast, expiration and activity cleanup.</span></label><span class="tag important">Important</span></li>
+        <li class="todo"><input id="localization" type="checkbox"><label for="localization"><span class="title">Review English and Ukrainian localization</span><span class="note">Remove truncation, untranslated strings, placeholder copy and inconsistent terminology.</span></label><span class="tag important">Important</span></li>
+        <li class="todo"><input id="accessibility" type="checkbox"><label for="accessibility"><span class="title">Complete an accessibility pass</span><span class="note">Home Dynamic Type clipping was fixed and the largest-text timer controls passed on iPhone 14, iPhone 17 Pro and in supplementary iPhone SE stress tests; see the <a href="release/Validation-2026-09-07.md">validation notes and screenshots</a>. Complete VoiceOver, contrast, Reduce Motion and all-screen accessibility checks before marking this complete.</span></label><span class="tag important">Important</span></li>
+        <li class="todo"><input id="offline" type="checkbox"><label for="offline"><span class="title">Verify offline and fresh-install behavior</span><span class="note">No previous app data, no network, device restart, upgrades and corrupted/restored state should fail safely.</span></label><span class="tag">Recommended</span></li>
+        <li class="todo"><input id="release-logging" type="checkbox" checked><label for="release-logging"><span class="title">Check Release configuration for debug behavior</span><span class="note">Verified September 7, 2026: storage/notification, onboarding, initial-tab and splash UI-test overrides are gated behind <code>#if DEBUG</code>. No debug logging, mock endpoints or explicit fatal assertions were found. An unsigned Release archive passed with optimized compilation, no DEBUG/testability, no test bundles or diagnostic libraries, and no UI-test argument strings in either executable. Validation: 148 Debug unit tests, 3 startup UI tests and 4 Release startup tests passed. Release tests used testability only in a separate simulator test build; distribution signing remains a separate checklist item.</span></label><span class="tag known">Verified</span></li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>3. Signing, identifiers and archive</h2><span class="counter"></span></div>
+      <ul>
+        <li class="todo"><input id="xcode-account" type="checkbox"><label for="xcode-account"><span class="title">Sign in to the enrolled Apple Account in Xcode</span><span class="note">App Store export could not authenticate a provider for the current setup. The owner confirmed that the current team YY9396KB75 is incorrect for release and will provide the replacement. Configure that team in both targets and use Xcode → Settings → Accounts to resolve App Store Connect access.</span></label><span class="tag blocker">Blocker</span></li>
+        <li class="todo"><input id="distribution-cert" type="checkbox"><label for="distribution-cert"><span class="title">Install a valid Apple Distribution certificate</span><span class="note">Two Apple Development identities exist; no local Apple Distribution identity was found. The App Store export attempt also failed because distribution profiles were unavailable for both targets. Resolve account access and configure distribution signing in Xcode, then repeat export and validation.</span></label><span class="tag blocker">Known blocker</span></li>
+        <li class="todo"><input id="app-signing" type="checkbox"><label for="app-signing"><span class="title">Validate automatic signing for the Ritli target</span><span class="note">Local Release archive succeeded with Apple Development signing for <code>com.kirill.Ritli</code>, team <code>YY9396KB75</code>; signature verification passed. Distribution signing and export remain unverified.</span></label><span class="tag blocker">Blocker</span></li>
+        <li class="todo"><input id="extension-signing" type="checkbox"><label for="extension-signing"><span class="title">Validate signing for the Live Activity extension</span><span class="note">Local Release archive succeeded with Apple Development signing for <code>com.kirill.Ritli.LiveActivity</code> on the same team as the app. Distribution signing and export remain unverified.</span></label><span class="tag blocker">Blocker</span></li>
+        <li class="todo"><input id="version-build" type="checkbox"><label for="version-build"><span class="title">Set the marketing version and unique build number</span><span class="note">For example, version 1.0 and build 1. Every new upload requires a higher build number.</span></label><span class="tag blocker">Blocker</span></li>
+        <li class="todo"><input id="archive" type="checkbox"><label for="archive"><span class="title">Create and validate a Release archive</span><span class="note">A local development-signed Release archive succeeded on September 7; app and extension signatures passed deep/strict verification. Both retain development entitlements. App Store export subsequently failed on provider authentication and missing distribution profiles. Resolve signing, repeat export, and Validate App in Organizer before marking this item complete.</span></label><span class="tag blocker">Blocker</span></li>
+        <li class="todo"><input id="upload" type="checkbox"><label for="upload"><span class="title">Upload the validated archive to App Store Connect</span><span class="note">Confirm the embedded Live Activity extension and wait for build processing to finish.</span></label><span class="tag blocker">Blocker</span></li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>4. App Store product page</h2><span class="counter"></span></div>
+      <ul>
+        <li class="todo"><input id="app-record" type="checkbox"><label for="app-record"><span class="title">Create the App Store Connect app record</span><span class="note">iOS, Ritli: Focus Timer, primary language, <code>com.kirill.Ritli</code> and a stable SKU.</span></label><span class="tag blocker">Blocker</span></li>
+        <li class="todo"><input id="name-subtitle" type="checkbox"><label for="name-subtitle"><span class="title">Finalize app name and subtitle</span><span class="note">English and Ukrainian name/subtitle options are prepared in the <a href="release/App-Store-Metadata-Draft.json">metadata draft</a>; both meet the 30-character limits. Owner choice and App Store name availability remain unverified.</span></label><span class="tag blocker">Metadata</span></li>
+        <li class="todo"><input id="description" type="checkbox"><label for="description"><span class="title">Write the App Store description and promotional text</span><span class="note">English and Ukrainian descriptions and promotional text are prepared in the <a href="release/App-Store-Metadata-Draft.json">metadata draft</a>. Field lengths were checked; review the wording and enter it in App Store Connect.</span></label><span class="tag blocker">Metadata</span></li>
+        <li class="todo"><input id="keywords" type="checkbox"><label for="keywords"><span class="title">Prepare localized keywords</span><span class="note">English and Ukrainian keyword drafts are prepared with no competitor names; each is below 100 UTF-8 bytes. Review positioning and enter the final choices in App Store Connect.</span></label><span class="tag important">Discovery</span></li>
+        <li class="todo"><input id="category" type="checkbox"><label for="category"><span class="title">Select primary and secondary categories</span><span class="note">Productivity is likely the primary category; validate the final positioning.</span></label><span class="tag blocker">Metadata</span></li>
+        <li class="todo"><input id="screenshots" type="checkbox"><label for="screenshots"><span class="title">Capture polished App Store screenshots</span><span class="note">Six English and Ukrainian <a href="release/screenshots/index.html">screenshot drafts</a> are prepared, three per language: task-linked timer, task list and timer settings. Each is a native 1320 × 2868 JPEG with no transparency or simulator chrome. Review the selection and compare both localizations against the final signed candidate before upload.</span></label><span class="tag blocker">Assets</span></li>
+        <li class="todo"><input id="app-preview" type="checkbox"><label for="app-preview"><span class="title">Decide whether to create an App Preview video</span><span class="note">Optional; only invest if it clearly demonstrates timer and Live Activity behavior.</span></label><span class="tag">Optional</span></li>
+        <li class="todo"><input id="urls" type="checkbox"><label for="urls"><span class="title">Enter working support, marketing and privacy URLs</span><span class="note">All submitted links must be public, complete and functional during review.</span></label><span class="tag blocker">Blocker</span></li>
+        <li class="todo"><input id="copyright" type="checkbox"><label for="copyright"><span class="title">Enter copyright and app ownership details</span><span class="note">Use the legal owner name and current year.</span></label><span class="tag blocker">Metadata</span></li>
+        <li class="todo"><input id="availability" type="checkbox"><label for="availability"><span class="title">Choose price, storefronts and availability</span><span class="note">Confirm whether Ritli is free, supported countries/regions and earliest release availability.</span></label><span class="tag blocker">Business</span></li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>5. Privacy and compliance</h2><span class="counter"></span></div>
+      <ul>
+        <li class="todo"><input id="privacy-labels" type="checkbox"><label for="privacy-labels"><span class="title">Complete App Privacy data-use answers</span><span class="note">Include data practices of every SDK. If Ritli collects nothing, explicitly select and publish that answer.</span></label><span class="tag blocker">Blocker</span></li>
+        <li class="todo"><input id="manifest" type="checkbox" checked><label for="manifest"><span class="title">Include and verify the privacy manifest</span><span class="note">A privacy manifest already exists in the project; confirm it matches current APIs and third-party SDKs.</span></label><span class="tag known">Present</span></li>
+        <li class="todo"><input id="tracking" type="checkbox"><label for="tracking"><span class="title">Confirm tracking and ATT status</span><span class="note">If there is no cross-app tracking, do not request ATT permission. If tracking is added, disclose and implement it correctly.</span></label><span class="tag blocker">Blocker</span></li>
+        <li class="todo"><input id="encryption" type="checkbox"><label for="encryption"><span class="title">Complete export-compliance questions</span><span class="note">The project declares no non-exempt encryption; verify the declaration remains truthful for this build.</span></label><span class="tag blocker">Blocker</span></li>
+        <li class="todo"><input id="age-rating" type="checkbox"><label for="age-rating"><span class="title">Complete the age-rating questionnaire</span><span class="note">Answer based on actual content and functionality, not the desired rating.</span></label><span class="tag blocker">Blocker</span></li>
+        <li class="todo"><input id="content-rights" type="checkbox"><label for="content-rights"><span class="title">Answer content-rights and advertising questions</span><span class="note">Declare third-party content, advertising identifier use and regulated content accurately.</span></label><span class="tag blocker">Blocker</span></li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>6. TestFlight release candidate</h2><span class="counter"></span></div>
+      <ul>
+        <li class="todo"><input id="internal-beta" type="checkbox"><label for="internal-beta"><span class="title">Distribute the exact release candidate to internal testers</span><span class="note">Add What to Test notes and install the build from TestFlight.</span></label><span class="tag important">Important</span></li>
+        <li class="todo"><input id="beta-smoke" type="checkbox"><label for="beta-smoke"><span class="title">Run a TestFlight smoke-test matrix</span><span class="note">Fresh install, upgrade, settings, notifications, haptics, auto-start, custom task timers, lock screen and Dynamic Island.</span></label><span class="tag blocker">Release gate</span></li>
+        <li class="todo"><input id="external-beta" type="checkbox"><label for="external-beta"><span class="title">Complete external beta testing if desired</span><span class="note">Provide beta metadata, submit the first build for TestFlight App Review and collect feedback.</span></label><span class="tag">Recommended</span></li>
+        <li class="todo"><input id="feedback" type="checkbox"><label for="feedback"><span class="title">Triage feedback and freeze the release candidate</span><span class="note">Resolve blockers, increment the build if code changes, and repeat validation.</span></label><span class="tag important">Important</span></li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>7. App Review submission</h2><span class="counter"></span></div>
+      <ul>
+        <li class="todo"><input id="select-build" type="checkbox"><label for="select-build"><span class="title">Attach the approved release-candidate build to version 1.0</span><span class="note">Do not select an older TestFlight build accidentally.</span></label><span class="tag blocker">Blocker</span></li>
+        <li class="todo"><input id="review-contact" type="checkbox"><label for="review-contact"><span class="title">Enter reachable App Review contact information</span><span class="note">Use a monitored email address and phone number.</span></label><span class="tag blocker">Blocker</span></li>
+        <li class="todo"><input id="review-notes" type="checkbox"><label for="review-notes"><span class="title">Write focused App Review notes</span><span class="note">A <a href="release/App-Review-Notes.md">review-notes draft</a> covers notifications, Live Activities, task-name privacy, timer restoration and feature access. Verify it against the signed TestFlight candidate, enter the separate review contact fields, then paste it into App Store Connect.</span></label><span class="tag important">Important</span></li>
+        <li class="todo"><input id="demo-access" type="checkbox"><label for="demo-access"><span class="title">Provide unrestricted review access</span><span class="note">Ritli currently appears not to require login; confirm the reviewer can reach every feature without credentials or external hardware.</span></label><span class="tag blocker">Blocker</span></li>
+        <li class="todo"><input id="release-option" type="checkbox"><label for="release-option"><span class="title">Choose the release method</span><span class="note">For a first release, manual release is safest. Automatic and scheduled release are also available.</span></label><span class="tag important">Decision</span></li>
+        <li class="todo"><input id="final-review" type="checkbox"><label for="final-review"><span class="title">Review every localization and required field</span><span class="note">No placeholder text, broken links, inaccurate screenshots or incomplete metadata.</span></label><span class="tag blocker">Release gate</span></li>
+        <li class="todo"><input id="submit-review" type="checkbox"><label for="submit-review"><span class="title">Add the version to a submission and send it to App Review</span><span class="note">Monitor App Store Connect and answer reviewer questions promptly.</span></label><span class="tag blocker">Submit</span></li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>8. Release and post-launch</h2><span class="counter"></span></div>
+      <ul>
+        <li class="todo"><input id="approval-check" type="checkbox"><label for="approval-check"><span class="title">Confirm approval and release readiness</span><span class="note">Verify support availability and that no urgent issue appeared after submission.</span></label><span class="tag blocker">Release gate</span></li>
+        <li class="todo"><input id="production-release" type="checkbox"><label for="production-release"><span class="title">Release version 1.0</span><span class="note">If manual release was selected, use Release This Version. Storefront propagation can take time.</span></label><span class="tag blocker">Production</span></li>
+        <li class="todo"><input id="store-install" type="checkbox"><label for="store-install"><span class="title">Install the public App Store build</span><span class="note">Verify launch, onboarding, timers, notifications, Live Activities, localization and settings one more time.</span></label><span class="tag blocker">Smoke test</span></li>
+        <li class="todo"><input id="monitor" type="checkbox"><label for="monitor"><span class="title">Monitor crashes, reviews and support reports</span><span class="note">Watch App Store Connect metrics and prioritize timer/data-loss regressions.</span></label><span class="tag important">Important</span></li>
+        <li class="todo"><input id="release-notes" type="checkbox"><label for="release-notes"><span class="title">Record the released commit, version and build</span><span class="note">Tag the release in Git and preserve release notes so the shipped binary can be reproduced.</span></label><span class="tag">Recommended</span></li>
+        <li class="todo"><input id="rollback" type="checkbox"><label for="rollback"><span class="title">Document emergency response triggers</span><span class="note">For crashes, timer corruption or data loss: remove the version from sale if necessary, communicate clearly, and submit a corrected build.</span></label><span class="tag important">Safety</span></li>
+      </ul>
+    </section>
+
+    <nav class="quick-links" aria-label="Official Apple resources">
+      <a href="https://appstoreconnect.apple.com/">App Store Connect ↗</a>
+      <a href="https://developer.apple.com/app-store/review/guidelines/">Review Guidelines ↗</a>
+      <a href="https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy/">App Privacy ↗</a>
+      <a href="https://developer.apple.com/help/app-store-connect/manage-app-information/upload-app-previews-and-screenshots">Screenshots ↗</a>
+      <a href="https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/overview-of-submitting-for-review/">Submit for Review ↗</a>
+      <a href="https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/select-an-app-store-version-release-option">Release Options ↗</a>
+      <a href="TestFlight-Deployment-Checklist.html">Open TestFlight checklist →</a>
+    </nav>
+
+    <footer>Checklist progress is stored locally in this browser. Last reviewed against Apple documentation: September 2026.</footer>
+  </main>
+
+  <script>
+    const storageKey = "swish-app-store-checklist-v1";
+    const boxes = [...document.querySelectorAll('input[type="checkbox"]')];
+    const text = document.getElementById("progressText");
+    const fill = document.getElementById("progressFill");
+    const track = document.querySelector(".track");
+
+    function readState() {
+      try { return JSON.parse(localStorage.getItem(storageKey)) || null; }
+      catch { return null; }
+    }
+
+    function render() {
+      const complete = boxes.filter(box => box.checked).length;
+      const percent = Math.round(complete / boxes.length * 100);
+      text.textContent = `${complete} of ${boxes.length} complete`;
+      fill.style.width = `${percent}%`;
+      track.setAttribute("aria-valuenow", String(percent));
+
+      document.querySelectorAll("section").forEach(section => {
+        const items = [...section.querySelectorAll('input[type="checkbox"]')];
+        const done = items.filter(item => item.checked).length;
+        section.querySelector(".counter").textContent = `${done}/${items.length}`;
+      });
+    }
+
+    function save() {
+      localStorage.setItem(storageKey, JSON.stringify(Object.fromEntries(boxes.map(box => [box.id, box.checked]))));
+      render();
+    }
+
+    const state = readState();
+    if (state) boxes.forEach(box => { box.checked = Boolean(state[box.id]); });
+    boxes.forEach(box => box.addEventListener("change", save));
+
+    document.getElementById("reset").addEventListener("click", () => {
+      if (!window.confirm("Reset every App Store checklist item?")) return;
+      boxes.forEach(box => { box.checked = box.id === "manifest"; });
+      localStorage.removeItem(storageKey);
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

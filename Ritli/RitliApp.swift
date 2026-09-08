@@ -28,11 +28,15 @@ struct RitliApp: App {
         )
 
         do {
+            #if DEBUG
             let isUITesting = arguments.contains("--ui-testing")
             let dependencies = try AppDependencies.live(
                 inMemory: isUITesting,
                 notificationsEnabled: !isUITesting
             )
+            #else
+            let dependencies = try AppDependencies.live()
+            #endif
             self.dependencies = dependencies
             _onboardingStore = State(initialValue: OnboardingStore())
         } catch {

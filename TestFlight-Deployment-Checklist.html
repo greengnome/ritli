@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ritli — TestFlight Deployment Checklist</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f7f5f1;
+      --surface: rgba(255, 255, 255, 0.82);
+      --surface-strong: #fff;
+      --text: #181512;
+      --muted: #746f69;
+      --border: rgba(24, 21, 18, 0.09);
+      --accent: #ff644f;
+      --accent-2: #ff9b3f;
+      --success: #2f9e65;
+      --warning: #d78320;
+      --shadow: 0 18px 48px rgba(43, 31, 19, 0.09);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #11100f;
+        --surface: rgba(31, 29, 27, 0.88);
+        --surface-strong: #211f1d;
+        --text: #f6f2ed;
+        --muted: #aaa39b;
+        --border: rgba(255, 255, 255, 0.09);
+        --shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 5%, rgba(255, 100, 79, 0.15), transparent 30rem),
+        radial-gradient(circle at 90% 20%, rgba(255, 155, 63, 0.12), transparent 28rem),
+        var(--bg);
+    }
+
+    main {
+      width: min(940px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 56px 0 80px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 28px;
+      align-items: end;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 6vw, 60px);
+      line-height: 0.98;
+      letter-spacing: -0.055em;
+    }
+
+    .intro {
+      max-width: 620px;
+      margin: 16px 0 0;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.55;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 10px 16px;
+      color: var(--text);
+      background: var(--surface);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover { border-color: var(--accent); }
+
+    .progress-card {
+      padding: 22px;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+      font-weight: 750;
+    }
+
+    #progressText { color: var(--muted); }
+
+    .progress-track {
+      height: 11px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: var(--border);
+    }
+
+    .progress-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      transition: width 240ms ease;
+    }
+
+    .alert {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin: 18px 0 30px;
+      padding: 16px 18px;
+      border: 1px solid color-mix(in srgb, var(--warning) 28%, transparent);
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--warning) 10%, transparent);
+      color: var(--text);
+      line-height: 1.45;
+    }
+
+    .alert strong { color: var(--warning); }
+
+    section {
+      margin-top: 22px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 21px;
+      letter-spacing: -0.025em;
+    }
+
+    .badge {
+      flex: none;
+      padding: 5px 10px;
+      border-radius: 999px;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 11%, transparent);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .checklist { margin: 0; padding: 0; list-style: none; }
+
+    .todo {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 15px;
+      align-items: start;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .todo:last-child { border-bottom: 0; }
+
+    input[type="checkbox"] {
+      width: 22px;
+      height: 22px;
+      margin: 1px 0 0;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .todo label { cursor: pointer; }
+
+    .todo-title {
+      display: block;
+      margin-bottom: 4px;
+      font-weight: 750;
+      line-height: 1.35;
+    }
+
+    .todo-note {
+      display: block;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .todo:has(input:checked) .todo-title {
+      color: var(--muted);
+      text-decoration: line-through;
+      text-decoration-thickness: 1.5px;
+    }
+
+    .state {
+      padding: 4px 8px;
+      border-radius: 999px;
+      color: var(--muted);
+      background: var(--border);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .state.blocker {
+      color: var(--warning);
+      background: color-mix(in srgb, var(--warning) 12%, transparent);
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .links a {
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text);
+      background: var(--surface);
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .links a:hover { border-color: var(--accent); color: var(--accent); }
+
+    footer {
+      margin-top: 24px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    @media (max-width: 650px) {
+      main { padding-top: 32px; }
+      header { grid-template-columns: 1fr; align-items: start; }
+      header button { justify-self: start; }
+      .todo { grid-template-columns: auto 1fr; }
+      .state { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="eyebrow">Ritli release</p>
+        <h1>TestFlight checklist</h1>
+        <p class="intro">Complete these steps in order to upload Ritli, invite internal testers, and prepare an external beta.</p>
+      </div>
+      <button id="resetButton" type="button">Reset progress</button>
+    </header>
+
+    <div class="progress-card" aria-live="polite">
+      <div class="progress-meta">
+        <span>Release readiness</span>
+        <span id="progressText">0 of 0 complete</span>
+      </div>
+      <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <div class="alert">
+      <span aria-hidden="true">⚠︎</span>
+      <div><strong>Current blocker:</strong> this Mac previously reported zero valid code-signing identities. Configure the Apple account and signing certificate before creating an archive.</div>
+    </div>
+
+    <section>
+      <div class="section-heading">
+        <h2>1. Account and signing</h2>
+        <span class="badge">Required</span>
+      </div>
+      <ul class="checklist">
+        <li class="todo">
+          <input id="membership" type="checkbox">
+          <label for="membership"><span class="todo-title">Confirm active Apple Developer Program membership</span><span class="todo-note">The paid membership must belong to the team used by the app and Live Activity targets.</span></label>
+          <span class="state blocker">Blocker</span>
+        </li>
+        <li class="todo">
+          <input id="xcode-account" type="checkbox">
+          <label for="xcode-account"><span class="todo-title">Sign in under Xcode → Settings → Accounts</span><span class="todo-note">Use the Apple Account enrolled in the Developer Program.</span></label>
+          <span class="state blocker">Blocker</span>
+        </li>
+        <li class="todo">
+          <input id="certificate" type="checkbox">
+          <label for="certificate"><span class="todo-title">Install or create an Apple Distribution certificate</span><span class="todo-note">In Manage Certificates, create one if automatic signing does not provide it.</span></label>
+          <span class="state blocker">Blocker</span>
+        </li>
+        <li class="todo">
+          <input id="app-signing" type="checkbox">
+          <label for="app-signing"><span class="todo-title">Verify signing for the Ritli app target</span><span class="todo-note">Automatic signing enabled, correct team selected, bundle ID <code>com.kirill.Ritli</code>, and no red errors.</span></label>
+          <span class="state">Required</span>
+        </li>
+        <li class="todo">
+          <input id="extension-signing" type="checkbox">
+          <label for="extension-signing"><span class="todo-title">Verify signing for the Live Activity extension</span><span class="todo-note">Use the same team and confirm <code>com.kirill.Ritli.LiveActivity</code> signs successfully.</span></label>
+          <span class="state">Required</span>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="section-heading">
+        <h2>2. App Store Connect</h2>
+        <span class="badge">Required</span>
+      </div>
+      <ul class="checklist">
+        <li class="todo">
+          <input id="agreements" type="checkbox">
+          <label for="agreements"><span class="todo-title">Accept outstanding Apple agreements</span><span class="todo-note">Check Agreements, Tax, and Banking in App Store Connect.</span></label>
+          <span class="state">Required</span>
+        </li>
+        <li class="todo">
+          <input id="app-record" type="checkbox">
+          <label for="app-record"><span class="todo-title">Create the Ritli app record</span><span class="todo-note">Platform iOS, name Ritli: Focus Timer, bundle ID <code>com.kirill.Ritli</code>, primary language English, and a stable SKU such as <code>ritli-ios-001</code>.</span></label>
+          <span class="state blocker">Blocker</span>
+        </li>
+        <li class="todo">
+          <input id="privacy-url" type="checkbox">
+          <label for="privacy-url"><span class="todo-title">Publish and enter a Privacy Policy URL</span><span class="todo-note">Recommended before external TestFlight testing and required for the public App Store release.</span></label>
+          <span class="state">Before public</span>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="section-heading">
+        <h2>3. Prepare the build</h2>
+        <span class="badge">Before archive</span>
+      </div>
+      <ul class="checklist">
+        <li class="todo">
+          <input id="sync-main" type="checkbox">
+          <label for="sync-main"><span class="todo-title">Synchronize local main with origin/main</span><span class="todo-note"><code>git switch main</code>, then <code>git pull --ff-only origin main</code>. Confirm the working tree is clean.</span></label>
+          <span class="state">Required</span>
+        </li>
+        <li class="todo">
+          <input id="version" type="checkbox">
+          <label for="version"><span class="todo-title">Confirm version and unique build number</span><span class="todo-note">Version 1.0 and build 1 are suitable for the first upload. Increment the build number for every replacement upload.</span></label>
+          <span class="state">Required</span>
+        </li>
+        <li class="todo">
+          <input id="ci" type="checkbox">
+          <label for="ci"><span class="todo-title">Confirm CI build and tests are green</span><span class="todo-note">Do not distribute a build from a revision with failing automated tests.</span></label>
+          <span class="state">Required</span>
+        </li>
+        <li class="todo">
+          <input id="device-test" type="checkbox">
+          <label for="device-test"><span class="todo-title">Run a smoke test on a physical iPhone</span><span class="todo-note">Target support starts with iPhone 14 and newer, running iOS 17 or newer. Cover base iPhone 14, a Pro model with Dynamic Island, and a large Plus/Pro Max layout. Verify timers, notifications, sounds, haptics, background transitions, Live Activities, dark mode, and task-specific timer profiles.</span></label>
+          <span class="state">High value</span>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="section-heading">
+        <h2>4. Archive and upload</h2>
+        <span class="badge">Xcode Organizer</span>
+      </div>
+      <ul class="checklist">
+        <li class="todo">
+          <input id="archive" type="checkbox">
+          <label for="archive"><span class="todo-title">Create a Release archive</span><span class="todo-note">Select the Ritli scheme and Any iOS Device (arm64), then choose Product → Archive. Do not archive for a simulator.</span></label>
+          <span class="state">Required</span>
+        </li>
+        <li class="todo">
+          <input id="validate" type="checkbox">
+          <label for="validate"><span class="todo-title">Validate the archive</span><span class="todo-note">Resolve every signing, entitlement, icon, or embedded-extension error reported by Organizer.</span></label>
+          <span class="state">Required</span>
+        </li>
+        <li class="todo">
+          <input id="upload" type="checkbox">
+          <label for="upload"><span class="todo-title">Upload to App Store Connect</span><span class="todo-note">Organizer → Distribute App → App Store Connect → Upload. Wait for Apple to process the build.</span></label>
+          <span class="state">Required</span>
+        </li>
+        <li class="todo">
+          <input id="export-compliance" type="checkbox">
+          <label for="export-compliance"><span class="todo-title">Complete export-compliance questions</span><span class="todo-note">The project currently declares no non-exempt encryption; confirm that remains accurate.</span></label>
+          <span class="state">Required</span>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="section-heading">
+        <h2>5. Internal TestFlight</h2>
+        <span class="badge">First release</span>
+      </div>
+      <ul class="checklist">
+        <li class="todo">
+          <input id="internal-group" type="checkbox">
+          <label for="internal-group"><span class="todo-title">Create an internal testing group</span><span class="todo-note">Add App Store Connect users who should test Ritli.</span></label>
+          <span class="state">Required</span>
+        </li>
+        <li class="todo">
+          <input id="test-notes" type="checkbox">
+          <label for="test-notes"><span class="todo-title">Add “What to Test” notes</span><span class="todo-note">Call out timer transitions, custom task timers, notifications, Live Activities, and light/dark themes.</span></label>
+          <span class="state">Required</span>
+        </li>
+        <li class="todo">
+          <input id="invite-internal" type="checkbox">
+          <label for="invite-internal"><span class="todo-title">Attach the build and invite internal testers</span><span class="todo-note">Testers install TestFlight and accept the invitation.</span></label>
+          <span class="state">Required</span>
+        </li>
+        <li class="todo">
+          <input id="testflight-smoke" type="checkbox">
+          <label for="testflight-smoke"><span class="todo-title">Install from TestFlight and run a final smoke test</span><span class="todo-note">Test the distributed build rather than relying only on the development build.</span></label>
+          <span class="state">Required</span>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="section-heading">
+        <h2>6. External beta</h2>
+        <span class="badge">Optional next step</span>
+      </div>
+      <ul class="checklist">
+        <li class="todo">
+          <input id="beta-metadata" type="checkbox">
+          <label for="beta-metadata"><span class="todo-title">Complete external beta metadata</span><span class="todo-note">Provide the beta description, feedback email, review contact, sign-in notes if applicable, and What to Test.</span></label>
+          <span class="state">External</span>
+        </li>
+        <li class="todo">
+          <input id="beta-review" type="checkbox">
+          <label for="beta-review"><span class="todo-title">Submit the first external build for TestFlight App Review</span><span class="todo-note">Apple normally reviews the first build before external testers can access it.</span></label>
+          <span class="state">External</span>
+        </li>
+        <li class="todo">
+          <input id="invite-external" type="checkbox">
+          <label for="invite-external"><span class="todo-title">Invite external testers</span><span class="todo-note">After approval, use email invitations or a controlled public link.</span></label>
+          <span class="state">External</span>
+        </li>
+      </ul>
+    </section>
+
+    <nav class="links" aria-label="Apple resources">
+      <a href="https://appstoreconnect.apple.com/">App Store Connect ↗</a>
+      <a href="https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds/">Upload builds ↗</a>
+      <a href="https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview">TestFlight overview ↗</a>
+      <a href="https://developer.apple.com/help/app-store-connect/test-a-beta-version/invite-external-testers">External testers ↗</a>
+    </nav>
+
+    <footer>Progress is stored only in this browser on this device.</footer>
+  </main>
+
+  <script>
+    const storageKey = "swish-testflight-checklist-v1";
+    const checkboxes = [...document.querySelectorAll('input[type="checkbox"]')];
+    const progressText = document.getElementById("progressText");
+    const progressFill = document.getElementById("progressFill");
+    const progressTrack = document.querySelector(".progress-track");
+
+    function savedState() {
+      try { return JSON.parse(localStorage.getItem(storageKey)) || {}; }
+      catch { return {}; }
+    }
+
+    function updateProgress() {
+      const complete = checkboxes.filter(item => item.checked).length;
+      const percent = Math.round((complete / checkboxes.length) * 100);
+      progressText.textContent = `${complete} of ${checkboxes.length} complete`;
+      progressFill.style.width = `${percent}%`;
+      progressTrack.setAttribute("aria-valuenow", String(percent));
+    }
+
+    function saveProgress() {
+      const state = Object.fromEntries(checkboxes.map(item => [item.id, item.checked]));
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      updateProgress();
+    }
+
+    const state = savedState();
+    checkboxes.forEach(item => {
+      item.checked = Boolean(state[item.id]);
+      item.addEventListener("change", saveProgress);
+    });
+
+    document.getElementById("resetButton").addEventListener("click", () => {
+      if (!window.confirm("Reset every checklist item?")) return;
+      checkboxes.forEach(item => { item.checked = false; });
+      localStorage.removeItem(storageKey);
+      updateProgress();
+    });
+
+    updateProgress();
+  </script>
+</body>
+</html>

@@ -1,16 +1,18 @@
 import SwiftUI
 
 struct CurrentTaskBanner: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let task: FocusTask
 
     var body: some View {
-        HStack(spacing: 12) {
+        contentLayout {
             Image(systemName: task.category?.iconName ?? "checkmark.circle.fill")
-                .font(.title3)
+                .font(.system(size: 20))
                 .foregroundStyle(task.category?.presentationColor ?? RitliTheme.accent)
                 .frame(width: 38, height: 38)
                 .background(Color.secondary.opacity(0.1))
                 .clipShape(Circle())
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(.homeTaskWorkingOn)
@@ -19,10 +21,13 @@ struct CurrentTaskBanner: View {
 
                 Text(verbatim: task.title)
                     .font(.headline)
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
-            Spacer()
+            if !dynamicTypeSize.isAccessibilitySize {
+                Spacer()
+            }
 
             Text(verbatim: "\(task.completedPomodoros) / \(task.estimatedPomodoros)")
                 .font(.subheadline.weight(.semibold))
@@ -37,6 +42,7 @@ struct CurrentTaskBanner: View {
                     )
                 )
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .background(.background)
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -52,5 +58,11 @@ struct CurrentTaskBanner: View {
             )
         )
         .accessibilityIdentifier("home.currentTask")
+    }
+
+    private var contentLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            : AnyLayout(HStackLayout(spacing: 12))
     }
 }

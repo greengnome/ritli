@@ -1,18 +1,20 @@
 import SwiftUI
 
 struct HomeTaskPickerButton: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let task: FocusTask?
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            contentLayout {
                 Image(systemName: task?.category?.iconName ?? "checklist")
-                    .font(.title3)
+                    .font(.system(size: 20))
                     .foregroundStyle(task?.category?.presentationColor ?? RitliTheme.accent)
                     .frame(width: 38, height: 38)
                     .background(Color.secondary.opacity(0.1))
                     .clipShape(Circle())
+                    .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(.homeTaskWorkingOn)
@@ -28,15 +30,19 @@ struct HomeTaskPickerButton: View {
                     }
                     .font(.headline)
                     .foregroundStyle(.primary)
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                    .fixedSize(horizontal: false, vertical: true)
                 }
 
-                Spacer()
+                if !dynamicTypeSize.isAccessibilitySize {
+                    Spacer()
 
-                Image(systemName: "chevron.right")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                    Image(systemName: "chevron.right")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
             .background(.background)
             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -46,6 +52,12 @@ struct HomeTaskPickerButton: View {
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint(Text(.homeTaskPickerHint))
         .accessibilityIdentifier("home.taskSelector")
+    }
+
+    private var contentLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            : AnyLayout(HStackLayout(spacing: 12))
     }
 
     private var accessibilityLabel: Text {

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct HomeTimerCard: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     private enum ControlMetrics {
         static let height: CGFloat = 52
         static let primaryWidth: CGFloat = 160
@@ -19,7 +20,7 @@ struct HomeTimerCard: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            HStack {
+            headerLayout {
                 Menu {
                     modeButton(.focus)
                     modeButton(.shortBreak)
@@ -31,56 +32,56 @@ struct HomeTimerCard: View {
                             .frame(width: 9, height: 9)
                         Text(kind.title)
                             .font(.subheadline.weight(.semibold))
+                            .fixedSize(horizontal: false, vertical: true)
                         Image(systemName: "chevron.down")
-                            .font(.caption2.weight(.bold))
+                            .font(.system(size: 11, weight: .bold))
                     }
                     .foregroundStyle(RitliTheme.accent)
                 }
                 .disabled(!isModeSelectionEnabled)
                 .accessibilityIdentifier("home.timer.mode")
 
-                Spacer()
+                if !dynamicTypeSize.isAccessibilitySize {
+                    Spacer()
+                }
 
                 Text(verbatim: TimerDisplayFormatter.durationLabel(duration))
                     .font(.subheadline.weight(.medium))
+                    .fixedSize()
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)
                     .background(.thinMaterial, in: Capsule())
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            ZStack {
-                Circle()
-                    .stroke(RitliTheme.accentSoft.opacity(0.45), lineWidth: 7)
+            if dynamicTypeSize.isAccessibilitySize {
+                timerReadout
+            } else {
+                ZStack {
+                    Circle()
+                        .stroke(RitliTheme.accentSoft.opacity(0.45), lineWidth: 7)
 
-                Circle()
-                    .trim(from: 0, to: max(0.002, progress))
-                    .stroke(
-                        RitliTheme.accent,
-                        style: StrokeStyle(lineWidth: 7, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
+                    Circle()
+                        .trim(from: 0, to: max(0.002, progress))
+                        .stroke(
+                            RitliTheme.accent,
+                            style: StrokeStyle(lineWidth: 7, lineCap: .round)
+                        )
+                        .rotationEffect(.degrees(-90))
 
-                VStack(spacing: 7) {
-                    Text(verbatim: TimerDisplayFormatter.countdown(remainingTime))
-                        .font(.system(size: 50, weight: .semibold, design: .rounded))
-                        .monospacedDigit()
-                        .accessibilityIdentifier("home.timer.countdown")
-
-                    Text(kind.timerSubtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    timerReadout
                 }
+                .frame(width: 255, height: 255)
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel(Text(kind.timerAccessibilityLabel))
             }
-            .frame(width: 255, height: 255)
-            .accessibilityElement(children: .contain)
-            .accessibilityLabel(Text(kind.timerAccessibilityLabel))
 
-            HStack(spacing: 16) {
+            controlLayout {
                 if isActive {
                     Button(role: .destructive, action: onCancel) {
                         Image(systemName: "xmark")
-                            .font(.caption.weight(.bold))
+                            .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(.red)
                             .frame(
                                 width: ControlMetrics.height,
@@ -99,26 +100,32 @@ struct HomeTimerCard: View {
                 }
 
                 Button(action: onPrimaryAction) {
-                    Label {
-                        Text(primaryTitle)
-                    } icon: {
+                    primaryLabelLayout {
                         Image(systemName: primarySystemImage)
+                        Text(primaryTitle)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     .font(.headline)
+                    .multilineTextAlignment(.center)
                     .frame(
-                        width: ControlMetrics.primaryWidth,
-                        height: ControlMetrics.height
+                        width: dynamicTypeSize.isAccessibilitySize ? nil : ControlMetrics.primaryWidth,
+                        height: dynamicTypeSize.isAccessibilitySize ? nil : ControlMetrics.height
                     )
+                    .padding(.horizontal, dynamicTypeSize.isAccessibilitySize ? 16 : 0)
+                    .padding(.vertical, dynamicTypeSize.isAccessibilitySize ? 12 : 0)
+                    .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil)
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.white)
-                .background(RitliTheme.accent, in: Capsule())
-                .contentShape(Capsule())
+                .background(RitliTheme.accent, in: RoundedRectangle(cornerRadius: 26))
+                .contentShape(RoundedRectangle(cornerRadius: 26))
+                .accessibilityLabel(Text(primaryTitle))
                 .accessibilityIdentifier("home.timer.primary")
 
                 if isActive && kind != .focus {
                     Button(action: onSkipBreak) {
                         Image(systemName: "forward.end.fill")
+                            .font(.system(size: 17))
                             .frame(
                                 width: ControlMetrics.height,
                                 height: ControlMetrics.height
@@ -143,6 +150,45 @@ struct HomeTimerCard: View {
             in: RoundedRectangle(cornerRadius: RitliTheme.cardRadius)
         )
         .shadow(color: .black.opacity(0.055), radius: 18, y: 8)
+    }
+
+    private var headerLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            : AnyLayout(HStackLayout())
+    }
+
+    private var controlLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: 16))
+            : AnyLayout(HStackLayout(spacing: 16))
+    }
+
+    private var primaryLabelLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: 8))
+            : AnyLayout(HStackLayout(spacing: 8))
+    }
+
+    private var timerReadout: some View {
+        VStack(spacing: 7) {
+            Text(verbatim: TimerDisplayFormatter.countdown(remainingTime))
+                .font(
+                    dynamicTypeSize.isAccessibilitySize
+                        ? .system(.largeTitle, design: .rounded).weight(.semibold)
+                        : .system(size: 50, weight: .semibold, design: .rounded)
+                )
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .accessibilityIdentifier("home.timer.countdown")
+
+            Text(kind.timerSubtitle)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     private var isActive: Bool {

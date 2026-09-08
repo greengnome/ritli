@@ -10,6 +10,7 @@ struct ContentView: View {
     @State private var startFocusError: String?
 
     init() {
+        #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
         let initialTab: AppTab
 
@@ -24,6 +25,9 @@ struct ContentView: View {
         }
 
         _selectedTab = State(initialValue: initialTab)
+        #else
+        _selectedTab = State(initialValue: .home)
+        #endif
     }
 
     var body: some View {
