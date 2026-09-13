@@ -1,6 +1,23 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "live_activity.finished" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finished"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Завершено"
+          }
+        }
+      }
+    },
     "live_activity.focus" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18,6 +35,23 @@
         }
       }
     },
+    "live_activity.focus_finished" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus finished"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фокус завершено"
+          }
+        }
+      }
+    },
     "live_activity.long_break" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31,6 +65,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Довга перерва"
+          }
+        }
+      }
+    },
+    "live_activity.long_break_finished" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Long break finished"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Довгу перерву завершено"
           }
         }
       }
@@ -65,6 +116,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Коротка перерва"
+          }
+        }
+      }
+    },
+    "live_activity.short_break_finished" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Short break finished"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коротку перерву завершено"
           }
         }
       }

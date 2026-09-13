@@ -9,6 +9,10 @@ struct TimerLiveActivityLocalizationTests {
         ("live_activity.long_break", "Long Break", "Довга перерва"),
         ("live_activity.paused", "Paused", "Призупинено"),
         ("live_activity.stay_focused", "Stay focused", "Зберігайте фокус"),
+        ("live_activity.finished", "Finished", "Завершено"),
+        ("live_activity.focus_finished", "Focus finished", "Фокус завершено"),
+        ("live_activity.short_break_finished", "Short break finished", "Коротку перерву завершено"),
+        ("live_activity.long_break_finished", "Long break finished", "Довгу перерву завершено"),
     ])
     func resolvesCopy(key: String, english: String, ukrainian: String) throws {
         let extensionBundle = try liveActivityBundle()

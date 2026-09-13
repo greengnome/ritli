@@ -84,6 +84,18 @@ nonisolated enum TimerLiveActivityTheme: CaseIterable, Sendable {
 }
 
 nonisolated enum TimerLiveActivityPresentation {
+    static func isFinished(
+        state: TimerLiveActivityAttributes.ContentState,
+        isStale: Bool,
+        at date: Date
+    ) -> Bool {
+        guard case let .running(endDate) = state.phase else { return false }
+
+        // ActivityKit marks the content stale at its end date even when the
+        // app is suspended. Checking the date also covers a later render.
+        return isStale || date >= endDate
+    }
+
     static func pausedCountdown(_ interval: TimeInterval) -> String {
         let totalSeconds = Int(ceil(max(0, interval)))
         let minutes = totalSeconds / 60
