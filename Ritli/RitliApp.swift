@@ -34,6 +34,10 @@ struct RitliApp: App {
                 inMemory: isUITesting,
                 notificationsEnabled: !isUITesting
             )
+            if isUITesting && arguments.contains("--ui-testing-short-session") {
+                // ActivityKit coalesces stale refreshes for very short timers.
+                dependencies.timerEngine.settings.focusDuration = 130
+            }
             #else
             let dependencies = try AppDependencies.live()
             #endif

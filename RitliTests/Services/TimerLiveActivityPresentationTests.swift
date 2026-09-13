@@ -3,6 +3,78 @@ import Testing
 @testable import Ritli
 
 struct TimerLiveActivityPresentationTests {
+    @Test("Running content finishes at its deadline without an app update", arguments: [
+        (TimeInterval(999), false),
+        (TimeInterval(1_000), true),
+        (TimeInterval(1_060), true),
+    ])
+    func finishesAtDeadline(timestamp: TimeInterval, expected: Bool) {
+        let state = TimerLiveActivityAttributes.ContentState(
+            phase: .running(endDate: Date(timeIntervalSince1970: 1_000)),
+            taskTitle: "Prepare release"
+        )
+
+        #expect(
+            TimerLiveActivityPresentation.isFinished(
+                state: state,
+                isStale: false,
+                at: Date(timeIntervalSince1970: timestamp)
+            ) == expected
+        )
+    }
+
+    @Test("The system expiry signal finishes a suspended app's Live Activity")
+    func finishesStaleContent() {
+        let state = TimerLiveActivityAttributes.ContentState(
+            phase: .running(endDate: Date(timeIntervalSince1970: 1_000)),
+            taskTitle: nil
+        )
+
+        #expect(
+            TimerLiveActivityPresentation.isFinished(
+                state: state,
+                isStale: true,
+                at: Date(timeIntervalSince1970: 999)
+            )
+        )
+    }
+
+    @Test("Paused content never appears finished, including zero remaining time", arguments: [
+        TimeInterval(0), TimeInterval(100),
+    ])
+    func pausedContentDoesNotFinish(remainingTime: TimeInterval) {
+        let state = TimerLiveActivityAttributes.ContentState(
+            phase: .paused(remainingTime: remainingTime),
+            taskTitle: nil
+        )
+
+        #expect(
+            !TimerLiveActivityPresentation.isFinished(
+                state: state,
+                isStale: true,
+                at: .distantFuture
+            )
+        )
+    }
+
+    @Test("Resuming uses the new deadline rather than the original session end")
+    func resumedContentUsesUpdatedDeadline() {
+        let state = TimerLiveActivityAttributes.ContentState(
+            phase: .running(endDate: Date(timeIntervalSince1970: 2_000)),
+            taskTitle: nil
+        )
+
+        #expect(
+            !TimerLiveActivityPresentation.isFinished(
+                state: state,
+                isStale: false,
+                at: Date(timeIntervalSince1970: 1_500)
+            )
+        )
+        #expect(TimerLiveActivityPresentation.expirationDate(for: state)
+            == Date(timeIntervalSince1970: 2_000))
+    }
+
     @Test(
         "Lock Screen text keeps accessible contrast in every appearance",
         arguments: TimerLiveActivityTheme.allCases

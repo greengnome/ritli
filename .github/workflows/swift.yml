@@ -62,10 +62,11 @@ jobs:
             -resultBundlePath "$RUNNER_TEMP/RitliTests.xcresult" \
             -parallel-testing-enabled NO \
             -skip-testing:RitliUITests/RitliUITests/testDisplaysRunningTimerOutsideApp \
+            -skip-testing:RitliUITests/RitliUITests/testDisplaysFinishedTimerOutsideApp \
             -skip-testing:RitliUITests/RitliUITests/testOpensAppLanguageSettings \
             test-without-building
 
-      - name: Run Live Activity system UI test in isolation
+      - name: Run Live Activity system UI tests in isolation
         run: |
           for attempt in 1 2; do
             if xcodebuild \
@@ -77,6 +78,7 @@ jobs:
               -resultBundlePath "$RUNNER_TEMP/RitliLiveActivityUITests-attempt-${attempt}.xcresult" \
               -parallel-testing-enabled NO \
               -only-testing:RitliUITests/RitliUITests/testDisplaysRunningTimerOutsideApp \
+              -only-testing:RitliUITests/RitliUITests/testDisplaysFinishedTimerOutsideApp \
               test-without-building; then
               exit 0
             fi

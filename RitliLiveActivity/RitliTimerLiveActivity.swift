@@ -9,11 +9,14 @@ struct RitliTimerLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    TimerKindLabel(kind: context.attributes.kind)
+                    TimerKindLabel(
+                        kind: context.attributes.kind,
+                        isFinished: context.isFinished
+                    )
                 }
 
                 DynamicIslandExpandedRegion(.trailing) {
-                    TimerCountdownView(state: context.state)
+                    TimerCountdownView(context: context)
                         .font(.title3.weight(.semibold))
                         .frame(width: 64, alignment: .trailing)
                 }
@@ -22,7 +25,8 @@ struct RitliTimerLiveActivity: Widget {
                     VStack(alignment: .leading, spacing: 8) {
                         TimerTaskLabel(
                             taskTitle: context.state.taskTitle,
-                            state: context.state
+                            state: context.state,
+                            isFinished: context.isFinished
                         )
                         .foregroundStyle(.secondary)
                         TimerProgressView(context: context)
@@ -32,11 +36,11 @@ struct RitliTimerLiveActivity: Widget {
                 Image(systemName: context.attributes.kind.systemImage)
                     .foregroundStyle(context.attributes.kind.accentColor)
             } compactTrailing: {
-                TimerCountdownView(state: context.state)
+                TimerCountdownView(context: context)
                     .font(.caption.weight(.semibold))
                     .frame(maxWidth: 48)
             } minimal: {
-                TimerCountdownView(state: context.state)
+                TimerCountdownView(context: context)
                     .font(.caption2.weight(.bold))
                     .minimumScaleFactor(0.45)
             }
@@ -67,18 +71,19 @@ private struct TimerLockScreenView: View {
                     )
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(context.attributes.kind.titleKey)
+                    Text(context.attributes.kind.titleKey(isFinished: context.isFinished))
                         .font(.headline)
 
                     TimerTaskLabel(
                         taskTitle: context.state.taskTitle,
-                        state: context.state
+                        state: context.state,
+                        isFinished: context.isFinished
                     )
                     .foregroundStyle(Color(theme.secondaryText))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                TimerCountdownView(state: context.state)
+                TimerCountdownView(context: context)
                     .font(.system(.title2, design: .rounded, weight: .semibold))
                     .frame(width: 76, alignment: .trailing)
                     .layoutPriority(1)
@@ -95,9 +100,10 @@ private struct TimerLockScreenView: View {
 
 private struct TimerKindLabel: View {
     let kind: TimerLiveActivityAttributes.Kind
+    let isFinished: Bool
 
     var body: some View {
-        Label(kind.titleKey, systemImage: kind.systemImage)
+        Label(kind.titleKey(isFinished: isFinished), systemImage: kind.systemImage)
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(kind.accentColor)
     }
@@ -106,6 +112,7 @@ private struct TimerKindLabel: View {
 private struct TimerTaskLabel: View {
     let taskTitle: String?
     let state: TimerLiveActivityAttributes.ContentState
+    let isFinished: Bool
 
     var body: some View {
         HStack(spacing: 5) {
@@ -115,7 +122,7 @@ private struct TimerTaskLabel: View {
             } else if let taskTitle, !taskTitle.isEmpty {
                 Text(taskTitle)
                     .lineLimit(1)
-            } else {
+            } else if !isFinished {
                 Text("live_activity.stay_focused")
             }
         }
@@ -124,28 +131,39 @@ private struct TimerTaskLabel: View {
 }
 
 private struct TimerCountdownView: View {
-    let state: TimerLiveActivityAttributes.ContentState
+    let context: ActivityViewContext<TimerLiveActivityAttributes>
 
     var body: some View {
         Group {
-            switch state.phase {
-            case let .running(endDate):
-                let now = Date.now
-                Text(
-                    timerInterval: now...max(now, endDate),
-                    countsDown: true,
-                    showsHours: false
-                )
-            case let .paused(remainingTime):
-                Text(
-                    verbatim: TimerLiveActivityPresentation.pausedCountdown(
-                        remainingTime
-                    )
-                )
+            if context.isFinished {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(context.attributes.kind.accentColor)
+                    .accessibilityLabel(Text("live_activity.finished"))
+            } else {
+                countdown
             }
         }
         .monospacedDigit()
         .contentTransition(.numericText(countsDown: true))
+    }
+
+    @ViewBuilder
+    private var countdown: some View {
+        switch context.state.phase {
+        case let .running(endDate):
+            let now = Date.now
+            Text(
+                timerInterval: now...max(now, endDate),
+                countsDown: true,
+                showsHours: false
+            )
+        case let .paused(remainingTime):
+            Text(
+                verbatim: TimerLiveActivityPresentation.pausedCountdown(
+                    remainingTime
+                )
+            )
+        }
     }
 }
 
@@ -154,38 +172,57 @@ private struct TimerProgressView: View {
 
     var body: some View {
         Group {
-            switch context.state.phase {
-            case let .running(endDate):
-                let timerInterval = endDate.addingTimeInterval(
-                    -context.attributes.plannedDuration
-                )...endDate
-                ProgressView(
-                    timerInterval: timerInterval,
-                    countsDown: false
-                )
-            case let .paused(remainingTime):
-                ProgressView(
-                    value: TimerLiveActivityPresentation.progress(
-                        remainingTime: remainingTime,
-                        plannedDuration: context.attributes.plannedDuration
-                    )
-                )
+            if context.isFinished {
+                ProgressView(value: 1)
+            } else {
+                progress
             }
         }
         .labelsHidden()
         .tint(context.attributes.kind.accentColor)
     }
+
+    @ViewBuilder
+    private var progress: some View {
+        switch context.state.phase {
+        case let .running(endDate):
+            let timerInterval = endDate.addingTimeInterval(
+                -context.attributes.plannedDuration
+            )...endDate
+            ProgressView(
+                timerInterval: timerInterval,
+                countsDown: false
+            )
+        case let .paused(remainingTime):
+            ProgressView(
+                value: TimerLiveActivityPresentation.progress(
+                    remainingTime: remainingTime,
+                    plannedDuration: context.attributes.plannedDuration
+                )
+            )
+        }
+    }
+}
+
+private extension ActivityViewContext where Attributes == TimerLiveActivityAttributes {
+    var isFinished: Bool {
+        TimerLiveActivityPresentation.isFinished(
+            state: state,
+            isStale: isStale,
+            at: .now
+        )
+    }
 }
 
 private extension TimerLiveActivityAttributes.Kind {
-    var titleKey: LocalizedStringKey {
+    func titleKey(isFinished: Bool) -> LocalizedStringKey {
         switch self {
         case .focus:
-            "live_activity.focus"
+            isFinished ? "live_activity.focus_finished" : "live_activity.focus"
         case .shortBreak:
-            "live_activity.short_break"
+            isFinished ? "live_activity.short_break_finished" : "live_activity.short_break"
         case .longBreak:
-            "live_activity.long_break"
+            isFinished ? "live_activity.long_break_finished" : "live_activity.long_break"
         }
     }
 
@@ -244,6 +281,10 @@ private extension TimerLiveActivityAttributes.ContentState {
         phase: .paused(remainingTime: 625),
         taskTitle: "Prepare release"
     )
+    static let previewFinished = TimerLiveActivityAttributes.ContentState(
+        phase: .running(endDate: .now.addingTimeInterval(-60)),
+        taskTitle: "Prepare release"
+    )
 }
 
 #Preview("Lock Screen", as: .content, using: TimerLiveActivityAttributes.preview) {
@@ -251,6 +292,7 @@ private extension TimerLiveActivityAttributes.ContentState {
 } contentStates: {
     TimerLiveActivityAttributes.ContentState.previewRunning
     TimerLiveActivityAttributes.ContentState.previewPaused
+    TimerLiveActivityAttributes.ContentState.previewFinished
 }
 
 #Preview("Dynamic Island", as: .dynamicIsland(.expanded), using: TimerLiveActivityAttributes.preview) {
@@ -258,4 +300,5 @@ private extension TimerLiveActivityAttributes.ContentState {
 } contentStates: {
     TimerLiveActivityAttributes.ContentState.previewRunning
     TimerLiveActivityAttributes.ContentState.previewPaused
+    TimerLiveActivityAttributes.ContentState.previewFinished
 }
