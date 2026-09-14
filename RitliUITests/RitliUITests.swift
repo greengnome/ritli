@@ -502,6 +502,43 @@ final class RitliUITests: XCTestCase {
     }
 
     @MainActor
+    func testAutomaticallyCompletesTaskWhileViewingTasksAndCanReopen() throws {
+        let app = makeApp(showTasks: true, language: "en", locale: "en_US")
+        app.launchArguments.append("--ui-testing-task-completion")
+        app.launch()
+
+        createTask(named: "Finish proposal", in: app)
+        app.buttons["Start focus on Finish proposal"].tap()
+        XCTAssertTrue(app.buttons["Pause"].waitForExistence(timeout: 3))
+        app.tabBars.buttons["Tasks"].tap()
+
+        let reopenButton = app.buttons["Reopen Finish proposal"]
+        XCTAssertTrue(reopenButton.waitForExistence(timeout: 18))
+        XCTAssertTrue(app.staticTexts["1 / 1 session"].exists)
+        XCTAssertFalse(app.buttons["Start focus on Finish proposal"].exists)
+        let completedScreenshot = XCTAttachment(screenshot: app.screenshot())
+        completedScreenshot.name = "Task automatically completed at 1 of 1 sessions"
+        completedScreenshot.lifetime = .keepAlways
+        add(completedScreenshot)
+
+        reopenButton.tap()
+        XCTAssertTrue(app.buttons["Mark Finish proposal complete"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["1 / 2 sessions"].exists)
+        let reopenedScreenshot = XCTAttachment(screenshot: app.screenshot())
+        reopenedScreenshot.name = "Reopened task with one remaining session"
+        reopenedScreenshot.lifetime = .keepAlways
+        add(reopenedScreenshot)
+        app.buttons["Start focus on Finish proposal"].tap()
+        XCTAssertTrue(app.buttons["Pause"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["Start break"].waitForExistence(timeout: 18))
+
+        app.tabBars.buttons["Tasks"].tap()
+        XCTAssertTrue(reopenButton.waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["2 / 2 sessions"].exists)
+        XCTAssertFalse(app.buttons["Start focus on Finish proposal"].exists)
+    }
+
+    @MainActor
     func testCreatesAndSelectsCustomTimerRoutine() throws {
         let app = makeApp(showTasks: true)
         app.launch()

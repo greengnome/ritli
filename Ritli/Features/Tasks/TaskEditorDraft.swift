@@ -85,6 +85,7 @@ struct TaskEditorDraft: Equatable {
         task.estimatedPomodoros = max(1, estimatedPomodoros)
         task.priority = priority
         task.dueDate = includesDueDate ? dueDate : nil
+        task.completeIfEstimateReached()
     }
 
     private func selectedCategory(in categories: [FocusCategory]) -> FocusCategory? {

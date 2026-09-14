@@ -4,7 +4,6 @@ import SwiftUI
 struct HomeView: View {
     @Environment(TimerEngine.self) private var timerEngine
     @Environment(NotificationPermissionService.self) private var notificationPermissionService
-    @Environment(\.scenePhase) private var scenePhase
     @Query private var sessions: [FocusSession]
     @Query private var tasks: [FocusTask]
 
@@ -71,7 +70,7 @@ struct HomeView: View {
         }
         .task {
             selectedTaskID = timerEngine.cycleState.preferredFocusTask?.id
-            await monitorTimer()
+            synchronizeSuggestedKind()
         }
         .onChange(of: selectedTaskID) {
             persistSelectedTask()
@@ -79,10 +78,8 @@ struct HomeView: View {
         .onChange(of: timerEngine.cycleState.preferredFocusTask?.id) {
             selectedTaskID = timerEngine.cycleState.preferredFocusTask?.id
         }
-        .onChange(of: scenePhase) {
-            if scenePhase == .active {
-                refreshTimer()
-            }
+        .onChange(of: timerEngine.currentSession?.state) {
+            synchronizeSuggestedKind()
         }
         .sheet(isPresented: $isTaskPickerPresented) {
             HomeTaskPickerView(
@@ -239,14 +236,13 @@ struct HomeView: View {
         }
     }
 
-    private func refreshTimer() {
-        do {
-            if try timerEngine.refresh(), !timerEngine.hasActiveSession {
-                selectedKind = timerEngine.cycleState.nextSuggestedKind
-            }
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+    private func synchronizeSuggestedKind() {
+        guard
+            let state = timerEngine.currentSession?.state,
+            state == .completed || state == .skipped
+        else { return }
+
+        selectedKind = timerEngine.cycleState.nextSuggestedKind
     }
 
     private func persistSelectedTask() {
@@ -254,20 +250,6 @@ struct HomeView: View {
             try timerEngine.selectFocusTask(selectedTask)
         } catch {
             errorMessage = error.localizedDescription
-        }
-    }
-
-    private func monitorTimer() async {
-        refreshTimer()
-
-        while !Task.isCancelled {
-            do {
-                try await Task.sleep(for: .seconds(1))
-            } catch {
-                return
-            }
-
-            refreshTimer()
         }
     }
 }

@@ -69,4 +69,33 @@ struct TaskEditorDraftTests {
         #expect(task.estimatedPomodoros == 1)
         #expect(task.dueDate == nil)
     }
+
+    @Test("Reducing the estimate to completed progress marks a task done")
+    func loweredEstimateCompletesTask() {
+        let completionDate = Date(timeIntervalSince1970: 1_000)
+        let task = FocusTask(title: "Write tests", estimatedPomodoros: 3)
+        task.sessions = [FocusSession(
+            kind: .focus, state: .completed, finishedAt: completionDate,
+            plannedDuration: 60
+        )]
+        var draft = TaskEditorDraft(task: task)
+        draft.estimatedPomodoros = 1
+
+        draft.apply(to: task, categories: [])
+
+        #expect(task.isCompleted)
+        #expect(task.completedAt == completionDate)
+    }
+
+    @Test("Editing a manually completed task preserves its completion date")
+    func editingPreservesManualCompletion() {
+        let completionDate = Date(timeIntervalSince1970: 1_000)
+        let task = FocusTask(title: "Already done", completedAt: completionDate)
+        var draft = TaskEditorDraft(task: task)
+        draft.estimatedPomodoros = 4
+
+        draft.apply(to: task, categories: [])
+
+        #expect(task.completedAt == completionDate)
+    }
 }

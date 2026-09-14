@@ -38,6 +38,9 @@ struct RitliApp: App {
                 // ActivityKit coalesces stale refreshes for very short timers.
                 dependencies.timerEngine.settings.focusDuration = 130
             }
+            if isUITesting && arguments.contains("--ui-testing-task-completion") {
+                dependencies.timerEngine.settings.focusDuration = 12
+            }
             #else
             let dependencies = try AppDependencies.live()
             #endif

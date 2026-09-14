@@ -19,6 +19,7 @@ struct AppDependencies {
             PomodoroCycleState()
         }
         try DefaultFocusCategories.seedIfNeeded(in: context)
+        try TaskCompletionReconciliation.run(in: context)
         let notificationCenter = SystemUserNotificationCenterClient()
         let permissionService = NotificationPermissionService(
             center: notificationCenter

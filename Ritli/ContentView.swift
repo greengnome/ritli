@@ -7,7 +7,7 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var selectedTab: AppTab
-    @State private var startFocusError: String?
+    @State private var timerError: String?
 
     init() {
         #if DEBUG
@@ -80,18 +80,19 @@ struct ContentView: View {
         .tint(RitliTheme.accent)
         .preferredColorScheme(timerEngine.settings.appearance.preferredColorScheme)
         .alert(
-            String(
-                localized: "app.alert.focus_start_failed",
-                defaultValue: "Focus could not start"
-            ),
-            isPresented: startFocusErrorIsPresented
+            String(localized: .homeAlertTimerUnavailable),
+            isPresented: timerErrorIsPresented
         ) {
             Button(String(localized: .commonActionOk), role: .cancel) {}
         } message: {
-            Text(startFocusError ?? String(localized: .commonErrorTryAgain))
+            Text(timerError ?? String(localized: .commonErrorTryAgain))
         }
         .task {
             await synchronizeNotificationPreference()
+        }
+        .task(id: scenePhase) {
+            guard scenePhase == .active else { return }
+            await monitorTimer()
         }
         .onChange(of: scenePhase) {
             if scenePhase == .active {
@@ -100,11 +101,27 @@ struct ContentView: View {
         }
     }
 
-    private var startFocusErrorIsPresented: Binding<Bool> {
+    private var timerErrorIsPresented: Binding<Bool> {
         Binding(
-            get: { startFocusError != nil },
-            set: { if !$0 { startFocusError = nil } }
+            get: { timerError != nil },
+            set: { if !$0 { timerError = nil } }
         )
+    }
+
+    private func monitorTimer() async {
+        while !Task.isCancelled {
+            do {
+                try timerEngine.refresh()
+            } catch {
+                timerError = error.localizedDescription
+            }
+
+            do {
+                try await Task.sleep(for: .seconds(1))
+            } catch {
+                return
+            }
+        }
     }
 
     private func startFocus(on task: FocusTask) {
@@ -115,7 +132,7 @@ struct ContentView: View {
                 try timerEngine.startFocus(task: task)
                 selectedTab = .home
             } catch {
-                startFocusError = error.localizedDescription
+                timerError = error.localizedDescription
             }
         }
     }
@@ -131,7 +148,7 @@ struct ContentView: View {
             }
         } catch {
             try? timerEngine.setNotificationsEnabled(false)
-            startFocusError = error.localizedDescription
+            timerError = error.localizedDescription
         }
     }
 
@@ -147,7 +164,7 @@ struct ContentView: View {
         do {
             try timerEngine.setNotificationsEnabled(false)
         } catch {
-            startFocusError = error.localizedDescription
+            timerError = error.localizedDescription
         }
     }
 }

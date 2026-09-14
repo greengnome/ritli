@@ -4,6 +4,43 @@ import Testing
 
 @MainActor
 struct TimerEngineCycleTests {
+    @Test("Only completed focus sessions advance a task toward automatic completion")
+    func completesTaskAfterFinalFocus() throws {
+        let task = FocusTask(title: "Proposal", estimatedPomodoros: 2)
+        let harness = TimerEngineHarness(settings: PomodoroSettings(
+            focusDuration: 60,
+            shortBreakDuration: 60
+        ))
+        try harness.engine.startFocus(task: task)
+        harness.clock.advance(by: 30)
+        try harness.engine.pause()
+        harness.clock.advance(by: 120)
+        try harness.engine.refresh()
+        #expect(!task.isCompleted)
+        #expect(task.completedPomodoros == 0)
+        try harness.engine.cancel()
+
+        try harness.engine.startFocus(task: task)
+        harness.clock.advance(by: 60)
+        try harness.engine.refresh()
+        #expect(task.completedPomodoros == 1)
+        #expect(!task.isCompleted)
+
+        try harness.engine.startShortBreak()
+        harness.clock.advance(by: 60)
+        try harness.engine.refresh()
+        #expect(task.completedPomodoros == 1)
+        #expect(!task.isCompleted)
+
+        try harness.engine.startFocus(task: task)
+        harness.clock.advance(by: 60)
+        try harness.engine.refresh()
+        #expect(task.completedPomodoros == 2)
+        #expect(task.completedAt == harness.clock.now)
+        #expect(try !harness.engine.refresh())
+        #expect(task.completedAt == harness.clock.now)
+    }
+
     @Test("Natural completion is idempotent and recommends a short break")
     func completesOnce() throws {
         let settings = PomodoroSettings(focusDuration: 60)
@@ -150,7 +187,8 @@ struct TimerEngineCycleTests {
         try harness.engine.refresh()
 
         #expect(task.completedPomodoros == 1)
-        #expect(!task.isCompleted)
+        #expect(task.isCompleted)
+        #expect(task.completedAt == harness.clock.now)
         #expect(harness.cycle.preferredFocusTask == nil)
         #expect(harness.engine.currentSession?.kind == .shortBreak)
 
