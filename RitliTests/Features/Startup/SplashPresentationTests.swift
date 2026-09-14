@@ -5,6 +5,7 @@ struct SplashPresentationTests {
     @Test("Production launches show the splash")
     func showsSplashInProduction() {
         #expect(SplashPresentation.shouldShow(arguments: []))
+        #expect(SplashPresentation.minimumDisplayDuration(arguments: []) == .milliseconds(1_200))
     }
 
     #if DEBUG
@@ -41,7 +42,7 @@ struct SplashPresentationTests {
             #expect(SplashPresentation.shouldShow(arguments: arguments))
             #expect(
                 SplashPresentation.minimumDisplayDuration(arguments: arguments)
-                    == .milliseconds(850)
+                    == .milliseconds(1_200)
             )
         }
     }

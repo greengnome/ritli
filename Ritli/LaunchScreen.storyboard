@@ -17,7 +17,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" image="LaunchMark" translatesAutoresizingMaskIntoConstraints="NO" id="launch-mark">
-                                <rect key="frame" x="132.5" y="369.5" width="128" height="128"/>
+                                <rect key="frame" x="116.5" y="346" width="160" height="160"/>
                             </imageView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="launch-safe-area"/>
@@ -25,8 +25,8 @@
                         <constraints>
                             <constraint firstItem="launch-mark" firstAttribute="centerX" secondItem="launch-view" secondAttribute="centerX" id="launch-center-x"/>
                             <constraint firstItem="launch-mark" firstAttribute="centerY" secondItem="launch-view" secondAttribute="centerY" id="launch-center-y"/>
-                            <constraint firstItem="launch-mark" firstAttribute="width" constant="128" id="launch-width"/>
-                            <constraint firstItem="launch-mark" firstAttribute="height" constant="128" id="launch-height"/>
+                            <constraint firstItem="launch-mark" firstAttribute="width" constant="160" id="launch-width"/>
+                            <constraint firstItem="launch-mark" firstAttribute="height" constant="160" id="launch-height"/>
                         </constraints>
                     </view>
                 </viewController>

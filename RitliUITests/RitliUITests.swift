@@ -40,6 +40,23 @@ final class RitliUITests: XCTestCase {
 
         let splash = app.descendants(matching: .any)["startup.splash"]
         XCTAssertTrue(splash.waitForExistence(timeout: 1))
+        let firstFrame = XCUIScreen.main.screenshot()
+        let firstAttachment = XCTAttachment(screenshot: firstFrame)
+        firstAttachment.name = "Splash — animated mark, first frame"
+        firstAttachment.lifetime = .keepAlways
+        add(firstAttachment)
+
+        _ = XCTWaiter.wait(for: [XCTestExpectation(description: "Next splash animation frame")], timeout: 0.6)
+        let secondFrame = XCUIScreen.main.screenshot()
+        let secondAttachment = XCTAttachment(screenshot: secondFrame)
+        secondAttachment.name = "Splash — animated mark, second frame"
+        secondAttachment.lifetime = .keepAlways
+        add(secondAttachment)
+        XCTAssertTrue(splash.exists)
+        XCTAssertFalse(
+            try splashMarkPixels(in: firstFrame) == splashMarkPixels(in: secondFrame),
+            "The splash logo should visibly animate while it is displayed"
+        )
         XCTAssertTrue(splash.waitForNonExistence(timeout: 7))
         XCTAssertTrue(
             app.staticTexts["onboarding.focus.title"]
@@ -67,7 +84,7 @@ final class RitliUITests: XCTestCase {
             "Selected"
         )
 
-        app.buttons["onboarding.continue"].tap()
+        tapOnboardingButtonEdge(in: app, offset: CGVector(dx: 0.05, dy: 0.5))
         XCTAssertTrue(
             app.staticTexts["onboarding.tasks.title"]
                 .waitForExistence(timeout: 2)
@@ -77,7 +94,7 @@ final class RitliUITests: XCTestCase {
             "Selected"
         )
 
-        app.buttons["onboarding.continue"].tap()
+        tapOnboardingButtonEdge(in: app, offset: CGVector(dx: 0.95, dy: 0.5))
         XCTAssertTrue(
             app.staticTexts["onboarding.insights.title"]
                 .waitForExistence(timeout: 2)
@@ -88,7 +105,7 @@ final class RitliUITests: XCTestCase {
         )
         XCTAssertEqual(app.buttons["onboarding.continue"].label, "Let's focus")
 
-        app.buttons["onboarding.continue"].tap()
+        tapOnboardingButtonEdge(in: app, offset: CGVector(dx: 0.5, dy: 0.1))
 
         XCTAssertTrue(
             app.staticTexts["home.timer.countdown"]
@@ -114,6 +131,32 @@ final class RitliUITests: XCTestCase {
     }
 
     @MainActor
+    func testOnboardingArtworkAnimatesOnEveryPageAndWhenRevisited() throws {
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "--ui-testing", "--ui-testing-reset-onboarding",
+            "-AppleLanguages", "(en)", "-AppleLocale", "en_US"
+        ]
+        app.launch()
+
+        for (index, page) in ["focus", "tasks", "insights"].enumerated() {
+            XCTAssertTrue(waitForValue("Selected", of: app.buttons["onboarding.page.\(index + 1)"]))
+            try assertOnboardingArtworkMoves(on: page, in: app)
+            if index < 2 {
+                app.swipeLeft()
+            }
+        }
+
+        app.buttons["onboarding.page.1"].tap()
+        XCTAssertTrue(waitForValue("Selected", of: app.buttons["onboarding.page.1"]))
+        try assertOnboardingArtworkMoves(on: "focus", in: app)
+
+        XCUIDevice.shared.press(.home)
+        app.activate()
+        try assertOnboardingArtworkMoves(on: "focus", in: app)
+    }
+
+    @MainActor
     func testDisplaysOnboardingInUkrainian() throws {
         let app = XCUIApplication()
         app.launchArguments = [
@@ -129,6 +172,7 @@ final class RitliUITests: XCTestCase {
         let focusTitle = app.staticTexts["onboarding.focus.title"]
         XCTAssertTrue(focusTitle.waitForExistence(timeout: 2))
         XCTAssertEqual(focusTitle.label, "Зосереджуйтеся глибше")
+        addScreenshot(named: "Onboarding Ukrainian — focus")
         XCTAssertEqual(app.buttons["onboarding.continue"].label, "Продовжити")
         XCTAssertEqual(
             app.buttons["onboarding.page.1"].value as? String,
@@ -139,11 +183,13 @@ final class RitliUITests: XCTestCase {
         let tasksTitle = app.staticTexts["onboarding.tasks.title"]
         XCTAssertTrue(tasksTitle.waitForExistence(timeout: 2))
         XCTAssertEqual(tasksTitle.label, "Перетворюйте плани на прогрес")
+        addScreenshot(named: "Onboarding Ukrainian — tasks")
 
         app.buttons["onboarding.continue"].tap()
         let insightsTitle = app.staticTexts["onboarding.insights.title"]
         XCTAssertTrue(insightsTitle.waitForExistence(timeout: 2))
         XCTAssertEqual(insightsTitle.label, "Відстежуйте свій прогрес")
+        addScreenshot(named: "Onboarding Ukrainian — insights")
         XCTAssertEqual(
             app.buttons["onboarding.continue"].label,
             "Почати фокусування"
@@ -922,6 +968,50 @@ final class RitliUITests: XCTestCase {
             app.staticTexts["settings.historyCount"].label,
             "Recorded sessions, 0"
         )
+    }
+
+    private func splashMarkPixels(in screenshot: XCUIScreenshot) throws -> Data {
+        let image = try XCTUnwrap(screenshot.image.cgImage)
+        let side = CGFloat(image.width) * 0.55
+        let rect = CGRect(
+            x: (CGFloat(image.width) - side) / 2,
+            y: (CGFloat(image.height) - side) / 2,
+            width: side, height: side
+        ).integral
+        let mark = UIImage(cgImage: try XCTUnwrap(image.cropping(to: rect)))
+        return try XCTUnwrap(mark.pngData())
+    }
+
+    private func tapOnboardingButtonEdge(in app: XCUIApplication, offset: CGVector) {
+        let button = app.buttons["onboarding.continue"]
+        XCTAssertGreaterThan(button.frame.width, app.frame.width * 0.8)
+        XCTAssertGreaterThanOrEqual(button.frame.height, 58)
+        button.coordinate(withNormalizedOffset: offset).tap()
+    }
+
+    private func assertOnboardingArtworkMoves(on page: String, in app: XCUIApplication) throws {
+        let title = app.staticTexts["onboarding.\(page).title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 2))
+        // Exclude page transitions, the status bar, and copy from the comparison.
+        // Sample after the entrance animation to catch artwork becoming static.
+        _ = XCTWaiter.wait(for: [XCTestExpectation(description: "Artwork settled")], timeout: 1.2)
+        let first = try onboardingArtworkImage(above: title, in: app)
+        _ = XCTWaiter.wait(for: [XCTestExpectation(description: "Next animation frame")], timeout: 1.2)
+        let second = try onboardingArtworkImage(above: title, in: app)
+        XCTAssertFalse(first.pngData() == second.pngData(), "The \(page) artwork should animate")
+        addScreenshot(named: "Onboarding — \(page)")
+    }
+
+    private func onboardingArtworkImage(above title: XCUIElement, in app: XCUIApplication) throws -> UIImage {
+        let screenshot = XCUIScreen.main.screenshot().image
+        let image = try XCTUnwrap(screenshot.cgImage)
+        let scale = CGFloat(image.width) / app.frame.width
+        let crop = CGRect(
+            x: 0, y: 100 * scale,
+            width: CGFloat(image.width),
+            height: (title.frame.minY - 116) * scale
+        ).integral
+        return UIImage(cgImage: try XCTUnwrap(image.cropping(to: crop)))
     }
 
     private func createTask(named title: String, in app: XCUIApplication) {
