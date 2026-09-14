@@ -17,9 +17,9 @@ nonisolated enum SplashPresentation {
         #if DEBUG
         arguments.contains(showInUITestsArgument)
             ? .seconds(5)
-            : .milliseconds(850)
+            : .milliseconds(1_200)
         #else
-        .milliseconds(850)
+        .milliseconds(1_200)
         #endif
     }
 }

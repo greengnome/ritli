@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct WelcomeView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selectedPage = 0
 
     let onContinue: () -> Void
@@ -11,7 +12,7 @@ struct WelcomeView: View {
         VStack(spacing: 0) {
             TabView(selection: $selectedPage) {
                 ForEach(Array(pages.enumerated()), id: \.element) { index, page in
-                    OnboardingPageView(page: page)
+                    OnboardingPageView(page: page, isActive: selectedPage == index)
                         .tag(index)
                 }
             }
@@ -26,19 +27,22 @@ struct WelcomeView: View {
                         ? .onboardingActionFinish
                         : .onboardingActionContinue
                 )
+                .font(.headline)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .frame(maxWidth: .infinity, minHeight: 58)
+                .background(
+                    LinearGradient(
+                        colors: [RitliTheme.accent, .orange],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    in: RoundedRectangle(cornerRadius: 16)
+                )
+                .contentShape(RoundedRectangle(cornerRadius: 16))
             }
-            .font(.headline)
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 58)
-            .background(
-                LinearGradient(
-                    colors: [RitliTheme.accent, .orange],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                ),
-                in: RoundedRectangle(cornerRadius: 16)
-            )
+            .buttonStyle(.plain)
             .padding(.horizontal, RitliTheme.screenPadding)
             .padding(.top, 30)
             .accessibilityIdentifier("onboarding.continue")
@@ -48,10 +52,10 @@ struct WelcomeView: View {
     }
 
     private var pageIndicator: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 0) {
             ForEach(pages.indices, id: \.self) { index in
                 Button {
-                    withAnimation(.easeInOut(duration: 0.25)) {
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
                         selectedPage = index
                     }
                 } label: {
@@ -65,6 +69,8 @@ struct WelcomeView: View {
                             width: index == selectedPage ? 22 : 8,
                             height: 8
                         )
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(
@@ -94,7 +100,7 @@ struct WelcomeView: View {
             return
         }
 
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
             selectedPage += 1
         }
     }
@@ -130,40 +136,90 @@ private enum OnboardingPage: String, CaseIterable {
 
 private struct OnboardingPageView: View {
     let page: OnboardingPage
+    let isActive: Bool
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                Spacer(minLength: 36)
+        GeometryReader { geometry in
+            let isCompact = geometry.size.height < 600
+            let artworkSize: CGFloat = isCompact ? 220 : 300
 
-                OnboardingArtwork(page: page)
-                    .frame(width: 270, height: 270)
-                    .accessibilityHidden(true)
+            ScrollView {
+                VStack(spacing: 0) {
+                    Spacer(minLength: 24)
 
-                VStack(spacing: 12) {
-                    Text(page.title)
-                        .font(.system(size: 38, weight: .bold, design: .rounded))
-                        .multilineTextAlignment(.center)
-                        .accessibilityIdentifier("onboarding.\(page.rawValue).title")
+                    AnimatedOnboardingArtwork(page: page, isActive: isActive)
+                        .frame(width: 300, height: 300)
+                        .scaleEffect(artworkSize / 300)
+                        .frame(width: artworkSize, height: artworkSize)
+                        .accessibilityHidden(true)
+                        .padding(.bottom, isCompact ? 20 : 32)
 
-                    Text(page.message)
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
+                    VStack(spacing: 12) {
+                        Text(page.title)
+                            .font(.system(size: isCompact ? 32 : 38, weight: .bold, design: .rounded))
+                            .multilineTextAlignment(.center)
+                            .accessibilityIdentifier("onboarding.\(page.rawValue).title")
+
+                        Text(page.message)
+                            .font(isCompact ? .body : .title3)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.horizontal, 28)
+
+                    Spacer(minLength: 24)
                 }
-                .padding(.horizontal, 28)
-
-                Spacer(minLength: 24)
+                .frame(maxWidth: .infinity, minHeight: geometry.size.height)
             }
-            .frame(maxWidth: .infinity)
+            .scrollBounceBehavior(.basedOnSize)
         }
-        .scrollBounceBehavior(.basedOnSize)
+    }
+}
+
+private struct AnimatedOnboardingArtwork: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var animationStart = Date.now
+
+    let page: OnboardingPage
+    let isActive: Bool
+
+    private var isAnimating: Bool {
+        isActive && !reduceMotion && scenePhase == .active
+    }
+
+    var body: some View {
+        // TabView preloads neighboring pages. Drive motion from selection so
+        // every page starts fresh, including when revisited or foregrounded.
+        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !isAnimating)) { context in
+            OnboardingArtwork(
+                page: page,
+                elapsed: isAnimating ? max(0, context.date.timeIntervalSince(animationStart)) : 0,
+                isAnimating: isAnimating
+            )
+        }
+        .onChange(of: isAnimating, initial: true) {
+            if isAnimating {
+                animationStart = .now
+            }
+        }
     }
 }
 
 private struct OnboardingArtwork: View {
     let page: OnboardingPage
+    let elapsed: TimeInterval
+    let isAnimating: Bool
+
+    private var entrance: Double {
+        guard isAnimating else { return 1 }
+        return 1 - pow(1 - min(elapsed / 0.85, 1), 3)
+    }
+
+    private func wave(delay: Double = 0) -> Double {
+        isAnimating ? sin(elapsed * .pi / 2 - delay) : 0
+    }
 
     var body: some View {
         switch page {
@@ -178,33 +234,93 @@ private struct OnboardingArtwork: View {
 
     private var focusArtwork: some View {
         ZStack {
-            Ellipse()
-                .trim(from: 0.08, to: 0.82)
-                .stroke(
-                    RitliTheme.accentSoft.opacity(0.55),
-                    style: StrokeStyle(lineWidth: 7, lineCap: .round)
-                )
-                .frame(width: 230, height: 135)
-                .rotationEffect(.degrees(-42))
-
             Circle()
                 .fill(
-                    LinearGradient(
-                        colors: [RitliTheme.accent, .orange],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+                    RadialGradient(
+                        colors: [RitliTheme.accentSoft.opacity(0.5), RitliTheme.accentSoft.opacity(0.04)],
+                        center: .center,
+                        startRadius: 65,
+                        endRadius: 145
                     )
                 )
-                .frame(width: 132, height: 132)
-                .shadow(color: RitliTheme.accent.opacity(0.2), radius: 20, y: 12)
-                .overlay {
-                    Text(verbatim: "R")
-                        .font(.system(size: 66, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white)
-                }
+                .frame(width: 290, height: 290)
+                .scaleEffect(1 + wave() * 0.035)
 
-            decorativeDots
+            Circle()
+                .fill(RitliTheme.surface)
+                .frame(width: 232, height: 232)
+                .shadow(color: RitliTheme.accent.opacity(0.12), radius: 24, y: 12)
+
+            ForEach(0..<60) { tick in
+                Capsule()
+                    .fill(RitliTheme.accent.opacity(tick.isMultiple(of: 5) ? 0.45 : 0.16))
+                    .frame(width: 2, height: tick.isMultiple(of: 5) ? 9 : 4)
+                    .offset(y: -105)
+                    .rotationEffect(.degrees(Double(tick) * 6))
+            }
+
+            Circle()
+                .stroke(RitliTheme.accentSoft.opacity(0.3), lineWidth: 9)
+                .frame(width: 180, height: 180)
+
+            Circle()
+                .trim(from: 0, to: entrance * max(0, 1_122 - elapsed) / 1_500)
+                .stroke(
+                    AngularGradient(
+                        colors: [.orange, RitliTheme.accent],
+                        center: .center,
+                        startAngle: .zero,
+                        endAngle: .degrees(270)
+                    ),
+                    style: StrokeStyle(lineWidth: 9, lineCap: .round)
+                )
+                .frame(width: 180, height: 180)
+                .rotationEffect(.degrees(-90))
+
+            VStack(spacing: 8) {
+                Text(.homeTimerModeFocus)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(RitliTheme.accent)
+
+                Text(verbatim: TimerDisplayFormatter.countdown(max(0, 1_122 - elapsed)))
+                    .font(.system(size: 43, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                    .contentTransition(.identity)
+
+                HStack(spacing: 4) {
+                    ForEach(0..<4) { index in
+                        Capsule()
+                            .fill(RitliTheme.accent.opacity(index == 0 ? 1 : 0.2))
+                            .frame(width: index == 0 ? 16 : 5, height: 5)
+                    }
+                }
+            }
+
+            Image(systemName: "moon.zzz.fill")
+                .font(.system(size: 22, weight: .medium))
+                .foregroundStyle(RitliTheme.accent)
+                .frame(width: 52, height: 52)
+                .background(RitliTheme.surface, in: RoundedRectangle(cornerRadius: 18))
+                .rotationEffect(.degrees(-12))
+                .shadow(color: .black.opacity(0.05), radius: 12, y: 6)
+                .offset(x: -105, y: -82 + wave() * 5)
+
+            HStack(spacing: 9) {
+                Image(systemName: "cup.and.saucer.fill")
+                    .foregroundStyle(RitliTheme.success)
+                Text(verbatim: "05:00")
+                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                    .monospacedDigit()
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(RitliTheme.surface, in: Capsule())
+            .shadow(color: .black.opacity(0.06), radius: 12, y: 6)
+            .rotationEffect(.degrees(8))
+            .offset(x: 83, y: 102 - wave() * 5)
         }
+        .scaleEffect(0.92 + entrance * 0.08)
+        .opacity(0.3 + entrance * 0.7)
     }
 
     private var tasksArtwork: some View {
@@ -214,33 +330,35 @@ private struct OnboardingArtwork: View {
                 progress: Text(verbatim: "2 / 4"),
                 color: RitliTheme.accent
             )
-            .offset(x: -8)
+            .offset(x: -8 - (1 - entrance) * 25, y: wave() * 4)
 
             taskCard(
                 title: .onboardingTasksReadPages,
                 progress: Text(.onboardingTasksDone),
-                color: RitliTheme.success
+                color: RitliTheme.success,
+                isComplete: true
             )
-            .offset(x: 10)
+            .offset(x: 10 + (1 - entrance) * 25, y: wave(delay: 0.8) * 4)
 
             taskCard(
                 title: .onboardingTasksLearnSpanish,
                 progress: Text(verbatim: "1 / 3"),
                 color: .purple
             )
-            .offset(x: -4)
+            .offset(x: -4 - (1 - entrance) * 25, y: wave(delay: 1.6) * 4)
         }
-        .padding(20)
+        .padding(.horizontal, 8)
+        .opacity(0.3 + entrance * 0.7)
     }
 
     private var insightsArtwork: some View {
         VStack(spacing: 22) {
             HStack(alignment: .bottom, spacing: 13) {
-                bar(height: 48, color: RitliTheme.accentSoft)
-                bar(height: 72, color: RitliTheme.accentSoft)
-                bar(height: 102, color: RitliTheme.accent)
-                bar(height: 64, color: RitliTheme.accentSoft)
-                bar(height: 88, color: RitliTheme.accentSoft)
+                bar(height: 48, color: RitliTheme.accentSoft, index: 0)
+                bar(height: 72, color: RitliTheme.accentSoft, index: 1)
+                bar(height: 102, color: RitliTheme.accent, index: 2)
+                bar(height: 64, color: RitliTheme.accentSoft, index: 3)
+                bar(height: 88, color: RitliTheme.accentSoft, index: 4)
             }
             .frame(height: 112, alignment: .bottom)
 
@@ -259,45 +377,39 @@ private struct OnboardingArtwork: View {
         .background(RitliTheme.surface, in: RoundedRectangle(cornerRadius: 28))
         .shadow(color: .black.opacity(0.06), radius: 20, y: 10)
         .padding(10)
-    }
-
-    private var decorativeDots: some View {
-        ZStack {
-            Circle()
-                .fill(.purple.opacity(0.65))
-                .frame(width: 31, height: 31)
-                .offset(x: 102, y: -76)
-
-            Circle()
-                .fill(.yellow.opacity(0.8))
-                .frame(width: 38, height: 38)
-                .offset(x: -107, y: 78)
-
-            Circle()
-                .fill(RitliTheme.success.opacity(0.85))
-                .frame(width: 15, height: 15)
-                .offset(x: 93, y: 102)
-        }
+        .offset(y: (1 - entrance) * 18)
+        .opacity(0.3 + entrance * 0.7)
     }
 
     private func taskCard(
         title: LocalizedStringResource,
         progress: Text,
-        color: Color
+        color: Color,
+        isComplete: Bool = false
     ) -> some View {
         HStack(spacing: 13) {
             Circle()
                 .stroke(color, lineWidth: 3)
                 .frame(width: 25, height: 25)
+                .overlay {
+                    if isComplete {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(color)
+                            .scaleEffect(entrance)
+                    }
+                }
 
             Text(title)
                 .font(.headline)
+                .fixedSize(horizontal: false, vertical: true)
 
             Spacer()
 
             progress
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(color)
+                .fixedSize()
         }
         .padding(17)
         .background(RitliTheme.surface, in: RoundedRectangle(cornerRadius: 18))
@@ -309,10 +421,14 @@ private struct OnboardingArtwork: View {
         .shadow(color: .black.opacity(0.05), radius: 12, y: 6)
     }
 
-    private func bar(height: CGFloat, color: Color) -> some View {
+    private func bar(height: CGFloat, color: Color, index: Int) -> some View {
         RoundedRectangle(cornerRadius: 6)
             .fill(color)
             .frame(width: 25, height: height)
+            .scaleEffect(
+                y: max(0.05, entrance * (0.9 + wave(delay: Double(index) * 0.65) * 0.1)),
+                anchor: .bottom
+            )
     }
 
     private func insightMetric(
