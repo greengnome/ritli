@@ -418,6 +418,7 @@ private struct OnboardingArtwork: View {
                 .fill(color)
                 .frame(width: 5)
         }
+        .clipShape(RoundedRectangle(cornerRadius: 18))
         .shadow(color: .black.opacity(0.05), radius: 12, y: 6)
     }
 
