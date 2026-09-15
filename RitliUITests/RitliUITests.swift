@@ -1058,6 +1058,16 @@ final class RitliUITests: XCTestCase {
         let titleField = app.textFields["tasks.editor.title"]
         XCTAssertTrue(titleField.waitForExistence(timeout: 2))
         titleField.tap()
+        let keyboard = app.keyboards.firstMatch
+        if !keyboard.waitForExistence(timeout: 3) {
+            // A hosted simulator can miss the first tap while the editor sheet
+            // settles. Focus the field again before dispatching any keystrokes.
+            titleField.tap()
+        }
+        XCTAssertTrue(
+            keyboard.waitForExistence(timeout: 5),
+            "The task editor keyboard should be ready before entering the title"
+        )
         titleField.typeText(title)
         app.buttons["tasks.editor.save"].tap()
 
