@@ -19,6 +19,11 @@ struct TasksLocalizationTests {
         ("tasks.archived.restore", "Restore", "Відновити"),
         ("tasks.archived.title", "Archived Tasks", "Архівовані завдання"),
         ("tasks.editor.category", "Category", "Категорія"),
+        (
+            "tasks.editor.auto_completion_hint",
+            "Tasks are marked done when all planned focus sessions finish. Reopening a task adds another session if its estimate has been reached.",
+            "Завдання позначається виконаним після завершення всіх запланованих сесій фокусу. Повторне відкриття додає ще одну сесію, якщо заплановану кількість уже досягнуто."
+        ),
         ("tasks.editor.date", "Date", "Дата"),
         ("tasks.editor.due_date", "Due date", "Термін виконання"),
         ("tasks.editor.edit.title", "Edit Task", "Редагувати завдання"),

@@ -52,7 +52,7 @@ struct TaskEditorView: View {
                     Stepper(
                         focusEstimateLabel,
                         value: $draft.estimatedPomodoros,
-                        in: 1...24
+                        in: 1...max(24, draft.estimatedPomodoros)
                     )
                     .accessibilityIdentifier("tasks.editor.estimate")
 
@@ -79,6 +79,8 @@ struct TaskEditorView: View {
                     }
                 } header: {
                     Text(.tasksEditorPlanSection)
+                } footer: {
+                    Text(.tasksEditorAutoCompletionHint)
                 }
 
                 timerRoutineSection

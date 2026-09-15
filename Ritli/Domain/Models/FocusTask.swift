@@ -73,7 +73,25 @@ final class FocusTask {
         completedAt = date
     }
 
+    @discardableResult
+    func completeIfEstimateReached() -> Bool {
+        guard !isCompleted else { return false }
+
+        let completionDates = sessions
+            .filter { $0.kind == .focus && $0.state == .completed }
+            .map { $0.finishedAt ?? $0.startedAt }
+            .sorted()
+        let estimate = max(1, estimatedPomodoros)
+        guard completionDates.count >= estimate else { return false }
+
+        // Preserve the day the estimate was reached, including when an
+        // overdue timer is restored or older task progress is reconciled.
+        complete(at: completionDates[estimate - 1])
+        return true
+    }
+
     func reopen() {
+        estimatedPomodoros = max(estimatedPomodoros, completedPomodoros + 1)
         completedAt = nil
     }
 }

@@ -368,6 +368,9 @@ final class TimerEngine {
             at: completionDate,
             cancelNotification: false
         )
+        if session.kind == .focus {
+            session.task?.completeIfEstimateReached()
+        }
         advanceCycle(after: session)
         clearUnavailablePreferredFocusTask()
         try store.save()

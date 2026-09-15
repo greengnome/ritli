@@ -42,4 +42,65 @@ struct FocusTaskTests {
 
         #expect(task.completedPomodoros == 1)
     }
+
+    @Test("Tasks complete at or above their estimate", arguments: [0, 1, 2, 3])
+    func completesAtEstimate(completedCount: Int) {
+        let task = FocusTask(title: "Write tests", estimatedPomodoros: 2)
+        task.sessions = (0..<completedCount).reversed().map { index in
+            FocusSession(
+                kind: .focus, state: .completed,
+                finishedAt: Date(timeIntervalSince1970: Double(index + 1) * 100),
+                plannedDuration: 60
+            )
+        }
+
+        #expect(task.completeIfEstimateReached() == (completedCount >= 2))
+        #expect(task.isCompleted == (completedCount >= 2))
+        #expect(task.completedAt == (completedCount >= 2 ? Date(timeIntervalSince1970: 200) : nil))
+        #expect(!task.completeIfEstimateReached())
+    }
+
+    @Test("Only finished focus sessions count toward automatic completion")
+    func ignoresOtherSessionStatesAndBreaks() {
+        let task = FocusTask(title: "Write tests")
+        task.sessions = [
+            FocusSession(kind: .focus, state: .running, plannedDuration: 60),
+            FocusSession(kind: .focus, state: .paused, plannedDuration: 60),
+            FocusSession(kind: .focus, state: .cancelled, plannedDuration: 60),
+            FocusSession(kind: .focus, state: .skipped, plannedDuration: 60),
+            FocusSession(kind: .shortBreak, state: .completed, plannedDuration: 60),
+            FocusSession(kind: .longBreak, state: .completed, plannedDuration: 60),
+        ]
+
+        #expect(!task.completeIfEstimateReached())
+        #expect(!task.isCompleted)
+    }
+
+    @Test("Reopening makes room for another session without changing actual progress", arguments: [1, 2, 24])
+    func reopeningExtendsReachedEstimate(completedCount: Int) {
+        let task = FocusTask(title: "More work", estimatedPomodoros: 1)
+        task.sessions = (0..<completedCount).map { _ in
+            FocusSession(kind: .focus, state: .completed, plannedDuration: 60)
+        }
+        task.complete()
+
+        task.reopen()
+
+        #expect(!task.isCompleted)
+        #expect(task.estimatedPomodoros == completedCount + 1)
+        #expect(task.completedPomodoros == completedCount)
+        #expect(!task.completeIfEstimateReached())
+    }
+
+    @Test("Reopening an early completion preserves the remaining estimate")
+    func reopeningPreservesRemainingEstimate() {
+        let task = FocusTask(title: "More work", estimatedPomodoros: 4)
+        task.sessions = [FocusSession(kind: .focus, state: .completed, plannedDuration: 60)]
+        task.complete()
+
+        task.reopen()
+
+        #expect(task.estimatedPomodoros == 4)
+        #expect(!task.isCompleted)
+    }
 }

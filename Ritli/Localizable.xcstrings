@@ -3024,6 +3024,24 @@
         "uk" : { "stringUnit" : { "state" : "translated", "value" : "Архівовані завдання" } }
       }
     },
+    "tasks.editor.auto_completion_hint" : {
+      "comment" : "Explains automatic task completion and how reopening extends a completed session estimate.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tasks are marked done when all planned focus sessions finish. Reopening a task adds another session if its estimate has been reached."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Завдання позначається виконаним після завершення всіх запланованих сесій фокусу. Повторне відкриття додає ще одну сесію, якщо заплановану кількість уже досягнуто."
+          }
+        }
+      }
+    },
     "tasks.editor.category" : {
       "comment" : "Label for the category picker in the task editor.",
       "extractionState" : "manual",
