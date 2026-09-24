@@ -346,6 +346,9 @@
         }
       }
     },
+    "Edit Timer Routine" : {
+
+    },
     "history.date_picker.label" : {
       "comment" : "VoiceOver label for the date picker in Focus History.",
       "extractionState" : "manual",
@@ -1141,6 +1144,9 @@
     "Mark %@ complete" : {
 
     },
+    "New Timer Routine" : {
+
+    },
     "notification.break.body" : {
       "comment" : "Notification message shown when a break finishes.",
       "extractionState" : "manual",
@@ -1558,6 +1564,24 @@
     "Reopen %@" : {
 
     },
+    "settings.about.privacy_policy" : {
+      "comment" : "Link to the app privacy policy.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Policy"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Політика конфіденційності"
+          }
+        }
+      }
+    },
     "settings.about.section" : {
       "comment" : "Header for app information in Settings.",
       "extractionState" : "manual",
@@ -1576,20 +1600,22 @@
         }
       }
     },
-    "settings.about.privacy_policy" : {
-      "comment" : "Link to the app privacy policy.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Privacy Policy" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Політика конфіденційності" } }
-      }
-    },
     "settings.about.support" : {
       "comment" : "Link to app support.",
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Support" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Підтримка" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Support"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Підтримка"
+          }
+        }
       }
     },
     "settings.about.version" : {
@@ -2132,24 +2158,6 @@
         }
       }
     },
-    "settings.notifications.permission_required" : {
-      "comment" : "Guidance shown when notification permission is denied.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enable notifications for Ritli in System Settings to receive timer alerts."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Увімкніть сповіщення для Ritli у системних налаштуваннях, щоб отримувати сповіщення таймера."
-          }
-        }
-      }
-    },
     "settings.notifications.open_settings" : {
       "comment" : "Action that opens the app's notification settings in iOS Settings.",
       "extractionState" : "manual",
@@ -2164,6 +2172,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Відкрити налаштування"
+          }
+        }
+      }
+    },
+    "settings.notifications.permission_required" : {
+      "comment" : "Guidance shown when notification permission is denied.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable notifications for Ritli in System Settings to receive timer alerts."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Увімкніть сповіщення для Ritli у системних налаштуваннях, щоб отримувати сповіщення таймера."
           }
         }
       }
@@ -2326,6 +2352,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Коротка перерва"
+          }
+        }
+      }
+    },
+    "startup.failure.message" : {
+      "comment" : "Recovery guidance shown when the app's local data store cannot be opened.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close and reopen the app. Your existing data has not been changed."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрийте та знову відкрийте застосунок. Ваші наявні дані не змінено."
+          }
+        }
+      }
+    },
+    "startup.failure.title" : {
+      "comment" : "Title shown when the app cannot initialize its local data store.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ritli couldn't start"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося запустити Ritli"
           }
         }
       }
@@ -2964,64 +3026,144 @@
       "comment" : "Action for permanently deleting an archived task.",
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Видалити" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Видалити"
+          }
+        }
       }
     },
     "tasks.archived.delete_confirmation.action" : {
       "comment" : "Destructive confirmation action for deleting an archived task.",
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete Task" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Видалити завдання" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Task"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Видалити завдання"
+          }
+        }
       }
     },
     "tasks.archived.delete_confirmation.message" : {
       "comment" : "Explains what remains after deleting an archived task.",
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Its recorded focus sessions will remain in your history." } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Записані сесії фокусу залишаться у вашій історії." } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Its recorded focus sessions will remain in your history."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Записані сесії фокусу залишаться у вашій історії."
+          }
+        }
       }
     },
     "tasks.archived.delete_confirmation.title" : {
       "comment" : "Title asking whether an archived task should be permanently deleted.",
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete this task permanently?" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Видалити це завдання назавжди?" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete this task permanently?"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Видалити це завдання назавжди?"
+          }
+        }
       }
     },
     "tasks.archived.empty.description" : {
       "comment" : "Description shown when there are no archived tasks.",
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tasks you archive will appear here." } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Заархівовані завдання з’являтимуться тут." } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tasks you archive will appear here."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заархівовані завдання з’являтимуться тут."
+          }
+        }
       }
     },
     "tasks.archived.empty.title" : {
       "comment" : "Title shown when there are no archived tasks.",
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "No archived tasks" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Немає заархівованих завдань" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No archived tasks"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Немає заархівованих завдань"
+          }
+        }
       }
     },
     "tasks.archived.restore" : {
       "comment" : "Action for restoring an archived task.",
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Restore" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Відновити" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Відновити"
+          }
+        }
       }
     },
     "tasks.archived.title" : {
       "comment" : "Title of the archived tasks screen and its navigation action.",
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Archived Tasks" } },
-        "uk" : { "stringUnit" : { "state" : "translated", "value" : "Архівовані завдання" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archived Tasks"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Архівовані завдання"
+          }
+        }
       }
     },
     "tasks.editor.auto_completion_hint" : {
@@ -3758,42 +3900,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld хв"
-          }
-        }
-      }
-    },
-    "startup.failure.message" : {
-      "comment" : "Recovery guidance shown when the app's local data store cannot be opened.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Close and reopen the app. Your existing data has not been changed."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закрийте та знову відкрийте застосунок. Ваші наявні дані не змінено."
-          }
-        }
-      }
-    },
-    "startup.failure.title" : {
-      "comment" : "Title shown when the app cannot initialize its local data store.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ritli couldn't start"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не вдалося запустити Ritli"
           }
         }
       }
