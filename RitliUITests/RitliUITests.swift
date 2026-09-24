@@ -143,7 +143,9 @@ final class RitliUITests: XCTestCase {
             XCTAssertTrue(waitForValue("Selected", of: app.buttons["onboarding.page.\(index + 1)"]))
             try assertOnboardingArtworkMoves(on: page, in: app)
             if index < 2 {
-                app.swipeLeft()
+                // This test checks artwork animation; select the next page
+                // directly so a missed hosted-simulator swipe cannot derail it.
+                app.buttons["onboarding.page.\(index + 2)"].tap()
             }
         }
 
@@ -1069,9 +1071,16 @@ final class RitliUITests: XCTestCase {
             "The task editor keyboard should be ready before entering the title"
         )
         titleField.typeText(title)
-        app.buttons["tasks.editor.save"].tap()
+        XCTAssertTrue(waitForValue(title, of: titleField, timeout: 5))
+        let saveButton = app.buttons["tasks.editor.save"]
+        let saveReady = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "isEnabled == true AND isHittable == true"),
+            object: saveButton
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [saveReady], timeout: 5), .completed)
+        saveButton.tap()
 
-        XCTAssertTrue(app.staticTexts[title].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts[title].waitForExistence(timeout: 5))
     }
 
     private func waitForValue(

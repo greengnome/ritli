@@ -33,9 +33,13 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
 
+      - name: Test simulator preparation script
+        run: python3 -m unittest discover -s .github/scripts/tests -v
+
       - name: Prepare iOS simulator
         timeout-minutes: 15
         run: |
+          sudo xcode-select --switch "$DEVELOPER_DIR"
           sudo env DEVELOPER_DIR="$DEVELOPER_DIR" xcodebuild -runFirstLaunch
           bash .github/scripts/prepare-ios-simulator.sh
 
