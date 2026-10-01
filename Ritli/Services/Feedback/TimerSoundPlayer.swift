@@ -3,8 +3,8 @@ import Foundation
 import UserNotifications
 
 @MainActor
-final class TimerSoundPreviewPlayer {
-    nonisolated static let notificationIdentifier = "ritli.timer.sound-preview"
+final class TimerSoundPlayer {
+    nonisolated static let notificationIdentifier = "ritli.timer.sound-playback"
 
     private let center = UNUserNotificationCenter.current()
     private let bundle: Bundle
@@ -16,7 +16,10 @@ final class TimerSoundPreviewPlayer {
         self.bundle = bundle
     }
 
-    func play(_ sound: TimerSound) async throws {
+    func play(
+        _ sound: TimerSound,
+        notificationTitle: String = String(localized: "settings.timer_sound.preview", defaultValue: "Sound preview")
+    ) async throws {
         try Task.checkCancellation()
         stop()
         guard sound != .silent else { return }
@@ -49,14 +52,14 @@ final class TimerSoundPreviewPlayer {
         }
 
         let content = UNMutableNotificationContent()
-        content.title = String(localized: "settings.timer_sound.preview", defaultValue: "Sound preview")
+        content.title = notificationTitle
         content.sound = .default
         let identifier = "\(Self.notificationIdentifier).\(UUID().uuidString)"
         currentIdentifier = identifier
         let request = UNNotificationRequest(
             identifier: identifier,
             content: content,
-            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+            trigger: nil
         )
         try await center.add(request)
         if Task.isCancelled || playbackID != self.playbackID {

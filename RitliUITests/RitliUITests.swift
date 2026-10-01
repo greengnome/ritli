@@ -1003,6 +1003,70 @@ final class RitliUITests: XCTestCase {
     }
 
     @MainActor
+    func testFocusAndBreaksCompleteWithSoundAndNotificationsOff() throws {
+        let app = makeApp()
+        app.launchArguments.append("--ui-testing-sound-completion")
+        app.launch()
+
+        for mode in ["Focus", "Short break", "Long break"] {
+            app.buttons["home.timer.mode"].tap()
+            app.buttons.matching(identifier: mode).firstMatch.tap()
+            app.buttons["home.timer.primary"].tap()
+            XCTAssertTrue(app.buttons["home.timer.cancel"].waitForExistence(timeout: 2))
+            XCTAssertTrue(app.buttons["home.timer.cancel"].waitForNonExistence(timeout: 8))
+            let completion = XCTNSPredicateExpectation(
+                predicate: NSPredicate(format: "label == %@", "1"),
+                object: app.staticTexts["home.summary.sessions"]
+            )
+            XCTAssertEqual(XCTWaiter.wait(for: [completion], timeout: 2), .completed)
+        }
+        app.tabBars.buttons["Settings"].tap()
+        let notifications = app.switches["settings.notifications"]
+        XCTAssertTrue(scrollToElement(notifications, in: app))
+        XCTAssertEqual(notifications.value as? String, "Off")
+        XCTAssertEqual(app.switches["settings.haptics"].value as? String, "Off")
+    }
+
+    @MainActor
+    func testFocusAndBreakNotificationsArriveWhileAppIsInBackground() throws {
+        let app = makeApp()
+        app.launchArguments += ["--ui-testing-sound-completion", "--ui-testing-background-sound"]
+        app.launch()
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+
+        for (mode, title) in [("Focus", "Focus complete"), ("Short break", "Break complete"), ("Long break", "Long break complete")] {
+            app.buttons["home.timer.mode"].tap()
+            app.buttons.matching(identifier: mode).firstMatch.tap()
+            app.buttons["home.timer.primary"].tap()
+            XCTAssertTrue(app.buttons["home.timer.cancel"].waitForExistence(timeout: 2))
+            XCUIDevice.shared.press(.home)
+            XCTAssertTrue(springboard.staticTexts[title].waitForExistence(timeout: 8))
+            addScreenshot(named: "Background timer alert — \(mode)")
+            app.activate()
+            XCTAssertTrue(app.buttons["home.timer.cancel"].waitForNonExistence(timeout: 2))
+        }
+    }
+
+    @MainActor
+    func testReturningToAnExpiredTimerDoesNotReplayCompletionSound() throws {
+        let app = makeApp()
+        app.launchArguments.append("--ui-testing-sound-completion")
+        app.launch()
+        app.buttons["home.timer.primary"].tap()
+        XCTAssertTrue(app.buttons["home.timer.cancel"].waitForExistence(timeout: 2))
+        XCUIDevice.shared.press(.home)
+        _ = XCTWaiter.wait(for: [XCTestExpectation(description: "Timer expires in background")], timeout: 7)
+        app.activate()
+        XCTAssertTrue(app.buttons["home.timer.cancel"].waitForNonExistence(timeout: 2))
+        let completion = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label == %@", "1"),
+            object: app.staticTexts["home.summary.sessions"]
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [completion], timeout: 3), .completed)
+        XCTAssertEqual(app.staticTexts["home.timer.status"].label, "Ready to rest")
+    }
+
+    @MainActor
     func testCustomSoundPreviewsDoNotChangeTheSelectedSound() throws {
         let app = makeApp(showSettings: true)
         app.launch()

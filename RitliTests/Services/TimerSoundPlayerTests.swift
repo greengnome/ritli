@@ -5,14 +5,14 @@ import Testing
 
 @MainActor
 @Suite(.serialized)
-struct TimerSoundPreviewPlayerTests {
+struct TimerSoundPlayerTests {
     @Test("Each custom preview starts playback of its own bundled audio", arguments: [
         (TimerSound.gentleBell, "ritli-gentle-bell.wav", 2.0),
         (TimerSound.clearChime, "ritli-clear-chime.wav", 2.2),
         (TimerSound.softPulse, "ritli-soft-pulse.wav", 1.3),
     ])
     func playsSelectedFile(sound: TimerSound, fileName: String, duration: Double) async throws {
-        let preview = TimerSoundPreviewPlayer()
+        let preview = TimerSoundPlayer()
         defer { preview.stop() }
 
         try await preview.play(sound)
@@ -28,7 +28,7 @@ struct TimerSoundPreviewPlayerTests {
 
     @Test("Switching previews stops the previous tone; Silent stops all playback")
     func switchesAndStopsPlayback() async throws {
-        let preview = TimerSoundPreviewPlayer()
+        let preview = TimerSoundPlayer()
         defer { preview.stop() }
 
         try await preview.play(.gentleBell)
@@ -45,7 +45,7 @@ struct TimerSoundPreviewPlayerTests {
 
     @Test("Leaving the picker stops playback")
     func stopsPlayback() async throws {
-        let preview = TimerSoundPreviewPlayer()
+        let preview = TimerSoundPlayer()
         try await preview.play(.softPulse)
         let player = try #require(preview.audioPlayer)
         preview.stop()
@@ -55,7 +55,7 @@ struct TimerSoundPreviewPlayerTests {
 
     @Test("A missing custom sound reports an error instead of playing the default tone")
     func rejectsMissingAudio() async throws {
-        let preview = TimerSoundPreviewPlayer(bundle: Bundle(for: PreviewTestBundle.self))
+        let preview = TimerSoundPlayer(bundle: Bundle(for: PreviewTestBundle.self))
         await #expect(throws: (any Error).self) {
             try await preview.play(.gentleBell)
         }
@@ -64,7 +64,7 @@ struct TimerSoundPreviewPlayerTests {
 
     @Test("A canceled preview cannot stop a newer sound")
     func ignoresCanceledPlayback() async throws {
-        let preview = TimerSoundPreviewPlayer()
+        let preview = TimerSoundPlayer()
         defer { preview.stop() }
         try await preview.play(.softPulse)
         let player = try #require(preview.audioPlayer)

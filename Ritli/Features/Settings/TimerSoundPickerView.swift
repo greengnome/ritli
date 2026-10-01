@@ -5,7 +5,7 @@ struct TimerSoundPickerView: View {
     let selectedSound: TimerSound
     let onSelect: (TimerSound) throws -> Void
 
-    @State private var previewPlayer = TimerSoundPreviewPlayer()
+    @State private var previewPlayer = TimerSoundPlayer()
     @State private var previewTask: Task<Void, Never>?
     @State private var errorMessage: String?
 
@@ -64,7 +64,7 @@ struct TimerSoundPickerView: View {
             } footer: {
                 Text(String(
                     localized: "settings.timer_sound.footer",
-                    defaultValue: "Tap the speaker to preview a sound. Timer sounds follow your notification and iPhone sound settings."
+                    defaultValue: "Tap the speaker to preview a sound. Sounds respect Silent mode. Turn on Notifications for alerts when Ritli is in the background."
                 ))
             }
         }

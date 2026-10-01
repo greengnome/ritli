@@ -26,13 +26,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tap the speaker to preview a sound. Timer sounds follow your notification and iPhone sound settings."
+            "value": "Tap the speaker to preview a sound. Sounds respect Silent mode. Turn on Notifications for alerts when Ritli is in the background."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Натисніть динамік, щоб прослухати звук. Звуки таймера залежать від налаштувань сповіщень і звуку iPhone."
+            "value": "Натисніть динамік, щоб прослухати звук. Звуки враховують беззвучний режим. Увімкніть сповіщення, щоб отримувати нагадування, коли Ritli працює у фоновому режимі."
           }
         }
       }

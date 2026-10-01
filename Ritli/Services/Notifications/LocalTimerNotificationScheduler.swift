@@ -9,17 +9,25 @@ final class LocalTimerNotificationScheduler: TimerNotificationScheduling {
     private let dateProvider: any DateProviding
     private let localizationBundle: Bundle
     private let localizationLocale: Locale
+    private let useSystemSoundFallback: Bool
 
     init(
         center: any UserNotificationCenterClient,
         dateProvider: any DateProviding,
         localizationBundle: Bundle = .main,
-        localizationLocale: Locale = .current
+        localizationLocale: Locale = .current,
+        useSystemSoundFallback: Bool? = nil
     ) {
         self.center = center
         self.dateProvider = dateProvider
         self.localizationBundle = localizationBundle
         self.localizationLocale = localizationLocale
+        #if targetEnvironment(simulator)
+        // The Simulator notification service fails to resolve the bundled custom tones.
+        self.useSystemSoundFallback = useSystemSoundFallback ?? true
+        #else
+        self.useSystemSoundFallback = useSystemSoundFallback ?? false
+        #endif
     }
 
     convenience init(center: any UserNotificationCenterClient) {
@@ -42,9 +50,14 @@ final class LocalTimerNotificationScheduler: TimerNotificationScheduling {
         let content = UNMutableNotificationContent()
         content.title = notificationTitle(for: kind)
         content.body = notificationBody(for: kind)
-        content.sound = soundEnabled ? sound.notificationSound : nil
+        if soundEnabled, sound != .silent {
+            content.sound = useSystemSoundFallback ? .default : sound.notificationSound
+        }
         content.threadIdentifier = "ritli.timer"
-        content.userInfo = ["sessionID": id.uuidString]
+        content.userInfo = [
+            "sessionID": id.uuidString,
+            "timerSound": (soundEnabled ? sound : .silent).rawValue,
+        ]
 
         let trigger = UNTimeIntervalNotificationTrigger(
             timeInterval: interval,

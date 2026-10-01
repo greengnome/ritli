@@ -24,7 +24,7 @@ enum TimerSound: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    var fileName: String? {
+    nonisolated var fileName: String? {
         switch self {
         case .gentleBell: "ritli-gentle-bell.wav"
         case .clearChime: "ritli-clear-chime.wav"

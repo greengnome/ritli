@@ -33,7 +33,8 @@ struct AppDependencies {
                 center: notificationCenter
             ),
             liveActivities: ActivityKitTimerLiveActivityCoordinator(),
-            feedback: SystemTimerFeedbackPlayer()
+            feedback: SystemTimerFeedbackPlayer(),
+            completionSound: TimerCompletionSoundPlayer.shared
         )
         try engine.restore()
 
