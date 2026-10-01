@@ -1043,7 +1043,7 @@ final class RitliUITests: XCTestCase {
             let cancel = app.buttons["home.timer.cancel"]
             let permissionAlert = springboard.alerts["“Ritli” Would Like to Send You Notifications"]
             // Starting the timer awaits notification permission on a fresh install.
-            // Return immediately when permission was already granted: the timer lasts six seconds.
+            // Return as soon as the timer starts when permission was already granted.
             let readyToContinue = XCTNSPredicateExpectation(
                 predicate: NSPredicate { _, _ in cancel.exists || permissionAlert.exists },
                 object: nil
@@ -1051,11 +1051,14 @@ final class RitliUITests: XCTestCase {
             XCTAssertEqual(XCTWaiter.wait(for: [readyToContinue], timeout: 5), .completed)
             if permissionAlert.exists {
                 permissionAlert.buttons["Allow"].tap()
+                XCTAssertTrue(cancel.waitForExistence(timeout: 5))
+            } else {
+                XCTAssertTrue(cancel.exists)
             }
-            XCTAssertTrue(cancel.waitForExistence(timeout: 2))
             XCUIDevice.shared.press(.home)
-            // Notification intelligence processing can delay hosted-simulator banners after expiry.
-            XCTAssertTrue(springboard.staticTexts[title].waitForExistence(timeout: 20))
+            XCTAssertTrue(app.wait(for: .runningBackground, timeout: 5))
+            // Allow the 15-second fixture plus notification intelligence processing after expiry.
+            XCTAssertTrue(springboard.staticTexts[title].waitForExistence(timeout: 30))
             addScreenshot(named: "Background timer alert — \(mode)")
             app.activate()
             XCTAssertTrue(app.buttons["home.timer.cancel"].waitForNonExistence(timeout: 2))
@@ -1242,7 +1245,8 @@ final class RitliUITests: XCTestCase {
             "The task editor keyboard should be ready before entering the title"
         )
         titleField.typeText(title)
-        XCTAssertTrue(waitForValue(title, of: titleField, timeout: 5))
+        // On a cold hosted keyboard, queued characters can arrive after typeText returns.
+        XCTAssertTrue(waitForValue(title, of: titleField, timeout: 20))
         let saveButton = app.buttons["tasks.editor.save"]
         let saveReady = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "isEnabled == true AND isHittable == true"),
