@@ -7,3 +7,6 @@ DerivedData/
 
 # Local-only checklists, research notes, generated reports, and release artwork.
 /local-artifacts/
+
+buildServer.json
+.derivedData/
