@@ -1038,7 +1038,19 @@ final class RitliUITests: XCTestCase {
             app.buttons["home.timer.mode"].tap()
             app.buttons.matching(identifier: mode).firstMatch.tap()
             app.buttons["home.timer.primary"].tap()
-            XCTAssertTrue(app.buttons["home.timer.cancel"].waitForExistence(timeout: 2))
+            let cancel = app.buttons["home.timer.cancel"]
+            let permissionAlert = springboard.alerts["“Ritli” Would Like to Send You Notifications"]
+            // Starting the timer awaits notification permission on a fresh install.
+            // Return immediately when permission was already granted: the timer lasts six seconds.
+            let readyToContinue = XCTNSPredicateExpectation(
+                predicate: NSPredicate { _, _ in cancel.exists || permissionAlert.exists },
+                object: nil
+            )
+            XCTAssertEqual(XCTWaiter.wait(for: [readyToContinue], timeout: 5), .completed)
+            if permissionAlert.exists {
+                permissionAlert.buttons["Allow"].tap()
+            }
+            XCTAssertTrue(cancel.waitForExistence(timeout: 2))
             XCUIDevice.shared.press(.home)
             XCTAssertTrue(springboard.staticTexts[title].waitForExistence(timeout: 8))
             addScreenshot(named: "Background timer alert — \(mode)")
