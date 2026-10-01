@@ -9,8 +9,7 @@ struct HomeTimerCard: View {
 
     let kind: SessionKind
     let state: SessionState?
-    let remainingTime: TimeInterval
-    let progress: Double
+    let remainingTime: (Date) -> TimeInterval
     let duration: TimeInterval
     let isModeSelectionEnabled: Bool
     let onSelectMode: (SessionKind) -> Void
@@ -45,37 +44,19 @@ struct HomeTimerCard: View {
                     Spacer()
                 }
 
-                Text(verbatim: TimerDisplayFormatter.durationLabel(duration))
-                    .font(.subheadline.weight(.medium))
-                    .fixedSize()
+                Text(verbatim: TimerDisplayFormatter.sessionDurationLabel(duration))
+                    .font(.footnote)
+                    .fixedSize(horizontal: false, vertical: true)
                     .foregroundStyle(.secondary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(.thinMaterial, in: Capsule())
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            if dynamicTypeSize.isAccessibilitySize {
-                timerReadout
-            } else {
-                ZStack {
-                    Circle()
-                        .stroke(RitliTheme.accentSoft.opacity(0.45), lineWidth: 7)
-
-                    Circle()
-                        .trim(from: 0, to: max(0.002, progress))
-                        .stroke(
-                            RitliTheme.accent,
-                            style: StrokeStyle(lineWidth: 7, lineCap: .round)
-                        )
-                        .rotationEffect(.degrees(-90))
-
-                    timerReadout
-                }
-                .frame(width: 255, height: 255)
-                .accessibilityElement(children: .contain)
-                .accessibilityLabel(Text(kind.timerAccessibilityLabel))
-            }
+            HomeTimerReadout(
+                kind: kind,
+                state: isActive ? state : nil,
+                duration: duration,
+                remainingTime: remainingTime
+            )
 
             controlLayout {
                 if isActive {
@@ -168,27 +149,6 @@ struct HomeTimerCard: View {
         dynamicTypeSize.isAccessibilitySize
             ? AnyLayout(VStackLayout(spacing: 8))
             : AnyLayout(HStackLayout(spacing: 8))
-    }
-
-    private var timerReadout: some View {
-        VStack(spacing: 7) {
-            Text(verbatim: TimerDisplayFormatter.countdown(remainingTime))
-                .font(
-                    dynamicTypeSize.isAccessibilitySize
-                        ? .system(.largeTitle, design: .rounded).weight(.semibold)
-                        : .system(size: 50, weight: .semibold, design: .rounded)
-                )
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-                .accessibilityIdentifier("home.timer.countdown")
-
-            Text(kind.timerSubtitle)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-        }
     }
 
     private var isActive: Bool {

@@ -41,6 +41,20 @@ struct RitliApp: App {
             if isUITesting && arguments.contains("--ui-testing-task-completion") {
                 dependencies.timerEngine.settings.focusDuration = 12
             }
+            if isUITesting && arguments.contains("--ui-testing-sound-completion") {
+                dependencies.timerEngine.settings.focusDuration = 6
+                dependencies.timerEngine.settings.shortBreakDuration = 6
+                dependencies.timerEngine.settings.longBreakDuration = 6
+                dependencies.timerEngine.settings.timerSound = .clearChime
+                dependencies.timerEngine.settings.hapticsEnabled = false
+            }
+            if isUITesting && arguments.contains("--ui-testing-background-sound") {
+                // Leave time for hosted UI automation to background the app before expiry.
+                dependencies.timerEngine.settings.focusDuration = 15
+                dependencies.timerEngine.settings.shortBreakDuration = 15
+                dependencies.timerEngine.settings.longBreakDuration = 15
+                dependencies.timerEngine.settings.notificationsEnabled = true
+            }
             #else
             let dependencies = try AppDependencies.live()
             #endif

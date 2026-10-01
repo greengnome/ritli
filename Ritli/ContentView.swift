@@ -109,9 +109,12 @@ struct ContentView: View {
     }
 
     private func monitorTimer() async {
+        var isFirstRefresh = true
         while !Task.isCancelled {
             do {
-                try timerEngine.refresh()
+                // Reconcile a timer that expired while away without replaying its alert.
+                try timerEngine.refresh(playCompletionSound: !isFirstRefresh)
+                isFirstRefresh = false
             } catch {
                 timerError = error.localizedDescription
             }

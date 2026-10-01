@@ -20,6 +20,7 @@ final class TimerEngine {
     private let notifications: any TimerNotificationScheduling
     private let liveActivities: any TimerLiveActivityCoordinating
     private let feedback: any TimerFeedbackPlaying
+    private let completionSound: any TimerCompletionSoundPlaying
 
     var remainingTime: TimeInterval {
         remainingTime(at: dateProvider.now)
@@ -55,7 +56,8 @@ final class TimerEngine {
         dateProvider: any DateProviding,
         notifications: any TimerNotificationScheduling,
         liveActivities: any TimerLiveActivityCoordinating,
-        feedback: any TimerFeedbackPlaying
+        feedback: any TimerFeedbackPlaying,
+        completionSound: (any TimerCompletionSoundPlaying)? = nil
     ) {
         self.store = store
         self.settings = settings
@@ -64,6 +66,7 @@ final class TimerEngine {
         self.notifications = notifications
         self.liveActivities = liveActivities
         self.feedback = feedback
+        self.completionSound = completionSound ?? NoOpTimerCompletionSoundPlayer()
     }
 
     convenience init(
@@ -229,6 +232,37 @@ final class TimerEngine {
             settings.notificationsEnabled = previousValue
             throw error
         }
+
+        updatePendingSessionNotification()
+    }
+
+    func setTimerSound(_ sound: TimerSound) throws {
+        let previousRawValue = settings.timerSoundRawValue
+        let previousEnabled = settings.soundEnabled
+        settings.timerSound = sound
+
+        do {
+            try store.save()
+        } catch {
+            settings.timerSoundRawValue = previousRawValue
+            settings.soundEnabled = previousEnabled
+            throw error
+        }
+
+        updatePendingSessionNotification()
+    }
+
+    private func updatePendingSessionNotification() {
+        guard let session = currentSession, session.state == .running,
+              let endDate = session.endDate, endDate > dateProvider.now
+        else { return }
+
+        if settings.notificationsEnabled {
+            // Reusing the session identifier replaces its pending alert.
+            scheduleSessionEndIfEnabled(id: session.id, kind: session.kind, at: endDate)
+        } else {
+            notifications.cancelSessionEnd(id: session.id)
+        }
     }
 
     func setShowTaskTitlesOnLockScreen(_ isEnabled: Bool) throws {
@@ -257,7 +291,7 @@ final class TimerEngine {
 
         if session.state == .running {
             if remainingTime(at: dateProvider.now) <= 0 {
-                try finishCurrentSession(at: dateProvider.now)
+                try finishCurrentSession(at: dateProvider.now, playCompletionSound: false)
                 return
             } else if let endDate = session.endDate {
                 scheduleSessionEndIfEnabled(
@@ -272,8 +306,8 @@ final class TimerEngine {
     }
 
     @discardableResult
-    func refresh() throws -> Bool {
-        try synchronizeCompletionIfNeeded()
+    func refresh(playCompletionSound: Bool = true) throws -> Bool {
+        try synchronizeCompletionIfNeeded(playCompletionSound: playCompletionSound)
     }
 
     func remainingTime(at date: Date) -> TimeInterval {
@@ -337,7 +371,7 @@ final class TimerEngine {
     }
 
     @discardableResult
-    private func synchronizeCompletionIfNeeded() throws -> Bool {
+    private func synchronizeCompletionIfNeeded(playCompletionSound: Bool = true) throws -> Bool {
         guard
             let session = currentSession,
             session.state == .running,
@@ -346,13 +380,14 @@ final class TimerEngine {
             return false
         }
 
-        try finishCurrentSession(at: dateProvider.now)
+        try finishCurrentSession(at: dateProvider.now, playCompletionSound: playCompletionSound)
         return true
     }
 
     private func finishCurrentSession(
         at date: Date,
-        autoStart: Bool = true
+        autoStart: Bool = true,
+        playCompletionSound: Bool = true
     ) throws {
         guard let session = currentSession, !session.state.isTerminal else {
             return
@@ -376,6 +411,13 @@ final class TimerEngine {
         try store.save()
         synchronizeLiveActivity()
         playFeedback(.completed)
+        if playCompletionSound {
+            completionSound.playCompletion(
+                id: session.id,
+                sound: settings.timerSound,
+                hasScheduledNotification: settings.notificationsEnabled
+            )
+        }
 
         guard autoStart else { return }
 
@@ -417,7 +459,8 @@ final class TimerEngine {
             id: id,
             kind: kind,
             at: date,
-            soundEnabled: settings.soundEnabled
+            soundEnabled: settings.soundEnabled,
+            sound: settings.timerSound
         )
     }
 

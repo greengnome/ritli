@@ -1,6 +1,25 @@
 import Foundation
 
 enum TimerDisplayFormatter {
+    static func remainingFraction(_ remainingTime: TimeInterval, duration: TimeInterval) -> Double {
+        guard duration > 0 else { return 0 }
+        return min(1, max(0, remainingTime / duration))
+    }
+
+    static func sessionDurationLabel(
+        _ interval: TimeInterval,
+        bundle: Bundle = .main,
+        locale: Locale = .current
+    ) -> String {
+        let minutes = Int(interval / 60)
+        return String(
+            localized: "time.duration.session_minutes",
+            defaultValue: "\(minutes) min session",
+            bundle: bundle,
+            locale: locale
+        )
+    }
+
     static func countdown(_ interval: TimeInterval) -> String {
         let totalSeconds = Int(ceil(max(0, interval)))
         let minutes = totalSeconds / 60

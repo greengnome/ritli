@@ -1,6 +1,276 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "time.duration.session_minutes": {
+      "comment": "Planned duration shown above the timer.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min session"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сесія %lld хв"
+          }
+        }
+      }
+    },
+    "settings.timer_sound.footer": {
+      "comment": "Explains preview controls and notification sound behavior.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap the speaker to preview a sound. Sounds respect Silent mode. Turn on Notifications for alerts when Ritli is in the background."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Натисніть динамік, щоб прослухати звук. Звуки враховують беззвучний режим. Увімкніть сповіщення, щоб отримувати нагадування, коли Ritli працює у фоновому режимі."
+          }
+        }
+      }
+    },
+    "settings.timer_sound.preview_requires_permission": {
+      "comment": "Guidance when system sound previews are unavailable.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable notification sounds for Ritli in iPhone Settings to preview the system default sound."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Увімкніть звуки сповіщень для Ritli в налаштуваннях iPhone, щоб прослухати стандартний системний звук."
+          }
+        }
+      }
+    },
+    "settings.timer_sound.preview_unavailable": {
+      "comment": "Shown when a bundled timer sound cannot be previewed.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This sound couldn't be played. Please try again."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося відтворити цей звук. Спробуйте ще раз."
+          }
+        }
+      }
+    },
+    "settings.timer_sound.preview_named": {
+      "comment": "Accessibility label for previewing a named sound.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прослухати %@"
+          }
+        }
+      }
+    },
+    "settings.timer_sound.preview": {
+      "comment": "Sound preview title.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sound preview"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прослуховування звуку"
+          }
+        }
+      }
+    },
+    "settings.timer_sound.silent": {
+      "comment": "Silent completion sound option.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Silent"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Без звуку"
+          }
+        }
+      }
+    },
+    "settings.timer_sound.soft_pulse": {
+      "comment": "Soft pulse completion tone.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Soft pulse"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "М’який пульс"
+          }
+        }
+      }
+    },
+    "settings.timer_sound.clear_chime": {
+      "comment": "Clear chime completion tone.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear chime"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дзвінкий передзвін"
+          }
+        }
+      }
+    },
+    "settings.timer_sound.gentle_bell": {
+      "comment": "Gentle bell completion tone.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gentle bell"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ніжний дзвіночок"
+          }
+        }
+      }
+    },
+    "settings.timer_sound.system_default": {
+      "comment": "System notification sound option.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System default"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Системний звук"
+          }
+        }
+      }
+    },
+    "settings.timer_sound.title": {
+      "comment": "Completion sound chooser title.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer sound"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Звук таймера"
+          }
+        }
+      }
+    },
+    "home.timer.status.remaining": {
+      "comment": "Label below the active countdown.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remaining"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Залишилося"
+          }
+        }
+      }
+    },
+    "home.timer.status.paused": {
+      "comment": "Timer status when paused.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paused"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Призупинено"
+          }
+        }
+      }
+    },
+    "home.timer.status.complete": {
+      "comment": "Timer status at completion.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Complete"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Завершено"
+          }
+        }
+      }
+    },
     "%lld" : {
 
     },
@@ -896,13 +1166,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pomodoro timer"
+            "value" : "Focus timer"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Таймер помодоро"
+            "value" : "Таймер фокусу"
           }
         }
       }
@@ -1052,19 +1322,19 @@
       }
     },
     "home.timer.mode.focus" : {
-      "comment" : "Title of the Pomodoro focus-timer mode.",
+      "comment" : "Title of the focus-timer mode.",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pomodoro"
+            "value" : "Focus"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Помодоро"
+            "value" : "Фокус"
           }
         }
       }
@@ -1112,13 +1382,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recharge"
+            "value" : "Ready to rest"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Час відпочити"
+            "value" : "Готові до відпочинку"
           }
         }
       }
@@ -1130,13 +1400,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Focus time"
+            "value" : "Ready to focus"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Час фокусу"
+            "value" : "Готові до фокусу"
           }
         }
       }
@@ -1496,13 +1766,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Attach sessions to tasks, set Pomodoro estimates, and make every focus block count."
+            "value" : "Attach sessions to tasks, estimate focus sessions, and make every focus block count."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Прив’язуйте сесії до завдань, оцінюйте їх у помодоро й перетворюйте кожен блок фокусу на результат."
+            "value" : "Прив’язуйте сесії до завдань, оцінюйте кількість сесій фокусу й перетворюйте кожен блок фокусу на результат."
           }
         }
       }

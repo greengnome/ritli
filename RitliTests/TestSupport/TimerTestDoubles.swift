@@ -17,6 +17,7 @@ final class MutableDateProvider: DateProviding, @unchecked Sendable {
 final class InMemoryTimerSessionStore: TimerSessionStore {
     var sessions: [FocusSession]
     private(set) var saveCount = 0
+    var saveError: Error?
 
     init(sessions: [FocusSession] = []) {
         self.sessions = sessions
@@ -39,6 +40,7 @@ final class InMemoryTimerSessionStore: TimerSessionStore {
     }
 
     func save() throws {
+        if let saveError { throw saveError }
         saveCount += 1
     }
 }
@@ -49,6 +51,7 @@ final class TimerNotificationSchedulerSpy: TimerNotificationScheduling {
         let kind: SessionKind
         let date: Date
         let soundEnabled: Bool
+        var sound: TimerSound = .systemDefault
     }
 
     private(set) var schedules: [Schedule] = []
@@ -58,14 +61,16 @@ final class TimerNotificationSchedulerSpy: TimerNotificationScheduling {
         id: UUID,
         kind: SessionKind,
         at date: Date,
-        soundEnabled: Bool
+        soundEnabled: Bool,
+        sound: TimerSound
     ) {
         schedules.append(
             Schedule(
                 id: id,
                 kind: kind,
                 date: date,
-                soundEnabled: soundEnabled
+                soundEnabled: soundEnabled,
+                sound: sound
             )
         )
     }
@@ -99,6 +104,23 @@ final class TimerLiveActivityCoordinatorSpy: TimerLiveActivityCoordinating {
 }
 
 @MainActor
+final class TimerCompletionSoundPlayerSpy: TimerCompletionSoundPlaying {
+    struct Playback: Equatable {
+        let id: UUID
+        let sound: TimerSound
+        let hasScheduledNotification: Bool
+    }
+
+    private(set) var playbacks: [Playback] = []
+
+    @discardableResult
+    func playCompletion(id: UUID, sound: TimerSound, hasScheduledNotification: Bool) -> Bool {
+        playbacks.append(.init(id: id, sound: sound, hasScheduledNotification: hasScheduledNotification))
+        return true
+    }
+}
+
+@MainActor
 struct TimerEngineHarness {
     let startDate: Date
     let clock: MutableDateProvider
@@ -106,6 +128,7 @@ struct TimerEngineHarness {
     let notifications: TimerNotificationSchedulerSpy
     let liveActivities: TimerLiveActivityCoordinatorSpy
     let feedback: TimerFeedbackPlayerSpy
+    let completionSound: TimerCompletionSoundPlayerSpy
     let settings: PomodoroSettings
     let cycle: PomodoroCycleState
     let engine: TimerEngine
@@ -122,6 +145,7 @@ struct TimerEngineHarness {
         self.notifications = TimerNotificationSchedulerSpy()
         self.liveActivities = TimerLiveActivityCoordinatorSpy()
         self.feedback = TimerFeedbackPlayerSpy()
+        self.completionSound = TimerCompletionSoundPlayerSpy()
         self.settings = settings
         self.cycle = cycle
         self.engine = TimerEngine(
@@ -131,7 +155,8 @@ struct TimerEngineHarness {
             dateProvider: clock,
             notifications: notifications,
             liveActivities: liveActivities,
-            feedback: feedback
+            feedback: feedback,
+            completionSound: completionSound
         )
     }
 }

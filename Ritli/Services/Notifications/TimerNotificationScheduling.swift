@@ -5,7 +5,8 @@ protocol TimerNotificationScheduling: AnyObject {
         id: UUID,
         kind: SessionKind,
         at date: Date,
-        soundEnabled: Bool
+        soundEnabled: Bool,
+        sound: TimerSound
     )
     func cancelSessionEnd(id: UUID)
 }
@@ -15,7 +16,8 @@ final class NoOpTimerNotificationScheduler: TimerNotificationScheduling {
         id: UUID,
         kind: SessionKind,
         at date: Date,
-        soundEnabled: Bool
+        soundEnabled: Bool,
+        sound: TimerSound
     ) {}
     func cancelSessionEnd(id: UUID) {}
 }

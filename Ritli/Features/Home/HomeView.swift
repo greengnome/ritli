@@ -27,20 +27,17 @@ struct HomeView: View {
                         }
                     }
 
-                    TimelineView(.periodic(from: .now, by: 1)) { context in
-                        HomeTimerCard(
-                            kind: displayedKind,
-                            state: timerEngine.currentSession?.state,
-                            remainingTime: displayedRemainingTime(at: context.date),
-                            progress: displayedProgress(at: context.date),
-                            duration: displayedDuration,
-                            isModeSelectionEnabled: !timerEngine.hasActiveSession,
-                            onSelectMode: selectMode,
-                            onPrimaryAction: primaryAction,
-                            onCancel: cancelSession,
-                            onSkipBreak: skipBreak
-                        )
-                    }
+                    HomeTimerCard(
+                        kind: displayedKind,
+                        state: timerEngine.currentSession?.state,
+                        remainingTime: displayedRemainingTime,
+                        duration: displayedDuration,
+                        isModeSelectionEnabled: !timerEngine.hasActiveSession,
+                        onSelectMode: selectMode,
+                        onPrimaryAction: primaryAction,
+                        onCancel: cancelSession,
+                        onSkipBreak: skipBreak
+                    )
 
                     TodaySummaryView(
                         summary: TodaySummary(sessions: sessions, tasks: tasks),
@@ -143,21 +140,6 @@ struct HomeView: View {
             return timerEngine.remainingTime(at: date)
         }
         return displayedDuration
-    }
-
-    private func displayedProgress(at date: Date) -> Double {
-        guard
-            timerEngine.hasActiveSession,
-            let session = timerEngine.currentSession,
-            session.plannedDuration > 0
-        else {
-            return 0
-        }
-
-        return min(
-            1,
-            max(0, 1 - timerEngine.remainingTime(at: date) / session.plannedDuration)
-        )
     }
 
     private func selectMode(_ kind: SessionKind) {
