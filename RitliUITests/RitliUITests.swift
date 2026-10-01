@@ -22,6 +22,27 @@ final class RitliUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts["Ritli"].waitForExistence(timeout: 2))
         XCTAssertTrue(app.staticTexts["home.timer.countdown"].exists)
+        XCTAssertEqual(app.staticTexts["home.timer.status"].label, "Ready to focus")
+        addScreenshot(named: "Quiet ring — ready")
+    }
+
+    @MainActor
+    func testTimerModeMenuRemainsUsableAcrossRefreshIntervals() throws {
+        let app = makeApp()
+        app.launch()
+
+        for (mode, countdown) in [("Short break", "05:00"), ("Long break", "15:00"), ("Focus", "25:00")] {
+            let menu = app.buttons["home.timer.mode"]
+            XCTAssertTrue(menu.waitForExistence(timeout: 2))
+            menu.tap()
+            let option = app.buttons.matching(identifier: mode).firstMatch
+            XCTAssertTrue(option.waitForExistence(timeout: 2))
+            // Exercise the menu across the old one-second whole-card refresh boundary.
+            _ = XCTWaiter.wait(for: [XCTestExpectation(description: "Keep the mode menu open")], timeout: 1.2)
+            option.tap()
+            XCTAssertEqual(app.staticTexts["home.timer.countdown"].label, countdown)
+        }
+        addScreenshot(named: "Quiet ring — Focus mode menu")
     }
 
     @MainActor
@@ -266,6 +287,8 @@ final class RitliUITests: XCTestCase {
 
         let pauseButton = app.buttons["Pause"]
         XCTAssertTrue(pauseButton.waitForExistence(timeout: 2))
+        XCTAssertEqual(app.staticTexts["home.timer.status"].label, "Remaining")
+        addScreenshot(named: "Quiet ring — running")
         XCTAssertEqual(pauseButton.frame.height, controlHeight, accuracy: 1)
 
         let cancelButton = app.buttons["home.timer.cancel"]
@@ -275,6 +298,8 @@ final class RitliUITests: XCTestCase {
 
         let resumeButton = app.buttons["Resume"]
         XCTAssertTrue(resumeButton.waitForExistence(timeout: 2))
+        XCTAssertEqual(app.staticTexts["home.timer.status"].label, "Paused")
+        addScreenshot(named: "Quiet ring — paused")
         XCTAssertEqual(resumeButton.frame.height, controlHeight, accuracy: 1)
         resumeButton.tap()
 
@@ -853,11 +878,13 @@ final class RitliUITests: XCTestCase {
         tapSwitch(autoStartBreaks)
         XCTAssertTrue(waitForValue("On", of: autoStartBreaks))
 
-        let sounds = app.switches["settings.sound"]
-        XCTAssertTrue(sounds.exists)
-        XCTAssertEqual(sounds.value as? String, "On")
-        tapSwitch(sounds)
-        XCTAssertTrue(waitForValue("Off", of: sounds))
+        let soundRow = app.buttons["settings.timerSound"]
+        XCTAssertTrue(scrollToElement(soundRow, in: app))
+        soundRow.tap()
+        XCTAssertTrue(app.buttons["settings.timerSound.systemDefault"].waitForExistence(timeout: 2))
+        app.buttons["settings.timerSound.silent"].tap()
+        XCTAssertTrue(app.buttons["settings.timerSound.silent"].isSelected)
+        app.navigationBars.buttons.element(boundBy: 0).tap()
 
         let appearance = app.descendants(matching: .any)["settings.appearance"]
         XCTAssertTrue(
@@ -902,7 +929,9 @@ final class RitliUITests: XCTestCase {
             scrollToElement(app.staticTexts["Відгук"], in: app),
             "Розділ відгуку має бути доступним після прокручування"
         )
-        XCTAssertEqual(app.switches["settings.sound"].label, "Звуки сповіщень")
+        let soundRow = app.buttons["settings.timerSound"]
+        XCTAssertTrue(scrollToElement(soundRow, in: app))
+        XCTAssertTrue(soundRow.label.contains("Звук таймера"))
         XCTAssertEqual(app.switches["settings.haptics"].label, "Вібровідгук")
         XCTAssertEqual(app.switches["settings.notifications"].label, "Сповіщення")
 
@@ -949,6 +978,49 @@ final class RitliUITests: XCTestCase {
         XCTAssertTrue(version.exists)
         XCTAssertGreaterThanOrEqual(version.frame.minY, app.navigationBars.firstMatch.frame.maxY)
         XCTAssertLessThanOrEqual(version.frame.maxY, app.tabBars.firstMatch.frame.minY)
+    }
+
+    @MainActor
+    func testSelectsTimerSoundAndPreservesItWhenReopeningPicker() throws {
+        let app = makeApp(showSettings: true)
+        app.launch()
+        let soundRow = app.buttons["settings.timerSound"]
+        XCTAssertTrue(scrollToElement(soundRow, in: app))
+        soundRow.tap()
+        let bell = app.buttons["settings.timerSound.gentleBell"]
+        XCTAssertTrue(bell.waitForExistence(timeout: 2))
+        bell.tap()
+        XCTAssertTrue(bell.isSelected)
+        XCTAssertTrue(app.buttons["settings.timerSound.preview.gentleBell"].exists)
+        addScreenshot(named: "Timer sound — choices")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(soundRow.label.contains("Gentle bell"))
+        soundRow.tap()
+        XCTAssertTrue(app.buttons["settings.timerSound.gentleBell"].isSelected)
+        app.buttons["settings.timerSound.silent"].tap()
+        XCTAssertTrue(app.buttons["settings.timerSound.silent"].isSelected)
+        XCTAssertFalse(app.buttons["settings.timerSound.preview.silent"].exists)
+    }
+
+    @MainActor
+    func testTimerAndSoundPickerSupportDarkAppearance() throws {
+        let app = makeApp(showSettings: true)
+        app.launch()
+        let appearance = app.descendants(matching: .any)["settings.appearance"]
+        XCTAssertTrue(scrollToElement(appearance, in: app))
+        appearance.tap()
+        app.buttons["Dark"].tap()
+        app.tabBars.buttons["Home"].tap()
+        XCTAssertTrue(app.staticTexts["home.timer.countdown"].waitForExistence(timeout: 2))
+        XCTAssertEqual(app.staticTexts["home.timer.countdown"].label, "25:00")
+        addScreenshot(named: "Quiet ring — dark appearance")
+
+        app.tabBars.buttons["Settings"].tap()
+        let soundRow = app.buttons["settings.timerSound"]
+        XCTAssertTrue(scrollToElement(soundRow, in: app))
+        soundRow.tap()
+        XCTAssertTrue(app.buttons["settings.timerSound.systemDefault"].waitForExistence(timeout: 2))
+        addScreenshot(named: "Timer sound — dark appearance")
     }
 
     @MainActor

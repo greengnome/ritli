@@ -20,8 +20,8 @@ struct OnboardingLocalizationTests {
         ),
         (
             "onboarding.tasks.message",
-            "Attach sessions to tasks, set Pomodoro estimates, and make every focus block count.",
-            "Прив’язуйте сесії до завдань, оцінюйте їх у помодоро й перетворюйте кожен блок фокусу на результат."
+            "Attach sessions to tasks, estimate focus sessions, and make every focus block count.",
+            "Прив’язуйте сесії до завдань, оцінюйте кількість сесій фокусу й перетворюйте кожен блок фокусу на результат."
         ),
         ("onboarding.tasks.project_roadmap", "Project roadmap", "План проєкту"),
         ("onboarding.tasks.read_pages", "Read 20 pages", "Прочитати 20 сторінок"),

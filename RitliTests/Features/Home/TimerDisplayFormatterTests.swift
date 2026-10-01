@@ -3,6 +3,29 @@ import Testing
 @testable import Ritli
 
 struct TimerDisplayFormatterTests {
+    @Test("The remaining ring starts full, counts down, and clamps terminal values", arguments: [
+        (TimeInterval(1_500), TimeInterval(1_500), 1.0),
+        (TimeInterval(750), TimeInterval(1_500), 0.5),
+        (TimeInterval(0), TimeInterval(1_500), 0.0),
+        (TimeInterval(-1), TimeInterval(1_500), 0.0),
+        (TimeInterval(2_000), TimeInterval(1_500), 1.0),
+        (TimeInterval(1), TimeInterval(0), 0.0),
+    ])
+    func remainingRing(remaining: TimeInterval, duration: TimeInterval, expected: Double) {
+        #expect(TimerDisplayFormatter.remainingFraction(remaining, duration: duration) == expected)
+    }
+
+    @Test("The planned-session label resolves in both languages", arguments: [
+        ("en", "25 min session"),
+        ("uk", "Сесія 25 хв"),
+    ])
+    func sessionDurationLabel(language: String, expected: String) throws {
+        let bundle = try localizedBundle(language: language)
+        #expect(TimerDisplayFormatter.sessionDurationLabel(
+            1_500, bundle: bundle, locale: Locale(identifier: language)
+        ) == expected)
+    }
+
     @Test("Countdown rounds up partial seconds", arguments: [
         (TimeInterval(1_500), "25:00"),
         (TimeInterval(1_499.1), "25:00"),

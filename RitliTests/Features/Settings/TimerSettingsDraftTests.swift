@@ -28,6 +28,7 @@ struct TimerSettingsDraftTests {
         #expect(draft.autoStartBreaks)
         #expect(draft.autoStartFocus)
         #expect(!draft.soundEnabled)
+        #expect(draft.timerSound == .silent)
         #expect(!draft.hapticsEnabled)
         #expect(!draft.notificationsEnabled)
         #expect(draft.showTaskTitlesOnLockScreen)
@@ -45,6 +46,7 @@ struct TimerSettingsDraftTests {
         draft.autoStartBreaks = true
         draft.autoStartFocus = true
         draft.soundEnabled = false
+        draft.timerSound = .clearChime
         draft.hapticsEnabled = false
         draft.notificationsEnabled = false
         draft.showTaskTitlesOnLockScreen = true
@@ -59,6 +61,7 @@ struct TimerSettingsDraftTests {
         #expect(harness.settings.autoStartBreaks)
         #expect(harness.settings.autoStartFocus)
         #expect(!harness.settings.soundEnabled)
+        #expect(harness.settings.timerSoundRawValue == TimerSound.clearChime.rawValue)
         #expect(!harness.settings.hapticsEnabled)
         #expect(!harness.settings.notificationsEnabled)
         #expect(harness.settings.showTaskTitlesOnLockScreen)

@@ -5,6 +5,16 @@ import UserNotifications
 
 @MainActor
 struct LocalTimerNotificationSchedulerTests {
+    @Test("Custom and silent selections reach the notification content", arguments: TimerSound.allCases)
+    func appliesSelectedSound(sound: TimerSound) throws {
+        let center = UserNotificationCenterClientSpy()
+        let now = Date(timeIntervalSince1970: 45_000)
+        let scheduler = LocalTimerNotificationScheduler(center: center, dateProvider: MutableDateProvider(now: now))
+        scheduler.scheduleSessionEnd(id: UUID(), kind: .focus, at: now.addingTimeInterval(60), soundEnabled: true, sound: sound)
+        let content = try #require(center.addedRequests.first?.content)
+        #expect(content.sound == sound.notificationSound)
+    }
+
     @Test("Focus notification contains the expected copy and trigger")
     func schedulesFocusCompletion() throws {
         let now = Date(timeIntervalSince1970: 50_000)

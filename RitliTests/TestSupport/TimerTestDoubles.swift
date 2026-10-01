@@ -17,6 +17,7 @@ final class MutableDateProvider: DateProviding, @unchecked Sendable {
 final class InMemoryTimerSessionStore: TimerSessionStore {
     var sessions: [FocusSession]
     private(set) var saveCount = 0
+    var saveError: Error?
 
     init(sessions: [FocusSession] = []) {
         self.sessions = sessions
@@ -39,6 +40,7 @@ final class InMemoryTimerSessionStore: TimerSessionStore {
     }
 
     func save() throws {
+        if let saveError { throw saveError }
         saveCount += 1
     }
 }
@@ -49,6 +51,7 @@ final class TimerNotificationSchedulerSpy: TimerNotificationScheduling {
         let kind: SessionKind
         let date: Date
         let soundEnabled: Bool
+        var sound: TimerSound = .systemDefault
     }
 
     private(set) var schedules: [Schedule] = []
@@ -58,14 +61,16 @@ final class TimerNotificationSchedulerSpy: TimerNotificationScheduling {
         id: UUID,
         kind: SessionKind,
         at date: Date,
-        soundEnabled: Bool
+        soundEnabled: Bool,
+        sound: TimerSound
     ) {
         schedules.append(
             Schedule(
                 id: id,
                 kind: kind,
                 date: date,
-                soundEnabled: soundEnabled
+                soundEnabled: soundEnabled,
+                sound: sound
             )
         )
     }

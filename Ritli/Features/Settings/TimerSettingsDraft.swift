@@ -13,6 +13,7 @@ struct TimerSettingsDraft: Equatable {
     var autoStartBreaks: Bool
     var autoStartFocus: Bool
     var soundEnabled: Bool
+    var timerSound: TimerSound
     var hapticsEnabled: Bool
     var notificationsEnabled: Bool
     var showTaskTitlesOnLockScreen: Bool
@@ -25,6 +26,7 @@ struct TimerSettingsDraft: Equatable {
         autoStartBreaks = settings.autoStartBreaks
         autoStartFocus = settings.autoStartFocus
         soundEnabled = settings.soundEnabled
+        timerSound = settings.timerSound
         hapticsEnabled = settings.hapticsEnabled
         notificationsEnabled = settings.notificationsEnabled
         showTaskTitlesOnLockScreen = settings.showTaskTitlesOnLockScreen
@@ -37,6 +39,7 @@ struct TimerSettingsDraft: Equatable {
         settings.longBreakEvery = max(1, longBreakEvery)
         settings.autoStartBreaks = autoStartBreaks
         settings.autoStartFocus = autoStartFocus
+        settings.timerSound = timerSound
         settings.soundEnabled = soundEnabled
         settings.hapticsEnabled = hapticsEnabled
         settings.notificationsEnabled = notificationsEnabled

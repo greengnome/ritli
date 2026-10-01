@@ -229,6 +229,37 @@ final class TimerEngine {
             settings.notificationsEnabled = previousValue
             throw error
         }
+
+        updatePendingSessionNotification()
+    }
+
+    func setTimerSound(_ sound: TimerSound) throws {
+        let previousRawValue = settings.timerSoundRawValue
+        let previousEnabled = settings.soundEnabled
+        settings.timerSound = sound
+
+        do {
+            try store.save()
+        } catch {
+            settings.timerSoundRawValue = previousRawValue
+            settings.soundEnabled = previousEnabled
+            throw error
+        }
+
+        updatePendingSessionNotification()
+    }
+
+    private func updatePendingSessionNotification() {
+        guard let session = currentSession, session.state == .running,
+              let endDate = session.endDate, endDate > dateProvider.now
+        else { return }
+
+        if settings.notificationsEnabled {
+            // Reusing the session identifier replaces its pending alert.
+            scheduleSessionEndIfEnabled(id: session.id, kind: session.kind, at: endDate)
+        } else {
+            notifications.cancelSessionEnd(id: session.id)
+        }
     }
 
     func setShowTaskTitlesOnLockScreen(_ isEnabled: Bool) throws {
@@ -417,7 +448,8 @@ final class TimerEngine {
             id: id,
             kind: kind,
             at: date,
-            soundEnabled: settings.soundEnabled
+            soundEnabled: settings.soundEnabled,
+            sound: settings.timerSound
         )
     }
 

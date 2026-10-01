@@ -170,15 +170,17 @@ struct SettingsView: View {
 
     private var feedbackSection: some View {
         Section(String(localized: "settings.feedback.section", defaultValue: "Feedback")) {
-            Toggle(
-                String(
-                    localized: "settings.feedback.sounds",
-                    defaultValue: "Sounds"
-                ),
-                isOn: settingBinding(\.soundEnabled)
-            )
-                .accessibilityIdentifier("settings.sound")
-                .accessibilityValue(SettingsPresentation.toggleState(isOn: settings.soundEnabled))
+            NavigationLink {
+                TimerSoundPickerView(selectedSound: settings.timerSound) { sound in
+                    try timerEngine.setTimerSound(sound)
+                }
+            } label: {
+                LabeledContent(
+                    String(localized: "settings.timer_sound.title", defaultValue: "Timer sound"),
+                    value: String(localized: settings.timerSound.title)
+                )
+            }
+            .accessibilityIdentifier("settings.timerSound")
 
             Toggle(
                 String(
@@ -439,10 +441,11 @@ struct SettingsView: View {
         Binding(
             get: { settings.notificationsEnabled },
             set: { isEnabled in
-                settings.notificationsEnabled = isEnabled
-                persistSettings()
-                if isEnabled {
-                    requestNotificationPermission()
+                do {
+                    try timerEngine.setNotificationsEnabled(isEnabled)
+                    if isEnabled { requestNotificationPermission() }
+                } catch {
+                    errorMessage = error.localizedDescription
                 }
             }
         )
@@ -476,14 +479,12 @@ struct SettingsView: View {
             do {
                 let isAuthorized = try await notificationPermissionService
                     .requestAuthorizationIfNeeded()
+                try timerEngine.setNotificationsEnabled(isAuthorized)
                 if !isAuthorized {
-                    settings.notificationsEnabled = false
-                    persistSettings()
                     isNotificationSettingsAlertPresented = true
                 }
             } catch {
-                settings.notificationsEnabled = false
-                persistSettings()
+                try? timerEngine.setNotificationsEnabled(false)
                 errorMessage = error.localizedDescription
             }
         }
@@ -498,8 +499,11 @@ struct SettingsView: View {
             return
         }
 
-        settings.notificationsEnabled = false
-        persistSettings()
+        do {
+            try timerEngine.setNotificationsEnabled(false)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     private func clearHistory() {

@@ -7,6 +7,12 @@ final class AppNotificationDelegate: NSObject, UIApplicationDelegate,
     nonisolated static let foregroundPresentationOptions:
         UNNotificationPresentationOptions = [.banner, .sound]
 
+    nonisolated static func presentationOptions(for identifier: String) -> UNNotificationPresentationOptions {
+        identifier.hasPrefix(TimerSoundPreviewPlayer.notificationIdentifier + ".")
+            ? [.sound]
+            : foregroundPresentationOptions
+    }
+
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions:
@@ -22,6 +28,6 @@ final class AppNotificationDelegate: NSObject, UIApplicationDelegate,
         withCompletionHandler completionHandler:
             @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        completionHandler(Self.foregroundPresentationOptions)
+        completionHandler(Self.presentationOptions(for: notification.request.identifier))
     }
 }

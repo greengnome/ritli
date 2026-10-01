@@ -11,6 +11,7 @@ final class PomodoroSettings {
     var autoStartBreaks: Bool
     var autoStartFocus: Bool
     var soundEnabled: Bool
+    var timerSoundRawValue: String = "systemDefault"
     var hapticsEnabled: Bool
     var notificationsEnabled: Bool
     var showTaskTitlesOnLockScreen: Bool = false
@@ -26,6 +27,7 @@ final class PomodoroSettings {
         autoStartBreaks: Bool = false,
         autoStartFocus: Bool = false,
         soundEnabled: Bool = true,
+        timerSound: TimerSound = .systemDefault,
         hapticsEnabled: Bool = true,
         notificationsEnabled: Bool = true,
         showTaskTitlesOnLockScreen: Bool = false,
@@ -39,7 +41,8 @@ final class PomodoroSettings {
         self.longBreakEvery = max(1, longBreakEvery)
         self.autoStartBreaks = autoStartBreaks
         self.autoStartFocus = autoStartFocus
-        self.soundEnabled = soundEnabled
+        self.soundEnabled = soundEnabled && timerSound != .silent
+        self.timerSoundRawValue = timerSound.rawValue
         self.hapticsEnabled = hapticsEnabled
         self.notificationsEnabled = notificationsEnabled
         self.showTaskTitlesOnLockScreen = showTaskTitlesOnLockScreen
@@ -50,6 +53,18 @@ final class PomodoroSettings {
     var appearance: AppAppearance {
         get { AppAppearance(rawValue: appearanceRawValue) ?? .system }
         set { appearanceRawValue = newValue.rawValue }
+    }
+
+    var timerSound: TimerSound {
+        get {
+            guard soundEnabled else { return .silent }
+            let sound = TimerSound(rawValue: timerSoundRawValue) ?? .systemDefault
+            return sound == .silent ? .systemDefault : sound
+        }
+        set {
+            timerSoundRawValue = newValue.rawValue
+            soundEnabled = newValue != .silent
+        }
     }
 
     func duration(for kind: SessionKind) -> TimeInterval {

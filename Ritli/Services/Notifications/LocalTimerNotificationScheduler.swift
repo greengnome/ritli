@@ -33,7 +33,8 @@ final class LocalTimerNotificationScheduler: TimerNotificationScheduling {
         id: UUID,
         kind: SessionKind,
         at date: Date,
-        soundEnabled: Bool
+        soundEnabled: Bool,
+        sound: TimerSound = .systemDefault
     ) {
         let interval = date.timeIntervalSince(dateProvider.now)
         guard interval > 0 else { return }
@@ -41,7 +42,7 @@ final class LocalTimerNotificationScheduler: TimerNotificationScheduling {
         let content = UNMutableNotificationContent()
         content.title = notificationTitle(for: kind)
         content.body = notificationBody(for: kind)
-        content.sound = soundEnabled ? .default : nil
+        content.sound = soundEnabled ? sound.notificationSound : nil
         content.threadIdentifier = "ritli.timer"
         content.userInfo = ["sessionID": id.uuidString]
 

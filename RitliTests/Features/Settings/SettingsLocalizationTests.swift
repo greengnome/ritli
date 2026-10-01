@@ -27,6 +27,12 @@ struct SettingsLocalizationTests {
         ("settings.feedback.notifications", "Notifications", "Сповіщення"),
         ("settings.feedback.section", "Feedback", "Відгук"),
         ("settings.feedback.sounds", "Notification sounds", "Звуки сповіщень"),
+        ("settings.timer_sound.title", "Timer sound", "Звук таймера"),
+        ("settings.timer_sound.system_default", "System default", "Системний звук"),
+        ("settings.timer_sound.gentle_bell", "Gentle bell", "Ніжний дзвіночок"),
+        ("settings.timer_sound.clear_chime", "Clear chime", "Дзвінкий передзвін"),
+        ("settings.timer_sound.soft_pulse", "Soft pulse", "М’який пульс"),
+        ("settings.timer_sound.silent", "Silent", "Без звуку"),
         ("settings.language.app_language", "App language", "Мова застосунку"),
         (
             "settings.language.footer",
