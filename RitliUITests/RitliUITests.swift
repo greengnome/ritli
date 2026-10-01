@@ -1052,7 +1052,8 @@ final class RitliUITests: XCTestCase {
             }
             XCTAssertTrue(cancel.waitForExistence(timeout: 2))
             XCUIDevice.shared.press(.home)
-            XCTAssertTrue(springboard.staticTexts[title].waitForExistence(timeout: 8))
+            // Notification intelligence processing can delay hosted-simulator banners after expiry.
+            XCTAssertTrue(springboard.staticTexts[title].waitForExistence(timeout: 20))
             addScreenshot(named: "Background timer alert — \(mode)")
             app.activate()
             XCTAssertTrue(app.buttons["home.timer.cancel"].waitForNonExistence(timeout: 2))
