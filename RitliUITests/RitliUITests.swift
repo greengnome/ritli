@@ -1003,6 +1003,28 @@ final class RitliUITests: XCTestCase {
     }
 
     @MainActor
+    func testCustomSoundPreviewsDoNotChangeTheSelectedSound() throws {
+        let app = makeApp(showSettings: true)
+        app.launch()
+        let soundRow = app.buttons["settings.timerSound"]
+        XCTAssertTrue(scrollToElement(soundRow, in: app))
+        soundRow.tap()
+        let selectedSound = app.buttons["settings.timerSound.systemDefault"]
+        XCTAssertTrue(selectedSound.waitForExistence(timeout: 2))
+
+        for sound in ["gentleBell", "clearChime", "softPulse"] {
+            app.buttons["settings.timerSound.preview.\(sound)"].tap()
+            XCTAssertTrue(selectedSound.isSelected)
+            XCTAssertFalse(app.alerts.firstMatch.exists)
+        }
+
+        app.buttons["settings.timerSound.silent"].tap()
+        XCTAssertTrue(app.buttons["settings.timerSound.silent"].isSelected)
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(soundRow.label.contains("Silent"))
+    }
+
+    @MainActor
     func testTimerAndSoundPickerSupportDarkAppearance() throws {
         let app = makeApp(showSettings: true)
         app.launch()

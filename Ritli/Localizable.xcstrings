@@ -44,13 +44,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enable notification sounds for Ritli in iPhone Settings to preview timer sounds."
+            "value": "Enable notification sounds for Ritli in iPhone Settings to preview the system default sound."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Увімкніть звуки сповіщень для Ritli в налаштуваннях iPhone, щоб прослухати звуки таймера."
+            "value": "Увімкніть звуки сповіщень для Ritli в налаштуваннях iPhone, щоб прослухати стандартний системний звук."
+          }
+        }
+      }
+    },
+    "settings.timer_sound.preview_unavailable": {
+      "comment": "Shown when a bundled timer sound cannot be previewed.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This sound couldn't be played. Please try again."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося відтворити цей звук. Спробуйте ще раз."
           }
         }
       }
