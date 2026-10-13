@@ -335,8 +335,9 @@ final class RitliUITests: XCTestCase {
         XCTAssertTrue(pause.waitForExistence(timeout: 3))
 
         let cancel = app.buttons["home.timer.cancel"]
-        if !cancel.isHittable { app.swipeDown() }
-        XCTAssertTrue(cancel.isHittable)
+        // Dynamic Type can move Cancel under the navigation bar while XCTest
+        // still reports it as hittable. Bring its tap point into visible bounds.
+        XCTAssertTrue(scrollToElement(cancel, in: app))
         cancel.tap()
         XCTAssertTrue(app.buttons["Start focus"].waitForExistence(timeout: 3))
     }
@@ -530,11 +531,11 @@ final class RitliUITests: XCTestCase {
 
     @MainActor
     func testAutomaticallyCompletesTaskWhileViewingTasksAndCanReopen() throws {
-        let app = makeApp(showTasks: true, language: "en", locale: "en_US")
+        let app = makeApp(showTasks: true, language: "en", locale: "en_US", taskTitle: "Finish proposal")
         app.launchArguments.append("--ui-testing-task-completion")
         app.launch()
 
-        createTask(named: "Finish proposal", in: app)
+        XCTAssertTrue(app.buttons["Start focus on Finish proposal"].waitForExistence(timeout: 3))
         app.buttons["Start focus on Finish proposal"].tap()
         XCTAssertTrue(app.buttons["Pause"].waitForExistence(timeout: 3))
         app.tabBars.buttons["Tasks"].tap()
@@ -620,10 +621,9 @@ final class RitliUITests: XCTestCase {
 
     @MainActor
     func testArchivesAndRestoresTask() throws {
-        let app = makeApp(showTasks: true)
+        let app = makeApp(showTasks: true, taskTitle: "Recoverable task")
         app.launch()
 
-        createTask(named: "Recoverable task", in: app)
         let taskTitle = app.staticTexts["Recoverable task"]
         XCTAssertTrue(taskTitle.waitForExistence(timeout: 2))
         taskTitle.swipeLeft()
@@ -703,10 +703,8 @@ final class RitliUITests: XCTestCase {
 
     @MainActor
     func testStartsFocusFromTaskAndOpensHome() throws {
-        let app = makeApp(showTasks: true)
+        let app = makeApp(showTasks: true, taskTitle: "Project roadmap")
         app.launch()
-
-        createTask(named: "Project roadmap", in: app)
 
         let startButton = app.buttons["Start focus on Project roadmap"]
         XCTAssertTrue(startButton.waitForExistence(timeout: 2))
@@ -722,11 +720,8 @@ final class RitliUITests: XCTestCase {
 
     @MainActor
     func testSelectsTaskFromHomeForNextFocusSession() throws {
-        let app = makeApp(showTasks: true)
+        let app = makeApp(taskTitle: "Design landing page")
         app.launch()
-
-        createTask(named: "Design landing page", in: app)
-        app.tabBars.buttons["Home"].tap()
 
         let taskSelector = app.buttons["home.taskSelector"]
         XCTAssertTrue(taskSelector.waitForExistence(timeout: 2))
@@ -1005,23 +1000,21 @@ final class RitliUITests: XCTestCase {
     }
 
     @MainActor
-    func testFocusAndBreaksCompleteWithSoundAndNotificationsOff() throws {
+    func testFocusCompletesWithSoundAndNotificationsOff() throws {
         let app = makeApp()
         app.launchArguments.append("--ui-testing-sound-completion")
         app.launch()
 
-        for mode in ["Focus", "Short break", "Long break"] {
-            app.buttons["home.timer.mode"].tap()
-            app.buttons.matching(identifier: mode).firstMatch.tap()
-            app.buttons["home.timer.primary"].tap()
-            XCTAssertTrue(app.buttons["home.timer.cancel"].waitForExistence(timeout: 2))
-            XCTAssertTrue(app.buttons["home.timer.cancel"].waitForNonExistence(timeout: 8))
-            let completion = XCTNSPredicateExpectation(
-                predicate: NSPredicate(format: "label == %@", "1"),
-                object: app.staticTexts["home.summary.sessions"]
-            )
-            XCTAssertEqual(XCTWaiter.wait(for: [completion], timeout: 2), .completed)
-        }
+        // TimerEngineSoundTests covers all three modes with a controlled clock.
+        // Keep one end-to-end check of foreground completion and preferences.
+        app.buttons["home.timer.primary"].tap()
+        XCTAssertTrue(app.buttons["home.timer.cancel"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.buttons["home.timer.cancel"].waitForNonExistence(timeout: 8))
+        let completion = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label == %@", "1"),
+            object: app.staticTexts["home.summary.sessions"]
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [completion], timeout: 2), .completed)
         app.tabBars.buttons["Settings"].tap()
         let notifications = app.switches["settings.notifications"]
         XCTAssertTrue(scrollToElement(notifications, in: app))
@@ -1056,7 +1049,7 @@ final class RitliUITests: XCTestCase {
                 XCTAssertTrue(cancel.exists)
             }
             XCUIDevice.shared.press(.home)
-            XCTAssertTrue(app.wait(for: .runningBackground, timeout: 5))
+            assertAppIsInBackground(app, context: mode)
             // Allow the 15-second fixture plus notification intelligence processing after expiry.
             XCTAssertTrue(springboard.staticTexts[title].waitForExistence(timeout: 30))
             addScreenshot(named: "Background timer alert — \(mode)")
@@ -1181,6 +1174,43 @@ final class RitliUITests: XCTestCase {
             app.staticTexts["settings.historyCount"].label,
             "Recorded sessions, 0"
         )
+    }
+
+    @MainActor
+    private func assertAppIsInBackground(
+        _ app: XCUIApplication,
+        context: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let started = Date()
+        var observations: [String] = []
+        let background = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in
+                let state = app.state
+                observations.append(String(
+                    format: "%.3fs: %@ (%lu)",
+                    Date().timeIntervalSince(started),
+                    String(describing: state), state.rawValue
+                ))
+                // iOS may suspend the process before XCTest observes it. Both
+                // states are background; a terminated or foreground app is not.
+                return state == .runningBackground || state == .runningBackgroundSuspended
+            },
+            object: nil
+        )
+        let result = XCTWaiter.wait(for: [background], timeout: 5)
+        let diagnostic = "\(context): background wait \(result); final state \(app.state)\n"
+            + observations.joined(separator: "\n")
+        let attachment = XCTAttachment(string: diagnostic)
+        attachment.name = "Background transition — \(context)"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        print(diagnostic)
+        if result != .completed {
+            addScreenshot(named: "Failed background transition — \(context)")
+        }
+        XCTAssertEqual(result, .completed, diagnostic, file: file, line: line)
     }
 
     private func splashMarkPixels(in screenshot: XCUIScreenshot) throws -> Data {
@@ -1368,13 +1398,17 @@ final class RitliUITests: XCTestCase {
         showStats: Bool = false,
         showSettings: Bool = false,
         language: String? = nil,
-        locale: String? = nil
+        locale: String? = nil,
+        taskTitle: String? = nil
     ) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
             "--ui-testing",
             "--ui-testing-skip-onboarding"
         ]
+        if let taskTitle {
+            app.launchEnvironment["RITLI_UI_TEST_TASK_TITLE"] = taskTitle
+        }
         if showTasks {
             app.launchArguments.append("--ui-testing-show-tasks")
         }
