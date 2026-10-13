@@ -34,6 +34,14 @@ struct RitliApp: App {
                 inMemory: isUITesting,
                 notificationsEnabled: !isUITesting
             )
+            if isUITesting,
+               let title = ProcessInfo.processInfo.environment["RITLI_UI_TEST_TASK_TITLE"] {
+                // Seed only the isolated UI-test store. Task creation itself is
+                // exercised through the editor in its dedicated UI tests.
+                let context = dependencies.modelContainer.mainContext
+                context.insert(FocusTask(title: title))
+                try context.save()
+            }
             if isUITesting && arguments.contains("--ui-testing-short-session") {
                 // ActivityKit coalesces stale refreshes for very short timers.
                 dependencies.timerEngine.settings.focusDuration = 130
