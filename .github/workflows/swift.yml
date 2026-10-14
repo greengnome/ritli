@@ -31,7 +31,9 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Show Xcode version
-        run: xcodebuild -version
+        run: |
+          xcodebuild -version
+          sysctl hw.logicalcpu hw.memsize
 
       - name: Test simulator preparation script
         run: python3 -m unittest discover -s .github/scripts/tests -v
@@ -53,21 +55,65 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
             build-for-testing
 
-      # Hosted simulators can drop the cross-app Settings foreground transition.
-      # Its URL is unit-tested, and the complete handoff remains in the local UI suite.
-      - name: Run tests
+      - name: Run unit tests
         run: |
           xcodebuild \
             -project Ritli.xcodeproj \
             -scheme Ritli \
             -configuration Debug \
-            -destination "platform=iOS Simulator,id=$IOS_SIMULATOR_ID" \
+            -destination "platform=iOS Simulator,arch=arm64,id=$IOS_SIMULATOR_ID" \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
-            -resultBundlePath "$RUNNER_TEMP/RitliTests.xcresult" \
+            -resultBundlePath "$RUNNER_TEMP/RitliUnitTests.xcresult" \
             -parallel-testing-enabled NO \
-            -skip-testing:RitliUITests/RitliUITests/testDisplaysRunningTimerOutsideApp \
-            -skip-testing:RitliUITests/RitliUITests/testDisplaysFinishedTimerOutsideApp \
-            -skip-testing:RitliUITests/RitliUITests/testOpensAppLanguageSettings \
+            -only-testing:RitliTests \
+            test-without-building
+
+      # Keep the small hosted runner on one simulator. Two workers regressed CI
+      # despite improving wall time on a larger local Mac.
+      - name: Run app UI tests sequentially
+        timeout-minutes: 20
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Ritli.xcodeproj \
+            -scheme Ritli \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,arch=arm64,id=$IOS_SIMULATOR_ID" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/RitliAppUITests.xcresult" \
+            -parallel-testing-enabled NO \
+            -test-timeouts-enabled YES \
+            -default-test-execution-time-allowance 180 \
+            -maximum-test-execution-time-allowance 180 \
+            -collect-test-diagnostics on-failure \
+            -only-testing:RitliUITests \
+            -skip-testing:RitliUITests/SystemUITests \
+            -skip-testing:RitliUITests/LiveActivityUITests \
+            test-without-building 2>&1 | tee "$RUNNER_TEMP/RitliAppUITests.log"
+
+      # App UI tests leave ActivityKit state behind. Its background launches can
+      # race XCTest and start the app without the requested test arguments.
+      - name: Prepare fresh simulator for system UI tests
+        timeout-minutes: 15
+        run: |
+          xcrun simctl shutdown "$IOS_SIMULATOR_ID"
+          xcrun simctl delete "$IOS_SIMULATOR_ID"
+          bash .github/scripts/prepare-ios-simulator.sh
+
+      # Hosted simulators can drop the cross-app Settings foreground transition.
+      # Its URL is unit-tested, and the complete handoff remains in the local UI suite.
+      - name: Run background lifecycle UI tests in isolation
+        run: |
+          xcodebuild \
+            -project Ritli.xcodeproj \
+            -scheme Ritli \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,arch=arm64,id=$IOS_SIMULATOR_ID" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/RitliSystemUITests.xcresult" \
+            -parallel-testing-enabled NO \
+            -only-testing:RitliUITests/SystemUITests \
+            -skip-testing:RitliUITests/SystemUITests/testOpensAppLanguageSettings \
             test-without-building
 
       - name: Run Live Activity system UI tests in isolation
@@ -77,12 +123,11 @@ jobs:
               -project Ritli.xcodeproj \
               -scheme Ritli \
               -configuration Debug \
-              -destination "platform=iOS Simulator,id=$IOS_SIMULATOR_ID" \
+              -destination "platform=iOS Simulator,arch=arm64,id=$IOS_SIMULATOR_ID" \
               -derivedDataPath "$RUNNER_TEMP/DerivedData" \
               -resultBundlePath "$RUNNER_TEMP/RitliLiveActivityUITests-attempt-${attempt}.xcresult" \
               -parallel-testing-enabled NO \
-              -only-testing:RitliUITests/RitliUITests/testDisplaysRunningTimerOutsideApp \
-              -only-testing:RitliUITests/RitliUITests/testDisplaysFinishedTimerOutsideApp \
+              -only-testing:RitliUITests/LiveActivityUITests \
               test-without-building; then
               exit 0
             fi
@@ -102,7 +147,7 @@ jobs:
             -project Ritli.xcodeproj \
             -scheme Ritli \
             -configuration Release \
-            -destination "platform=iOS Simulator,id=$IOS_SIMULATOR_ID" \
+            -destination "platform=iOS Simulator,arch=arm64,id=$IOS_SIMULATOR_ID" \
             -derivedDataPath "$RUNNER_TEMP/ReleaseTests" \
             -resultBundlePath "$RUNNER_TEMP/RitliReleaseTests.xcresult" \
             -parallel-testing-enabled NO \
@@ -117,7 +162,10 @@ jobs:
         with:
           name: Ritli-test-results
           path: |
-            ${{ runner.temp }}/RitliTests.xcresult
+            ${{ runner.temp }}/RitliUnitTests.xcresult
+            ${{ runner.temp }}/RitliAppUITests.xcresult
+            ${{ runner.temp }}/RitliAppUITests.log
+            ${{ runner.temp }}/RitliSystemUITests.xcresult
             ${{ runner.temp }}/RitliLiveActivityUITests-attempt-*.xcresult
             ${{ runner.temp }}/RitliReleaseTests.xcresult
           if-no-files-found: ignore
