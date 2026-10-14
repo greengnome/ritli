@@ -13,6 +13,12 @@ final class SystemUITests: RitliUITestCase {
         for (mode, title) in [("Focus", "Focus complete"), ("Short break", "Break complete"), ("Long break", "Long break complete")] {
             app.buttons["home.timer.mode"].tap()
             app.buttons.matching(identifier: mode).firstMatch.tap()
+            let countdown = app.staticTexts["home.timer.countdown"]
+            XCTAssertTrue(countdown.waitForExistence(timeout: 5))
+            XCTAssertEqual(
+                countdown.label, "00:15",
+                "The \(mode) notification test must start with the 15-second fixture"
+            )
             app.buttons["home.timer.primary"].tap()
             let cancel = app.buttons["home.timer.cancel"]
             let permissionAlert = springboard.alerts["“Ritli” Would Like to Send You Notifications"]

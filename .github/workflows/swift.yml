@@ -91,6 +91,15 @@ jobs:
             -skip-testing:RitliUITests/LiveActivityUITests \
             test-without-building 2>&1 | tee "$RUNNER_TEMP/RitliAppUITests.log"
 
+      # App UI tests leave ActivityKit state behind. Its background launches can
+      # race XCTest and start the app without the requested test arguments.
+      - name: Prepare fresh simulator for system UI tests
+        timeout-minutes: 15
+        run: |
+          xcrun simctl shutdown "$IOS_SIMULATOR_ID"
+          xcrun simctl delete "$IOS_SIMULATOR_ID"
+          bash .github/scripts/prepare-ios-simulator.sh
+
       # Hosted simulators can drop the cross-app Settings foreground transition.
       # Its URL is unit-tested, and the complete handoff remains in the local UI suite.
       - name: Run background lifecycle UI tests in isolation
