@@ -44,10 +44,10 @@ xcodebuild -project Ritli.xcodeproj -scheme Ritli -configuration Debug \
 ```
 
 Notes mirrored from `.github/workflows/swift.yml` (the CI pipeline):
-- Unit tests run separately. Ordinary UI tests are grouped into feature classes and run on two isolated simulator clones with `-parallel-testing-enabled YES -parallel-testing-worker-count 2 -only-testing:RitliUITests -skip-testing:RitliUITests/SystemUITests -skip-testing:RitliUITests/LiveActivityUITests`.
+- Unit tests run separately. Ordinary UI tests are grouped into feature classes. CI runs them sequentially on the standard `macos-26` runner: two simulator workers regressed hosted execution despite improving local wall time. Local parallel experiments can use `-parallel-testing-enabled YES -parallel-testing-worker-count 2 -only-testing:RitliUITests -skip-testing:RitliUITests/SystemUITests -skip-testing:RitliUITests/LiveActivityUITests`. CI selects `arch=arm64` explicitly, enables 180-second timeouts for ordinary UI tests, and limits their step to 20 minutes to bound runner-launch hangs. Failure diagnostics, the raw app UI log, and result bundles are uploaded; pipeline failures are preserved with `pipefail`.
 - `SystemUITests` runs sequentially on the original simulator. Only `testOpensAppLanguageSettings` is excluded in CI because hosted simulators can drop the Settings foreground transition; it remains in the full local suite.
 - `LiveActivityUITests` runs separately and sequentially with the existing one-retry simulator recovery — ActivityKit/Dynamic Island system UI tests are flaky on hosted simulators.
-- `RitliUITestCase` contains shared helpers and setup only. Put new app UI tests in feature classes; put cross-app, background, and system UI scenarios in `SystemUITests` or `LiveActivityUITests` so the parallel step does not select them.
+- `RitliUITestCase` contains shared helpers and setup only. Put new app UI tests in feature classes; put cross-app, background, and system UI scenarios in `SystemUITests` or `LiveActivityUITests` so the app UI step does not select them.
 - A separate `test` pass runs `RitliTests/SplashPresentationTests` and `RitliTests/OnboardingStoreTests` against a **Release** configuration build (with `ENABLE_TESTABILITY=YES`) to verify real startup behavior isn't masked by Debug-only code paths.
 - `.github/scripts/prepare-ios-simulator.sh` creates the CI simulator and waits for Xcode to recognize it — not needed locally if you already have a simulator.
 
