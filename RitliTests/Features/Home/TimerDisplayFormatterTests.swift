@@ -28,6 +28,9 @@ struct TimerDisplayFormatterTests {
 
     @Test("Countdown rounds up partial seconds", arguments: [
         (TimeInterval(1_500), "25:00"),
+        (TimeInterval(300), "05:00"),
+        (TimeInterval(900), "15:00"),
+        (TimeInterval(15), "00:15"),
         (TimeInterval(1_499.1), "25:00"),
         (TimeInterval(59), "00:59"),
         (TimeInterval(-1), "00:00"),

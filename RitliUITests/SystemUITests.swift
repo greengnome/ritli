@@ -37,8 +37,9 @@ final class SystemUITests: RitliUITestCase {
             }
             XCUIDevice.shared.press(.home)
             assertAppIsInBackground(app, context: mode)
-            // Allow the 15-second fixture plus notification intelligence processing after expiry.
-            XCTAssertTrue(springboard.staticTexts[title].waitForExistence(timeout: 30))
+            // CI logs show up to 34 seconds in the system notification pipeline
+            // after the 15-second timer fires. Keep checking actual banner delivery.
+            XCTAssertTrue(springboard.staticTexts[title].waitForExistence(timeout: 60))
             addScreenshot(named: "Background timer alert — \(mode)")
             app.activate()
             XCTAssertTrue(app.buttons["home.timer.cancel"].waitForNonExistence(timeout: 2))
