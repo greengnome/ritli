@@ -14,9 +14,9 @@ struct SplashView: View {
             Color(.launchBackground)
                 .ignoresSafeArea()
 
-            TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion || hasFinished)) { context in
+            TimelineView(.animation(minimumInterval: 1.0 / 60, paused: reduceMotion || hasFinished)) { context in
                 SplashMark(
-                    elapsed: reduceMotion ? 0 : max(0, context.date.timeIntervalSince(animationStart))
+                    elapsed: max(0, context.date.timeIntervalSince(animationStart))
                 )
             }
             .frame(width: 160, height: 160)
@@ -50,11 +50,23 @@ private struct SplashMark: View {
 
     let elapsed: TimeInterval
 
-    // The rings turn and draw back into the brand mark over 950 ms, then
-    // hold the finished silhouette before the normal 1.2-second dismissal.
+    // The rings settle from a wound, rotated state into the resting brand
+    // mark over 850 ms (eased, so velocity is zero at both ends), while the
+    // whole mark fades and scales in over the first 320 ms. The silhouette
+    // then holds still until the normal dismissal fade.
+    private var settleProgress: Double {
+        let t = min(elapsed / 0.85, 1)
+        return t * t * (3 - 2 * t)
+    }
+
     private var motion: Double {
-        let phase = min(elapsed.truncatingRemainder(dividingBy: 1.4) / 0.95, 1)
-        return pow(sin(.pi * phase), 2)
+        reduceMotion ? 0 : 1 - settleProgress
+    }
+
+    private var appearProgress: Double {
+        guard !reduceMotion else { return 1 }
+        let t = min(elapsed / 0.32, 1)
+        return t * t * (3 - 2 * t)
     }
 
     private var ringColors: [Color] {
@@ -99,6 +111,8 @@ private struct SplashMark: View {
                 .offset(x: 34 + 6 * motion, y: -30 - 7 * motion)
         }
         .shadow(color: RitliTheme.accent.opacity(0.12 * motion), radius: 12, y: 4)
+        .opacity(appearProgress)
+        .scaleEffect(0.92 + 0.08 * appearProgress)
     }
 }
 
