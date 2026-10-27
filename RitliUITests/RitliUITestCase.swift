@@ -46,16 +46,34 @@ class RitliUITestCase: XCTestCase {
         XCTAssertEqual(result, .completed, diagnostic, file: file, line: line)
     }
 
-    func splashMarkPixels(in screenshot: XCUIScreenshot) throws -> Data {
+    /// Luminance range (0–1) across the centre of the screen, where the
+    /// splash wordmark sits; a blank launch background is close to 0.
+    func splashWordmarkContrast(in screenshot: XCUIScreenshot) throws -> Double {
         let image = try XCTUnwrap(screenshot.image.cgImage)
-        let side = CGFloat(image.width) * 0.55
         let rect = CGRect(
-            x: (CGFloat(image.width) - side) / 2,
-            y: (CGFloat(image.height) - side) / 2,
-            width: side, height: side
+            x: CGFloat(image.width) * 0.2,
+            y: CGFloat(image.height) * 0.4,
+            width: CGFloat(image.width) * 0.6,
+            height: CGFloat(image.height) * 0.2
         ).integral
-        let mark = UIImage(cgImage: try XCTUnwrap(image.cropping(to: rect)))
-        return try XCTUnwrap(mark.pngData())
+        let crop = try XCTUnwrap(image.cropping(to: rect))
+        let width = crop.width, height = crop.height
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let context = try XCTUnwrap(CGContext(
+            data: &pixels, width: width, height: height, bitsPerComponent: 8,
+            bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ))
+        context.draw(crop, in: CGRect(x: 0, y: 0, width: width, height: height))
+        var lowest = 1.0, highest = 0.0
+        for offset in stride(from: 0, to: pixels.count, by: 4) {
+            let luminance = (0.2126 * Double(pixels[offset])
+                + 0.7152 * Double(pixels[offset + 1])
+                + 0.0722 * Double(pixels[offset + 2])) / 255
+            lowest = min(lowest, luminance)
+            highest = max(highest, luminance)
+        }
+        return highest - lowest
     }
 
     func tapOnboardingButtonEdge(in app: XCUIApplication, offset: CGVector) {

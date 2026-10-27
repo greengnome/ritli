@@ -84,7 +84,6 @@ struct RitliApp: App {
                         minimumDisplayDuration: splashMinimumDisplayDuration,
                         onFinished: dismissSplash
                     )
-                    .transition(.opacity)
                     .zIndex(1)
                 }
             }
@@ -113,8 +112,6 @@ struct RitliApp: App {
     }
 
     private func dismissSplash() {
-        withAnimation(.easeOut(duration: 0.22)) {
-            isShowingSplash = false
-        }
+        isShowingSplash = false
     }
 }
