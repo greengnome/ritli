@@ -19,15 +19,15 @@ final class HomeUITests: RitliUITestCase {
         let app = makeApp()
         app.launch()
 
-        for (mode, countdown) in [("Short break", "05:00"), ("Long break", "15:00"), ("Focus", "25:00")] {
-            let menu = app.buttons["home.timer.mode"]
-            XCTAssertTrue(menu.waitForExistence(timeout: 2))
-            menu.tap()
-            let option = app.buttons.matching(identifier: mode).firstMatch
-            XCTAssertTrue(option.waitForExistence(timeout: 2))
+        for (kind, mode, countdown) in [
+            ("shortBreak", "Short break", "05:00"),
+            // Reselect the current mode: the trigger and menu item share a label.
+            ("shortBreak", "Short break", "05:00"),
+            ("longBreak", "Long break", "15:00"),
+            ("focus", "Focus", "25:00")
+        ] {
             // Exercise the menu across the old one-second whole-card refresh boundary.
-            _ = XCTWaiter.wait(for: [XCTestExpectation(description: "Keep the mode menu open")], timeout: 1.2)
-            option.tap()
+            selectTimerMode(kind, titled: mode, in: app, menuOpenDuration: 1.2)
             XCTAssertEqual(app.staticTexts["home.timer.countdown"].label, countdown)
         }
         addScreenshot(named: "Quiet ring — Focus mode menu")

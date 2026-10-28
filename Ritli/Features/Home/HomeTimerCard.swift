@@ -187,5 +187,6 @@ struct HomeTimerCard: View {
                 Image(systemName: mode == kind ? "checkmark" : "circle")
             }
         }
+        .accessibilityIdentifier("home.timer.mode.option.\(mode.rawValue)")
     }
 }

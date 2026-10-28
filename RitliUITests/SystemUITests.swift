@@ -10,16 +10,22 @@ final class SystemUITests: RitliUITestCase {
         app.launch()
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
 
-        for (mode, title) in [("Focus", "Focus complete"), ("Short break", "Break complete"), ("Long break", "Long break complete")] {
-            app.buttons["home.timer.mode"].tap()
-            app.buttons.matching(identifier: mode).firstMatch.tap()
+        for (kind, mode, title) in [
+            ("focus", "Focus", "Focus complete"),
+            ("shortBreak", "Short break", "Break complete"),
+            ("longBreak", "Long break", "Long break complete")
+        ] {
+            XCTAssertTrue(app.wait(for: .runningForeground, timeout: 5))
+            selectTimerMode(kind, titled: mode, in: app)
             let countdown = app.staticTexts["home.timer.countdown"]
             XCTAssertTrue(countdown.waitForExistence(timeout: 5))
             XCTAssertEqual(
                 countdown.label, "00:15",
                 "The \(mode) notification test must start with the 15-second fixture"
             )
-            app.buttons["home.timer.primary"].tap()
+            let primary = app.buttons["home.timer.primary"]
+            XCTAssertTrue(scrollToElement(primary, in: app), "\(mode): Start must be reachable")
+            primary.tap()
             let cancel = app.buttons["home.timer.cancel"]
             let permissionAlert = springboard.alerts["“Ritli” Would Like to Send You Notifications"]
             // Starting the timer awaits notification permission on a fresh install.
@@ -28,7 +34,10 @@ final class SystemUITests: RitliUITestCase {
                 predicate: NSPredicate { _, _ in cancel.exists || permissionAlert.exists },
                 object: nil
             )
-            XCTAssertEqual(XCTWaiter.wait(for: [readyToContinue], timeout: 5), .completed)
+            XCTAssertEqual(
+                XCTWaiter.wait(for: [readyToContinue], timeout: 5), .completed,
+                "\(mode): tapping Start must start the timer or request notification permission"
+            )
             if permissionAlert.exists {
                 permissionAlert.buttons["Allow"].tap()
                 XCTAssertTrue(cancel.waitForExistence(timeout: 5))
@@ -42,6 +51,7 @@ final class SystemUITests: RitliUITestCase {
             XCTAssertTrue(springboard.staticTexts[title].waitForExistence(timeout: 60))
             addScreenshot(named: "Background timer alert — \(mode)")
             app.activate()
+            XCTAssertTrue(app.wait(for: .runningForeground, timeout: 5))
             XCTAssertTrue(app.buttons["home.timer.cancel"].waitForNonExistence(timeout: 2))
         }
     }
