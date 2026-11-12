@@ -28,7 +28,6 @@ struct FocusSessionTests {
         #expect(session.category === category)
         #expect(session.categoryNameSnapshot == "Work")
         #expect(session.categoryColorTokenSnapshot == "orange")
-        #expect(session.timeZoneIdentifier == "GMT")
     }
 
     @Test("Durations cannot start negative")

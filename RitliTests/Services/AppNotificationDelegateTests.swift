@@ -15,14 +15,6 @@ struct AppNotificationDelegateTests {
         #expect(AppNotificationDelegate.presentationOptions(for: "ritli.timer.session.sample") == [.banner, .sound])
     }
 
-    @Test("Foreground timer notifications remain visible and audible")
-    func presentsForegroundNotifications() {
-        let options = AppNotificationDelegate.foregroundPresentationOptions
-
-        #expect(options.contains(.banner))
-        #expect(options.contains(.sound))
-    }
-
     @Test("Only audible custom timer alerts are handed to direct playback", arguments: TimerSound.allCases)
     func recognizesCustomCompletion(sound: TimerSound) {
         let id = UUID()

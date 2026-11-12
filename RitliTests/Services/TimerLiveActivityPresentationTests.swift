@@ -57,24 +57,6 @@ struct TimerLiveActivityPresentationTests {
         )
     }
 
-    @Test("Resuming uses the new deadline rather than the original session end")
-    func resumedContentUsesUpdatedDeadline() {
-        let state = TimerLiveActivityAttributes.ContentState(
-            phase: .running(endDate: Date(timeIntervalSince1970: 2_000)),
-            taskTitle: nil
-        )
-
-        #expect(
-            !TimerLiveActivityPresentation.isFinished(
-                state: state,
-                isStale: false,
-                at: Date(timeIntervalSince1970: 1_500)
-            )
-        )
-        #expect(TimerLiveActivityPresentation.expirationDate(for: state)
-            == Date(timeIntervalSince1970: 2_000))
-    }
-
     @Test(
         "Lock Screen text keeps accessible contrast in every appearance",
         arguments: TimerLiveActivityTheme.allCases

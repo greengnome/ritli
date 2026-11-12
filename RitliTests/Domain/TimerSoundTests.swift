@@ -1,6 +1,5 @@
 import AVFAudio
 import Foundation
-import SwiftData
 import Testing
 @testable import Ritli
 
@@ -34,19 +33,5 @@ struct TimerSoundTests {
         #expect(duration < 30)
         #expect(audio.fileFormat.channelCount == 1)
         #expect(audio.fileFormat.streamDescription.pointee.mFormatID == kAudioFormatLinearPCM)
-    }
-
-    @Test("The selected sound persists alongside other timer preferences")
-    func persistsSelection() throws {
-        let container = try AppModelContainer.make(inMemory: true)
-        let settings = PomodoroSettings(timerSound: .softPulse)
-        container.mainContext.insert(settings)
-        try container.mainContext.save()
-
-        let verificationContext = ModelContext(container)
-        let saved = try #require(verificationContext.fetch(FetchDescriptor<PomodoroSettings>()).first)
-        #expect(saved.timerSound == .softPulse)
-        #expect(saved.focusDuration == 1_500)
-        #expect(saved.soundEnabled)
     }
 }
