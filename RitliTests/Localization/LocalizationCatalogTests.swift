@@ -12,34 +12,33 @@ struct LocalizationCatalogTests {
         #expect(localizations.contains("uk"))
     }
 
-    @Test("Shared copy resolves in English and Ukrainian", arguments: [
+    /// `StringCatalogIntegrityTests` checks the source catalogs; this smoke
+    /// test checks that the compiled `.lproj` tables actually ship them.
+    @Test("Shared copy resolves from each compiled language table", arguments: [
         ("en", "OK"),
         ("uk", "Гаразд"),
     ])
     func resolvesSharedCopy(language: String, expected: String) throws {
-        let resourcePath = try #require(
-            Bundle.main.path(forResource: language, ofType: "lproj")
-        )
-        let localizedBundle = try #require(Bundle(path: resourcePath))
-        let value = String(
-            localized: "common.action.ok",
-            defaultValue: "OK",
-            bundle: localizedBundle,
-            locale: Locale(identifier: language)
-        )
+        let bundle = try TestLocalization.bundle(language: language)
 
-        #expect(value == expected)
+        #expect(
+            bundle.localizedString(forKey: "common.action.ok", value: nil, table: nil)
+                == expected
+        )
     }
 
     @Test("Unsupported languages fall back to English")
-    func fallsBackToDevelopmentLanguage() {
-        let value = String(
-            localized: "common.action.ok",
-            defaultValue: "OK",
-            bundle: .main,
-            locale: Locale(identifier: "fr")
+    func fallsBackToDevelopmentLanguage() throws {
+        let resolved = Bundle.preferredLocalizations(
+            from: Bundle.main.localizations,
+            forPreferences: ["fr"]
         )
 
-        #expect(value == "OK")
+        #expect(resolved.first == "en")
+        let fallback = try TestLocalization.bundle(language: try #require(resolved.first))
+        #expect(
+            fallback.localizedString(forKey: "common.action.ok", value: nil, table: nil)
+                == "OK"
+        )
     }
 }
