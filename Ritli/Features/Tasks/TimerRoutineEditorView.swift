@@ -53,31 +53,31 @@ struct TimerRoutineEditorView: View {
                         defaultValue: "Timer"
                     )
                 ) {
-                    durationPicker(
+                    MinutesPicker(
                         title: String(
                             localized: "settings.timer.focus",
                             defaultValue: "Focus"
                         ),
                         selection: $draft.focusMinutes,
-                        options: TimerSettingsDraft.focusMinuteOptions,
+                        options: TimerDurationOptions.focusMinutes,
                         identifier: "routine.editor.focusDuration"
                     )
-                    durationPicker(
+                    MinutesPicker(
                         title: String(
                             localized: "settings.timer.short_break",
                             defaultValue: "Short break"
                         ),
                         selection: $draft.shortBreakMinutes,
-                        options: TimerSettingsDraft.shortBreakMinuteOptions,
+                        options: TimerDurationOptions.shortBreakMinutes,
                         identifier: "routine.editor.shortBreakDuration"
                     )
-                    durationPicker(
+                    MinutesPicker(
                         title: String(
                             localized: "settings.timer.long_break",
                             defaultValue: "Long break"
                         ),
                         selection: $draft.longBreakMinutes,
-                        options: TimerSettingsDraft.longBreakMinuteOptions,
+                        options: TimerDurationOptions.longBreakMinutes,
                         identifier: "routine.editor.longBreakDuration"
                     )
                 }
@@ -90,13 +90,13 @@ struct TimerRoutineEditorView: View {
                 ) {
                     Picker(
                         String(
-                            localized: "settings.timer.long_break",
-                            defaultValue: "Long break"
+                            localized: "settings.cycle.long_break_frequency",
+                            defaultValue: "Long break frequency"
                         ),
                         selection: $draft.longBreakEvery
                     ) {
                         ForEach(
-                            TimerSettingsDraft.longBreakIntervalOptions,
+                            TimerDurationOptions.longBreakIntervals,
                             id: \.self
                         ) { count in
                             Text(
@@ -164,26 +164,8 @@ struct TimerRoutineEditorView: View {
         }
     }
 
-    private func durationPicker(
-        title: String,
-        selection: Binding<Int>,
-        options: [Int],
-        identifier: String
-    ) -> some View {
-        Picker(title, selection: selection) {
-            ForEach(options, id: \.self) { minutes in
-                Text(verbatim: SettingsPresentation.minutes(minutes))
-                    .tag(minutes)
-            }
-        }
-        .accessibilityIdentifier(identifier)
-    }
-
     private var errorIsPresented: Binding<Bool> {
-        Binding(
-            get: { errorMessage != nil },
-            set: { if !$0 { errorMessage = nil } }
-        )
+        Binding(isPresenting: $errorMessage)
     }
 
     private func save() {

@@ -44,8 +44,8 @@ struct StatsPeriodTests {
         englishDescription: String,
         ukrainianDescription: String
     ) throws {
-        let englishBundle = try localizedBundle(language: "en")
-        let ukrainianBundle = try localizedBundle(language: "uk")
+        let englishBundle = try TestLocalization.bundle(language: "en")
+        let ukrainianBundle = try TestLocalization.bundle(language: "uk")
 
         #expect(period.title(bundle: englishBundle, locale: Locale(identifier: "en")) == englishTitle)
         #expect(period.title(bundle: ukrainianBundle, locale: Locale(identifier: "uk")) == ukrainianTitle)
@@ -53,13 +53,45 @@ struct StatsPeriodTests {
         #expect(period.completedTasksDescription(bundle: ukrainianBundle, locale: Locale(identifier: "uk")) == ukrainianDescription)
     }
 
-    private var testCalendar: Calendar {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
-        calendar.locale = Locale(identifier: "en_US_POSIX")
-        calendar.firstWeekday = 2
-        return calendar
+    @Test("Daylight-saving days have 23 or 25 hourly buckets", arguments: [
+        (3, 8, 23),
+        (11, 1, 25),
+    ])
+    func dstDayBuckets(month: Int, day: Int, expected: Int) {
+        let losAngeles = TestCalendar.zoned("America/Los_Angeles")
+        let now = TestCalendar.date(2026, month, day, 12, in: losAngeles)
+
+        #expect(StatsPeriod.day.bucketIntervals(containing: now, calendar: losAngeles).count == expected)
     }
+
+    @Test("Weeks follow the calendar's first weekday", arguments: [
+        (1, 16), // Sunday-first (en_US): the week of Sat 22 Aug starts Sun 16 Aug
+        (2, 17), // Monday-first: it starts Mon 17 Aug
+    ])
+    func weekStartFollowsFirstWeekday(firstWeekday: Int, expectedStartDay: Int) {
+        let calendar = TestCalendar.utc(firstWeekday: firstWeekday)
+        let saturday = TestCalendar.date(2026, 8, 22, 12, in: calendar)
+
+        let week = StatsPeriod.week.interval(containing: saturday, calendar: calendar)
+
+        #expect(week.start == TestCalendar.date(2026, 8, expectedStartDay, in: calendar))
+        #expect(week.duration == 7 * 86_400)
+    }
+
+    @Test("The comparable part of last month is clamped to its end", arguments: [
+        (31, 2, 28), // 31 March → up to 28 Feb 12:00
+        (15, 2, 15), // 15 March → up to 15 Feb 12:00
+    ])
+    func previousElapsedMonth(day: Int, expectedMonth: Int, expectedDay: Int) {
+        let now = date(2026, 3, day, 12)
+
+        let previous = StatsPeriod.month.previousElapsedInterval(containing: now, calendar: testCalendar)
+
+        #expect(previous.start == date(2026, 2, 1))
+        #expect(previous.end == date(2026, expectedMonth, expectedDay, 12))
+    }
+
+    private let testCalendar = TestCalendar.utc()
 
     private func date(
         _ year: Int,
@@ -67,20 +99,6 @@ struct StatsPeriodTests {
         _ day: Int,
         _ hour: Int = 0
     ) -> Date {
-        testCalendar.date(
-            from: DateComponents(
-                year: year,
-                month: month,
-                day: day,
-                hour: hour
-            )
-        )!
-    }
-
-    private func localizedBundle(language: String) throws -> Bundle {
-        let resourcePath = try #require(
-            Bundle.main.path(forResource: language, ofType: "lproj")
-        )
-        return try #require(Bundle(path: resourcePath))
+        TestCalendar.date(year, month, day, hour, in: testCalendar)
     }
 }

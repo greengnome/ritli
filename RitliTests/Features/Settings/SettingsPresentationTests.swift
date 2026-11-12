@@ -5,8 +5,8 @@ import Testing
 struct SettingsPresentationTests {
     @Test("Dynamic Settings values follow English and Ukrainian grammar")
     func localizesDynamicValues() throws {
-        let englishBundle = try localizedBundle(language: "en")
-        let ukrainianBundle = try localizedBundle(language: "uk")
+        let englishBundle = try TestLocalization.bundle(language: "en")
+        let ukrainianBundle = try TestLocalization.bundle(language: "uk")
 
         #expect(
             SettingsPresentation.minutes(
@@ -40,7 +40,7 @@ struct SettingsPresentationTests {
 
     @Test("Appearance and toggle values resolve in Ukrainian")
     func localizesChoices() throws {
-        let bundle = try localizedBundle(language: "uk")
+        let bundle = try TestLocalization.bundle(language: "uk")
         let locale = Locale(identifier: "uk")
 
         #expect(AppAppearance.system.title(bundle: bundle, locale: locale) == "Системна")
@@ -60,12 +60,5 @@ struct SettingsPresentationTests {
                 locale: locale
             ) == "Вимкнено"
         )
-    }
-
-    private func localizedBundle(language: String) throws -> Bundle {
-        let resourcePath = try #require(
-            Bundle.main.path(forResource: language, ofType: "lproj")
-        )
-        return try #require(Bundle(path: resourcePath))
     }
 }

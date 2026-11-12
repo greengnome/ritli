@@ -10,6 +10,8 @@ struct FocusHistoryView: View {
     private let calendar = Calendar.current
 
     var body: some View {
+        let day = selectedDay
+
         ScrollView {
             VStack(spacing: 18) {
                 DatePicker(
@@ -31,10 +33,10 @@ struct FocusHistoryView: View {
                     Text(selectedDate, format: .dateTime.weekday(.wide).month(.wide).day())
                         .font(.title3.weight(.semibold))
 
-                    FocusHistorySummaryCard(day: selectedDay)
+                    FocusHistorySummaryCard(day: day)
                 }
 
-                sessionSection
+                sessionSection(day)
             }
             .padding(.horizontal, RitliTheme.screenPadding)
             .padding(.bottom, 24)
@@ -66,12 +68,12 @@ struct FocusHistoryView: View {
     }
 
     @ViewBuilder
-    private var sessionSection: some View {
+    private func sessionSection(_ day: FocusHistoryDay) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(.homeSummarySessions)
                 .font(.headline)
 
-            if selectedDay.entries.isEmpty {
+            if day.entries.isEmpty {
                 ContentUnavailableView(
                     String(localized: .historyEmptyTitle),
                     systemImage: "clock.badge.xmark",
@@ -85,12 +87,12 @@ struct FocusHistoryView: View {
                 .accessibilityIdentifier("history.empty")
             } else {
                 VStack(spacing: 0) {
-                    ForEach(Array(selectedDay.entries.enumerated()), id: \.element.id) {
+                    ForEach(Array(day.entries.enumerated()), id: \.element.id) {
                         index,
                         entry in
                         FocusHistoryRow(entry: entry)
 
-                        if index < selectedDay.entries.count - 1 {
+                        if index < day.entries.count - 1 {
                             Divider()
                                 .padding(.leading, 80)
                         }

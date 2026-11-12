@@ -15,8 +15,12 @@ struct StatsCalculator {
     ) -> StatsSnapshot {
         let currentInterval = period.interval(containing: now, calendar: calendar)
         let previousInterval = period.previousInterval(containing: now, calendar: calendar)
+        let comparableInterval = period.previousElapsedInterval(
+            containing: now,
+            calendar: calendar
+        )
         let currentSessions = focusSessions(sessions, in: currentInterval)
-        let previousSessions = focusSessions(sessions, in: previousInterval)
+        let previousSessions = focusSessions(sessions, in: comparableInterval)
         let current = metrics(
             sessions: currentSessions,
             tasks: tasks,
@@ -25,7 +29,7 @@ struct StatsCalculator {
         let previous = metrics(
             sessions: previousSessions,
             tasks: tasks,
-            interval: previousInterval
+            interval: comparableInterval
         )
 
         return StatsSnapshot(
@@ -59,8 +63,11 @@ struct StatsCalculator {
         _ sessions: [FocusSession],
         in interval: DateInterval
     ) -> [FocusSession] {
+        // Only finished sessions have a final duration, matching History.
         sessions.filter {
-            $0.kind == .focus && contains($0.startedAt, in: interval)
+            $0.kind == .focus
+                && $0.state.isTerminal
+                && contains($0.startedAt, in: interval)
         }
     }
 
@@ -87,7 +94,8 @@ struct StatsCalculator {
         }
 
         let percent = ((current - previous) / previous) * 100
-        return abs(percent) < 0.000_001
+        // Shown as a whole percentage; anything that rounds to 0% is no change.
+        return Int(percent.rounded()) == 0
             ? .unchanged
             : .change(percent: percent)
     }

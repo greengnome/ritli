@@ -1,3 +1,4 @@
+import Foundation
 import SwiftData
 import Testing
 @testable import Ritli
@@ -61,10 +62,47 @@ struct FocusHistoryCleanerTests {
         #expect(remainingSessions.first === paused)
         #expect(task.sessions.count == 1)
         #expect(task.sessions.first === paused)
+        // The task keeps its progress although the record is gone.
+        #expect(task.clearedPomodoroCount == 1)
+        #expect(task.completedPomodoros == 1)
         #expect(try context.fetch(FetchDescriptor<FocusTask>()).count == 1)
         #expect(try context.fetch(FetchDescriptor<FocusCategory>()).count == 1)
         #expect(try context.fetch(FetchDescriptor<PomodoroSettings>()).first === settings)
         #expect(try context.fetch(FetchDescriptor<PomodoroCycleState>()).first === cycle)
+    }
+
+    @Test("A task reaches its estimate after history was cleared")
+    func completesTaskAcrossClearedHistory() throws {
+        let container = try AppModelContainer.make(inMemory: true)
+        let context = container.mainContext
+        let task = FocusTask(title: "Write proposal", estimatedPomodoros: 2)
+        let first = FocusSession(
+            kind: .focus,
+            state: .completed,
+            plannedDuration: 1_500,
+            actualActiveDuration: 1_500,
+            task: task
+        )
+        context.insert(task)
+        context.insert(first)
+        try context.save()
+
+        try FocusHistoryCleaner.clearRecordedSessions(in: context)
+        #expect(!task.completeIfEstimateReached())
+
+        let finish = Date(timeIntervalSince1970: 50_000)
+        let second = FocusSession(
+            kind: .focus,
+            state: .completed,
+            finishedAt: finish,
+            plannedDuration: 1_500,
+            actualActiveDuration: 1_500,
+            task: task
+        )
+        context.insert(second)
+
+        #expect(task.completeIfEstimateReached())
+        #expect(task.completedAt == finish)
     }
 
     @Test("Clearing empty history succeeds without changes")

@@ -3,7 +3,7 @@ import UserNotifications
 
 @MainActor
 final class LocalTimerNotificationScheduler: TimerNotificationScheduling {
-    static let identifierPrefix = "ritli.timer.session"
+    nonisolated static let identifierPrefix = "ritli.timer.session"
 
     private let center: any UserNotificationCenterClient
     private let dateProvider: any DateProviding

@@ -103,4 +103,23 @@ struct FocusTaskTests {
         #expect(task.estimatedPomodoros == 4)
         #expect(!task.isCompleted)
     }
+
+    @Test("Progress cleared from history still counts toward the estimate")
+    func clearedProgressCounts() {
+        let task = FocusTask(title: "Essay", estimatedPomodoros: 3)
+        task.clearedPomodoroCount = 2
+        #expect(task.completedPomodoros == 2)
+        #expect(!task.completeIfEstimateReached())
+
+        let finish = Date(timeIntervalSince1970: 70_000)
+        task.sessions.append(FocusSession(
+            kind: .focus,
+            state: .completed,
+            finishedAt: finish,
+            plannedDuration: 1_500
+        ))
+
+        #expect(task.completeIfEstimateReached())
+        #expect(task.completedAt == finish)
+    }
 }

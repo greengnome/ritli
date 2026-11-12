@@ -6,8 +6,4 @@ struct FocusHistoryDay: Equatable, Sendable {
     let completedSessions: Int
     let completedTasks: Int
     let entries: [FocusHistoryEntry]
-
-    var isEmpty: Bool {
-        entries.isEmpty && completedTasks == 0
-    }
 }

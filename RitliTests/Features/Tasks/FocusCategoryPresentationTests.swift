@@ -19,10 +19,7 @@ struct FocusCategoryPresentationTests {
         language: String,
         expected: String
     ) throws {
-        let resourcePath = try #require(
-            Bundle.main.path(forResource: language, ofType: "lproj")
-        )
-        let localizedBundle = try #require(Bundle(path: resourcePath))
+        let localizedBundle = try TestLocalization.bundle(language: language)
 
         let value = FocusCategoryNamePresentation.displayName(
             for: storedName,
@@ -35,10 +32,7 @@ struct FocusCategoryPresentationTests {
 
     @Test("User-defined category names are never translated")
     func preservesUserDefinedName() throws {
-        let resourcePath = try #require(
-            Bundle.main.path(forResource: "uk", ofType: "lproj")
-        )
-        let localizedBundle = try #require(Bundle(path: resourcePath))
+        let localizedBundle = try TestLocalization.bundle(language: "uk")
 
         let value = FocusCategoryNamePresentation.displayName(
             for: "Writing",

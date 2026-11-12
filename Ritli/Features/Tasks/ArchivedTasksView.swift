@@ -128,17 +128,11 @@ struct ArchivedTasksView: View {
     }
 
     private var deletionConfirmationIsPresented: Binding<Bool> {
-        Binding(
-            get: { taskPendingDeletion != nil },
-            set: { if !$0 { taskPendingDeletion = nil } }
-        )
+        Binding(isPresenting: $taskPendingDeletion)
     }
 
     private var errorIsPresented: Binding<Bool> {
-        Binding(
-            get: { errorMessage != nil },
-            set: { if !$0 { errorMessage = nil } }
-        )
+        Binding(isPresenting: $errorMessage)
     }
 
     private func restore(_ task: FocusTask) {

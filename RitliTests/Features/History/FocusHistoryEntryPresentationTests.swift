@@ -5,7 +5,7 @@ import Testing
 struct FocusHistoryEntryPresentationTests {
     @Test("Assigned completed focus resolves in Ukrainian")
     func presentsAssignedCompletedFocus() throws {
-        let bundle = try localizedBundle(language: "uk")
+        let bundle = try TestLocalization.bundle(language: "uk")
         let entry = makeEntry(
             state: .completed,
             taskTitle: "План проєкту",
@@ -45,7 +45,7 @@ struct FocusHistoryEntryPresentationTests {
         expectedTitle: String,
         expectedDetail: String
     ) throws {
-        let bundle = try localizedBundle(language: language)
+        let bundle = try TestLocalization.bundle(language: language)
         let entry = makeEntry(state: .cancelled)
 
         #expect(
@@ -79,12 +79,5 @@ struct FocusHistoryEntryPresentationTests {
             categoryName: categoryName,
             categoryColorToken: nil
         )
-    }
-
-    private func localizedBundle(language: String) throws -> Bundle {
-        let resourcePath = try #require(
-            Bundle.main.path(forResource: language, ofType: "lproj")
-        )
-        return try #require(Bundle(path: resourcePath))
     }
 }

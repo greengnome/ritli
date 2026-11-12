@@ -49,7 +49,7 @@ struct FocusHistoryCalculator {
             startedAt: session.startedAt,
             focusTime: session.actualActiveDuration,
             state: session.state,
-            taskTitle: session.task?.title,
+            taskTitle: session.task?.title ?? session.taskTitleSnapshot,
             categoryName: session.categoryNameSnapshot ?? session.category?.name,
             categoryColorToken: session.categoryColorTokenSnapshot
                 ?? session.category?.colorToken

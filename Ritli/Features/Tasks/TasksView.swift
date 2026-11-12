@@ -186,10 +186,7 @@ struct TasksView: View {
     }
 
     private var errorIsPresented: Binding<Bool> {
-        Binding(
-            get: { errorMessage != nil },
-            set: { if !$0 { errorMessage = nil } }
-        )
+        Binding(isPresenting: $errorMessage)
     }
 
     private func toggleCompletion(of task: FocusTask) {

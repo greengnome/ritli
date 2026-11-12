@@ -88,6 +88,25 @@ struct FocusHistoryCalculatorTests {
         #expect(day.entries[1].categoryName == nil)
     }
 
+    @Test("Entries keep the task title after the task is deleted")
+    func keepsTitleOfDeletedTask() {
+        let task = FocusTask(title: "Old project")
+        let session = FocusSession(
+            kind: .focus,
+            state: .completed,
+            startedAt: date(2026, 8, 15, 9),
+            plannedDuration: 1_500,
+            actualActiveDuration: 1_500,
+            task: task,
+            timeZone: calendar.timeZone
+        )
+        session.task = nil
+
+        let day = calculator.day(containing: date(2026, 8, 15), sessions: [session], tasks: [])
+
+        #expect(day.entries.first?.taskTitle == "Old project")
+    }
+
     @Test("The exact end of a day belongs only to the next day")
     func excludesEndBoundary() {
         let midnight = focusSession(
@@ -106,23 +125,21 @@ struct FocusHistoryCalculatorTests {
             tasks: [task]
         )
 
-        #expect(day.isEmpty)
+        #expect(day.entries.isEmpty)
         #expect(day.focusTime == 0)
         #expect(day.completedSessions == 0)
         #expect(day.completedTasks == 0)
     }
 
-    @Test("Calendar days respect daylight-saving transitions")
-    func respectsDaylightSavingTime() {
-        var losAngeles = Calendar(identifier: .gregorian)
-        losAngeles.timeZone = TimeZone(identifier: "America/Los_Angeles")!
+    @Test("Calendar days respect daylight-saving transitions", arguments: [
+        (3, 8, 23.0),  // spring forward
+        (11, 1, 25.0), // fall back
+    ])
+    func respectsDaylightSavingTime(month: Int, day transitionDay: Int, hours: Double) {
+        let losAngeles = TestCalendar.zoned("America/Los_Angeles")
         let calculator = FocusHistoryCalculator(calendar: losAngeles)
-        let springForwardDay = losAngeles.date(
-            from: DateComponents(year: 2026, month: 3, day: 8, hour: 12)
-        )!
-        let sessionDate = losAngeles.date(
-            from: DateComponents(year: 2026, month: 3, day: 8, hour: 3)
-        )!
+        let transitionNoon = TestCalendar.date(2026, month, transitionDay, 12, in: losAngeles)
+        let sessionDate = TestCalendar.date(2026, month, transitionDay, 3, in: losAngeles)
         let session = FocusSession(
             kind: .focus,
             state: .completed,
@@ -133,22 +150,16 @@ struct FocusHistoryCalculatorTests {
         )
 
         let day = calculator.day(
-            containing: springForwardDay,
+            containing: transitionNoon,
             sessions: [session],
             tasks: []
         )
 
-        #expect(day.interval.duration == 23 * 60 * 60)
+        #expect(day.interval.duration == hours * 60 * 60)
         #expect(day.entries.map(\.id) == [session.id])
     }
 
-    private var calendar: Calendar {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
-        calendar.locale = Locale(identifier: "en_US_POSIX")
-        calendar.firstWeekday = 2
-        return calendar
-    }
+    private let calendar = TestCalendar.utc()
 
     private var calculator: FocusHistoryCalculator {
         FocusHistoryCalculator(calendar: calendar)
@@ -173,15 +184,9 @@ struct FocusHistoryCalculatorTests {
         _ year: Int,
         _ month: Int,
         _ day: Int,
-        _ hour: Int = 0
+        _ hour: Int = 0,
+        _ minute: Int = 0
     ) -> Date {
-        calendar.date(
-            from: DateComponents(
-                year: year,
-                month: month,
-                day: day,
-                hour: hour
-            )
-        )!
+        TestCalendar.date(year, month, day, hour, minute, in: calendar)
     }
 }

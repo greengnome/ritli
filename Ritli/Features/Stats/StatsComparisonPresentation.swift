@@ -22,6 +22,12 @@ struct StatsComparisonPresentation: Equatable, Sendable {
             locale: locale
         )
 
+        var comparison = comparison
+        if case let .change(percent) = comparison, Int(percent.rounded()) == 0 {
+            // "0%" with an up or down arrow would contradict itself.
+            comparison = .unchanged
+        }
+
         switch comparison {
         case .unavailable:
             return StatsComparisonPresentation(

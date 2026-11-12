@@ -8,6 +8,7 @@ struct ContentView: View {
 
     @State private var selectedTab: AppTab
     @State private var timerError: String?
+    @State private var isNotificationsOffAlertPresented = false
 
     init() {
         #if DEBUG
@@ -87,49 +88,31 @@ struct ContentView: View {
         } message: {
             Text(timerError ?? String(localized: .commonErrorTryAgain))
         }
-        .task {
-            await synchronizeNotificationPreference()
-        }
+        .notificationsOffAlert(isPresented: $isNotificationsOffAlertPresented)
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
-            await monitorTimer()
-        }
-        .onChange(of: scenePhase) {
-            if scenePhase == .active {
-                Task { await synchronizeNotificationPreference() }
+            await synchronizeNotificationPreference()
+            await TimerRefreshLoop().run(engine: timerEngine) { error in
+                timerError = error.localizedDescription
             }
         }
     }
 
     private var timerErrorIsPresented: Binding<Bool> {
-        Binding(
-            get: { timerError != nil },
-            set: { if !$0 { timerError = nil } }
-        )
-    }
-
-    private func monitorTimer() async {
-        var isFirstRefresh = true
-        while !Task.isCancelled {
-            do {
-                // Reconcile a timer that expired while away without replaying its alert.
-                try timerEngine.refresh(playCompletionSound: !isFirstRefresh)
-                isFirstRefresh = false
-            } catch {
-                timerError = error.localizedDescription
-            }
-
-            do {
-                try await Task.sleep(for: .seconds(1))
-            } catch {
-                return
-            }
-        }
+        Binding(isPresenting: $timerError)
     }
 
     private func startFocus(on task: FocusTask) {
         Task { @MainActor in
-            await requestNotificationPermissionIfNeeded()
+            do {
+                let readiness = try await TimerNotificationPreference.prepareForTimerStart(
+                    permissions: notificationPermissionService,
+                    engine: timerEngine
+                )
+                isNotificationsOffAlertPresented = readiness == .permissionDenied
+            } catch {
+                timerError = error.localizedDescription
+            }
 
             do {
                 try timerEngine.startFocus(task: task)
@@ -140,32 +123,12 @@ struct ContentView: View {
         }
     }
 
-    private func requestNotificationPermissionIfNeeded() async {
-        guard timerEngine.settings.notificationsEnabled else { return }
-
-        do {
-            let isAuthorized = try await notificationPermissionService
-                .requestAuthorizationIfNeeded()
-            if !isAuthorized {
-                try timerEngine.setNotificationsEnabled(false)
-            }
-        } catch {
-            try? timerEngine.setNotificationsEnabled(false)
-            timerError = error.localizedDescription
-        }
-    }
-
     private func synchronizeNotificationPreference() async {
-        await notificationPermissionService.refreshAuthorizationStatus()
-        guard
-            notificationPermissionService.isDenied,
-            timerEngine.settings.notificationsEnabled
-        else {
-            return
-        }
-
         do {
-            try timerEngine.setNotificationsEnabled(false)
+            try await TimerNotificationPreference.disableIfDenied(
+                permissions: notificationPermissionService,
+                engine: timerEngine
+            )
         } catch {
             timerError = error.localizedDescription
         }

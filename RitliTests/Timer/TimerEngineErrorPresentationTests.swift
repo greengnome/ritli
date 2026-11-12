@@ -30,8 +30,8 @@ struct TimerEngineErrorPresentationTests {
         english: String,
         ukrainian: String
     ) throws {
-        let englishBundle = try localizedBundle(language: "en")
-        let ukrainianBundle = try localizedBundle(language: "uk")
+        let englishBundle = try TestLocalization.bundle(language: "en")
+        let ukrainianBundle = try TestLocalization.bundle(language: "uk")
 
         #expect(
             error.message(
@@ -45,12 +45,5 @@ struct TimerEngineErrorPresentationTests {
                 locale: Locale(identifier: "uk")
             ) == ukrainian
         )
-    }
-
-    private func localizedBundle(language: String) throws -> Bundle {
-        let resourcePath = try #require(
-            Bundle.main.path(forResource: language, ofType: "lproj")
-        )
-        return try #require(Bundle(path: resourcePath))
     }
 }

@@ -1,6 +1,24 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "settings.cycle.long_break_frequency" : {
+      "comment" : "Picker label for how many focus sessions come before a long break.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Long break frequency"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Частота довгої перерви"
+          }
+        }
+      }
+    },
     "time.duration.session_minutes": {
       "comment": "Planned duration shown above the timer.",
       "extractionState": "manual",
@@ -4164,24 +4182,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lldm"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld хв"
-          }
-        }
-      }
-    },
-    "time.duration.minutes" : {
-      "comment" : "A timer's planned duration in whole minutes.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld min"
           }
         },
         "uk" : {

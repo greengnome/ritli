@@ -20,7 +20,7 @@ struct TimerDisplayFormatterTests {
         ("uk", "Сесія 25 хв"),
     ])
     func sessionDurationLabel(language: String, expected: String) throws {
-        let bundle = try localizedBundle(language: language)
+        let bundle = try TestLocalization.bundle(language: language)
         #expect(TimerDisplayFormatter.sessionDurationLabel(
             1_500, bundle: bundle, locale: Locale(identifier: language)
         ) == expected)
@@ -45,8 +45,16 @@ struct TimerDisplayFormatterTests {
         (TimeInterval(2 * 60 * 60), "2h"),
         (TimeInterval(2 * 60 * 60 + 15 * 60), "2h 15m"),
     ])
-    func focusedTime(interval: TimeInterval, expected: String) {
-        #expect(TimerDisplayFormatter.focusedTime(interval) == expected)
+    func focusedTime(interval: TimeInterval, expected: String) throws {
+        let bundle = try TestLocalization.bundle(language: "en")
+
+        #expect(
+            TimerDisplayFormatter.focusedTime(
+                interval,
+                bundle: bundle,
+                locale: Locale(identifier: "en")
+            ) == expected
+        )
     }
 
     @Test("Compact time resolves in Ukrainian", arguments: [
@@ -59,29 +67,13 @@ struct TimerDisplayFormatterTests {
         interval: TimeInterval,
         expected: String
     ) throws {
-        let bundle = try localizedBundle(language: "uk")
+        let bundle = try TestLocalization.bundle(language: "uk")
 
         #expect(
             TimerDisplayFormatter.focusedTime(
                 interval,
                 bundle: bundle,
                 locale: Locale(identifier: "uk")
-            ) == expected
-        )
-    }
-
-    @Test("Timer duration resolves in each supported language", arguments: [
-        ("en", "25 min"),
-        ("uk", "25 хв"),
-    ])
-    func durationLabel(language: String, expected: String) throws {
-        let bundle = try localizedBundle(language: language)
-
-        #expect(
-            TimerDisplayFormatter.durationLabel(
-                25 * 60,
-                bundle: bundle,
-                locale: Locale(identifier: language)
             ) == expected
         )
     }
@@ -99,7 +91,7 @@ struct TimerDisplayFormatterTests {
         count: Int,
         expected: String
     ) throws {
-        let bundle = try localizedBundle(language: language)
+        let bundle = try TestLocalization.bundle(language: language)
 
         #expect(
             TimerDisplayFormatter.sessionCount(
@@ -108,12 +100,5 @@ struct TimerDisplayFormatterTests {
                 locale: Locale(identifier: language)
             ) == expected
         )
-    }
-
-    private func localizedBundle(language: String) throws -> Bundle {
-        let resourcePath = try #require(
-            Bundle.main.path(forResource: language, ofType: "lproj")
-        )
-        return try #require(Bundle(path: resourcePath))
     }
 }

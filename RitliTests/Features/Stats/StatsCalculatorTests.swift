@@ -165,13 +165,87 @@ struct StatsCalculatorTests {
         #expect(snapshot.buckets.allSatisfy { $0.focusTime == 0 })
     }
 
-    private var calendar: Calendar {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
-        calendar.locale = Locale(identifier: "en_US_POSIX")
-        calendar.firstWeekday = 2
-        return calendar
+    @Test("The comparison uses the same elapsed part of the previous period")
+    func comparesWithElapsedPartOfPreviousPeriod() {
+        // Monday 9:00 vs last week up to Monday 9:00, not all of last week.
+        let now = date(2026, 8, 17, 9)
+        let lastMondayMorning = focusSession(
+            state: .completed,
+            startedAt: date(2026, 8, 10, 8),
+            activeDuration: 1_500
+        )
+        let lastWednesday = focusSession(
+            state: .completed,
+            startedAt: date(2026, 8, 12, 10),
+            activeDuration: 1_500
+        )
+        let thisMonday = focusSession(
+            state: .completed,
+            startedAt: date(2026, 8, 17, 8),
+            activeDuration: 1_500
+        )
+
+        let snapshot = calculator.snapshot(
+            sessions: [lastMondayMorning, lastWednesday, thisMonday],
+            tasks: [FocusTask(title: "Later", completedAt: date(2026, 8, 11, 9))],
+            period: .week,
+            now: now
+        )
+
+        #expect(snapshot.previous.completedSessions == 1)
+        #expect(snapshot.previous.completedTasks == 0)
+        #expect(snapshot.completedSessionsComparison == .unchanged)
+        #expect(snapshot.previousInterval.duration == 7 * 86_400)
     }
+
+    @Test("Running and paused sessions are left out until they finish")
+    func excludesUnfinishedSessions() {
+        let running = focusSession(
+            state: .running,
+            startedAt: date(2026, 8, 15, 9),
+            activeDuration: 0
+        )
+        let paused = focusSession(
+            state: .paused,
+            startedAt: date(2026, 8, 15, 10),
+            activeDuration: 720
+        )
+
+        let snapshot = calculator.snapshot(
+            sessions: [running, paused],
+            tasks: [],
+            period: .day,
+            now: date(2026, 8, 15, 18)
+        )
+
+        #expect(snapshot.current.focusTime == 0)
+        #expect(snapshot.categories.isEmpty)
+    }
+
+    @Test("A change that rounds to 0% is reported as unchanged")
+    func treatsRoundedZeroAsUnchanged() {
+        let today = focusSession(
+            state: .completed,
+            startedAt: date(2026, 8, 15, 9),
+            activeDuration: 996
+        )
+        let yesterday = focusSession(
+            state: .completed,
+            startedAt: date(2026, 8, 14, 9),
+            activeDuration: 1_000
+        )
+
+        let snapshot = calculator.snapshot(
+            sessions: [today, yesterday],
+            tasks: [],
+            period: .day,
+            now: date(2026, 8, 15, 18)
+        )
+
+        #expect(snapshot.focusTimeComparison == .unchanged)
+    }
+
+    private let calendar = TestCalendar.utc()
 
     private var calculator: StatsCalculator {
         StatsCalculator(calendar: calendar)
@@ -201,14 +275,6 @@ struct StatsCalculatorTests {
         _ hour: Int = 0,
         _ minute: Int = 0
     ) -> Date {
-        calendar.date(
-            from: DateComponents(
-                year: year,
-                month: month,
-                day: day,
-                hour: hour,
-                minute: minute
-            )
-        )!
+        TestCalendar.date(year, month, day, hour, minute, in: calendar)
     }
 }

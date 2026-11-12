@@ -31,18 +31,18 @@ struct TimerRoutineDraft: Equatable {
         if let routine {
             self.init(
                 name: routine.name,
-                focusMinutes: Self.minutes(from: routine.focusDuration),
-                shortBreakMinutes: Self.minutes(from: routine.shortBreakDuration),
-                longBreakMinutes: Self.minutes(from: routine.longBreakDuration),
+                focusMinutes: TimerDurationOptions.minutes(from: routine.focusDuration),
+                shortBreakMinutes: TimerDurationOptions.minutes(from: routine.shortBreakDuration),
+                longBreakMinutes: TimerDurationOptions.minutes(from: routine.longBreakDuration),
                 longBreakEvery: routine.longBreakEvery,
                 autoStartBreaks: routine.autoStartBreaks,
                 autoStartFocus: routine.autoStartFocus
             )
         } else if let defaults {
             self.init(
-                focusMinutes: Self.minutes(from: defaults.focusDuration),
-                shortBreakMinutes: Self.minutes(from: defaults.shortBreakDuration),
-                longBreakMinutes: Self.minutes(from: defaults.longBreakDuration),
+                focusMinutes: TimerDurationOptions.minutes(from: defaults.focusDuration),
+                shortBreakMinutes: TimerDurationOptions.minutes(from: defaults.shortBreakDuration),
+                longBreakMinutes: TimerDurationOptions.minutes(from: defaults.longBreakDuration),
                 longBreakEvery: defaults.longBreakEvery,
                 autoStartBreaks: defaults.autoStartBreaks,
                 autoStartFocus: defaults.autoStartFocus
@@ -63,9 +63,9 @@ struct TimerRoutineDraft: Equatable {
     func makeRoutine() -> TimerRoutine {
         TimerRoutine(
             name: normalizedName,
-            focusDuration: Self.duration(from: focusMinutes),
-            shortBreakDuration: Self.duration(from: shortBreakMinutes),
-            longBreakDuration: Self.duration(from: longBreakMinutes),
+            focusDuration: TimerDurationOptions.duration(fromMinutes: focusMinutes),
+            shortBreakDuration: TimerDurationOptions.duration(fromMinutes: shortBreakMinutes),
+            longBreakDuration: TimerDurationOptions.duration(fromMinutes: longBreakMinutes),
             longBreakEvery: longBreakEvery,
             autoStartBreaks: autoStartBreaks,
             autoStartFocus: autoStartFocus
@@ -74,19 +74,11 @@ struct TimerRoutineDraft: Equatable {
 
     func apply(to routine: TimerRoutine) {
         routine.name = normalizedName
-        routine.focusDuration = Self.duration(from: focusMinutes)
-        routine.shortBreakDuration = Self.duration(from: shortBreakMinutes)
-        routine.longBreakDuration = Self.duration(from: longBreakMinutes)
+        routine.focusDuration = TimerDurationOptions.duration(fromMinutes: focusMinutes)
+        routine.shortBreakDuration = TimerDurationOptions.duration(fromMinutes: shortBreakMinutes)
+        routine.longBreakDuration = TimerDurationOptions.duration(fromMinutes: longBreakMinutes)
         routine.longBreakEvery = max(1, longBreakEvery)
         routine.autoStartBreaks = autoStartBreaks
         routine.autoStartFocus = autoStartFocus
-    }
-
-    private static func minutes(from duration: TimeInterval) -> Int {
-        max(1, Int((duration / 60).rounded()))
-    }
-
-    private static func duration(from minutes: Int) -> TimeInterval {
-        TimeInterval(max(1, minutes) * 60)
     }
 }

@@ -5,10 +5,13 @@ import Testing
 @MainActor
 struct StatsComparisonPresentationTests {
     @Test("Comparison copy uses the selected period")
-    func usesPeriodComparisonLabels() {
+    func usesPeriodComparisonLabels() throws {
+        let english = try TestLocalization.bundle(language: "en")
         let presentation = StatsComparisonPresentation.make(
             comparison: .change(percent: 18.4),
-            period: .week
+            period: .week,
+            bundle: english,
+            locale: Locale(identifier: "en")
         )
 
         #expect(presentation.text == "18% vs last week")
@@ -17,10 +20,13 @@ struct StatsComparisonPresentationTests {
     }
 
     @Test("Negative comparisons use absolute copy and a negative tone")
-    func presentsNegativeChanges() {
+    func presentsNegativeChanges() throws {
+        let english = try TestLocalization.bundle(language: "en")
         let presentation = StatsComparisonPresentation.make(
             comparison: .change(percent: -12.8),
-            period: .month
+            period: .month,
+            bundle: english,
+            locale: Locale(identifier: "en")
         )
 
         #expect(presentation.text == "13% vs last month")
@@ -29,14 +35,19 @@ struct StatsComparisonPresentationTests {
     }
 
     @Test("Zero-baseline states never display an infinite percentage")
-    func presentsZeroBaselineStates() {
+    func presentsZeroBaselineStates() throws {
+        let english = try TestLocalization.bundle(language: "en")
         let newValue = StatsComparisonPresentation.make(
             comparison: .new,
-            period: .day
+            period: .day,
+            bundle: english,
+            locale: Locale(identifier: "en")
         )
         let unavailable = StatsComparisonPresentation.make(
             comparison: .unavailable,
-            period: .year
+            period: .year,
+            bundle: english,
+            locale: Locale(identifier: "en")
         )
 
         #expect(newValue.text == "New vs yesterday")
@@ -47,7 +58,7 @@ struct StatsComparisonPresentationTests {
 
     @Test("Comparison copy resolves in Ukrainian")
     func localizesComparisons() throws {
-        let bundle = try localizedBundle(language: "uk")
+        let bundle = try TestLocalization.bundle(language: "uk")
         let locale = Locale(identifier: "uk")
 
         let positive = StatsComparisonPresentation.make(
@@ -86,10 +97,16 @@ struct StatsComparisonPresentationTests {
         #expect(StatsPeriod.year.bucketLabel(for: date, calendar: calendar) == "Aug")
     }
 
-    private func localizedBundle(language: String) throws -> Bundle {
-        let resourcePath = try #require(
-            Bundle.main.path(forResource: language, ofType: "lproj")
+    @Test("A change that rounds to 0% reads as no change, not an arrow", arguments: [0.4, -0.4])
+    func roundsTinyChangesToUnchanged(percent: Double) throws {
+        let presentation = StatsComparisonPresentation.make(
+            comparison: .change(percent: percent),
+            period: .week,
+            bundle: try TestLocalization.bundle(language: "en"),
+            locale: Locale(identifier: "en")
         )
-        return try #require(Bundle(path: resourcePath))
+
+        #expect(presentation.text == "No change vs last week")
+        #expect(presentation.tone == .neutral)
     }
 }
