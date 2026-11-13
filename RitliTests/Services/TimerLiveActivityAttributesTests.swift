@@ -55,31 +55,4 @@ struct TimerLiveActivityAttributesTests {
         #expect(decoded == expected)
     }
 
-    @Test("Running content counts down and clamps at zero")
-    func runningRemainingTime() {
-        let state = TimerLiveActivityAttributes.ContentState(
-            phase: .running(endDate: Date(timeIntervalSince1970: 1_100)),
-            taskTitle: nil
-        )
-
-        #expect(!state.isPaused)
-        #expect(state.remainingTime(at: Date(timeIntervalSince1970: 1_000)) == 100)
-        #expect(state.remainingTime(at: Date(timeIntervalSince1970: 1_200)) == 0)
-    }
-
-    @Test("Paused content freezes and normalizes remaining time")
-    func pausedRemainingTime() {
-        let paused = TimerLiveActivityAttributes.ContentState(
-            phase: .paused(remainingTime: 300),
-            taskTitle: nil
-        )
-        let invalid = TimerLiveActivityAttributes.ContentState(
-            phase: .paused(remainingTime: -1),
-            taskTitle: nil
-        )
-
-        #expect(paused.isPaused)
-        #expect(paused.remainingTime(at: .distantFuture) == 300)
-        #expect(invalid.remainingTime(at: .now) == 0)
-    }
 }

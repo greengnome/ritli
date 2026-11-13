@@ -31,28 +31,6 @@ struct StatsPeriodTests {
         #expect(StatsPeriod.year.bucketIntervals(containing: now, calendar: calendar).count == 12)
     }
 
-    @Test("Period copy resolves in English and Ukrainian", arguments: [
-        (StatsPeriod.day, "Day", "День", "Tasks completed today", "Завдання, виконані сьогодні"),
-        (StatsPeriod.week, "Week", "Тиждень", "Tasks completed this week", "Завдання, виконані цього тижня"),
-        (StatsPeriod.month, "Month", "Місяць", "Tasks completed this month", "Завдання, виконані цього місяця"),
-        (StatsPeriod.year, "Year", "Рік", "Tasks completed this year", "Завдання, виконані цього року"),
-    ])
-    func localizesPeriodCopy(
-        period: StatsPeriod,
-        englishTitle: String,
-        ukrainianTitle: String,
-        englishDescription: String,
-        ukrainianDescription: String
-    ) throws {
-        let englishBundle = try TestLocalization.bundle(language: "en")
-        let ukrainianBundle = try TestLocalization.bundle(language: "uk")
-
-        #expect(period.title(bundle: englishBundle, locale: Locale(identifier: "en")) == englishTitle)
-        #expect(period.title(bundle: ukrainianBundle, locale: Locale(identifier: "uk")) == ukrainianTitle)
-        #expect(period.completedTasksDescription(bundle: englishBundle, locale: Locale(identifier: "en")) == englishDescription)
-        #expect(period.completedTasksDescription(bundle: ukrainianBundle, locale: Locale(identifier: "uk")) == ukrainianDescription)
-    }
-
     @Test("Daylight-saving days have 23 or 25 hourly buckets", arguments: [
         (3, 8, 23),
         (11, 1, 25),

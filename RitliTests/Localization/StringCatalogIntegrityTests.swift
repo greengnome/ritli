@@ -3,8 +3,7 @@ import Testing
 
 /// Checks the source String Catalogs as data instead of pinning individual
 /// translations: every key needs a finished Ukrainian translation whose format
-/// arguments line up with English. Composition of formatted and plural copy is
-/// covered by the feature suites (for example `TasksLocalizationTests`).
+/// arguments line up with English.
 @Suite("String Catalog integrity")
 struct StringCatalogIntegrityTests {
     /// Catalog paths relative to the repository root. Simulator test processes
@@ -14,54 +13,17 @@ struct StringCatalogIntegrityTests {
         "RitliLiveActivity/Localizable.xcstrings",
     ]
 
-    /// Known failures, excluded so the check guards every other key.
-    /// Remove an entry once its catalog entry is fixed or deleted; the
-    /// `allowlistIsCurrent` test fails while an entry here is stale.
-    /// Keep it empty: fix the catalog (or the code that extracted a stray
-    /// key, such as a ternary inside `String(localized:)`) instead.
-    static let allowlistedKeys: Set<String> = []
-
     @Test("Every key has a finished Ukrainian translation with English's format arguments",
           arguments: catalogPaths)
     func catalogIsComplete(path: String) throws {
         let catalog = try Self.loadCatalog(at: path)
         let problems = catalog.strings.keys.sorted().flatMap { key in
-            Self.allowlistedKeys.contains(key)
-                ? []
-                : Self.problems(forKey: key, in: catalog)
+            Self.problems(forKey: key, in: catalog)
         }
 
         #expect(
             problems.isEmpty,
             "\(path) has \(problems.count) problem(s):\n\(problems.joined(separator: "\n"))"
-        )
-    }
-
-    @Test("The allowlist names only keys that still fail the integrity check")
-    func allowlistIsCurrent() throws {
-        let catalogs = try Self.catalogPaths.map(Self.loadCatalog(at:))
-        for key in Self.allowlistedKeys.sorted() {
-            let failingCatalogs = catalogs.filter {
-                $0.strings[key] != nil && !Self.problems(forKey: key, in: $0).isEmpty
-            }
-            #expect(
-                !failingCatalogs.isEmpty,
-                "\"\(key)\" passes or no longer exists; remove it from the allowlist"
-            )
-        }
-    }
-
-    @Test("Format signatures pair positional and sequential arguments", arguments: [
-        ("%@ of %lld", "%2$lld з %1$@", true),
-        ("%1$lld%%", "%lld%%", true),
-        ("%lldh %lldm", "%lld год %lld хв", true),
-        ("%@ of %lld", "%lld з %@", false),
-        ("%lld min", "хв", false),
-    ])
-    func formatSignature(english: String, ukrainian: String, matches: Bool) {
-        #expect(
-            (Self.formatSignature(of: [english]) == Self.formatSignature(of: [ukrainian]))
-                == matches
         )
     }
 

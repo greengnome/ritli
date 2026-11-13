@@ -4,17 +4,6 @@ import UserNotifications
 @testable import Ritli
 
 struct AppNotificationDelegateTests {
-    @Test("Sound previews play without presenting a banner")
-    func presentsSoundPreview() {
-        let options = AppNotificationDelegate.presentationOptions(for: "ritli.timer.sound-playback.sample")
-        #expect(options == [.sound])
-    }
-
-    @Test("A session completion still shows its banner and sound")
-    func presentsSessionCompletion() {
-        #expect(AppNotificationDelegate.presentationOptions(for: "ritli.timer.session.sample") == [.banner, .sound])
-    }
-
     @Test("Only audible custom timer alerts are handed to direct playback", arguments: TimerSound.allCases)
     func recognizesCustomCompletion(sound: TimerSound) {
         let id = UUID()

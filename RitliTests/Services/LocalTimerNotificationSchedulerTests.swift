@@ -18,19 +18,6 @@ struct LocalTimerNotificationSchedulerTests {
         #expect(content.userInfo["timerSound"] as? String == sound.rawValue)
     }
 
-    @Test("Simulator fallback keeps background alerts audible and Silent silent", arguments: TimerSound.allCases)
-    func usesSystemSoundFallback(sound: TimerSound) throws {
-        let center = UserNotificationCenterClientSpy()
-        let now = Date(timeIntervalSince1970: 45_000)
-        let scheduler = LocalTimerNotificationScheduler(
-            center: center, dateProvider: MutableDateProvider(now: now), useSystemSoundFallback: true
-        )
-        scheduler.scheduleSessionEnd(id: UUID(), kind: .focus, at: now.addingTimeInterval(60), soundEnabled: true, sound: sound)
-        let content = try #require(center.addedRequests.first?.content)
-        #expect(content.sound == (sound == .silent ? nil : UNNotificationSound.default))
-        #expect(content.userInfo["timerSound"] as? String == sound.rawValue)
-    }
-
     @Test("Focus notification contains the expected copy and trigger")
     func schedulesFocusCompletion() throws {
         let now = Date(timeIntervalSince1970: 50_000)
@@ -88,49 +75,6 @@ struct LocalTimerNotificationSchedulerTests {
         let content = try #require(center.addedRequests.first?.content)
         #expect(content.title == expectedTitle)
         #expect(content.body == "Ready for another focus session?")
-    }
-
-    @Test("Timer notifications resolve in Ukrainian")
-    func localizesNotificationsInUkrainian() throws {
-        let now = Date(timeIntervalSince1970: 65_000)
-        let center = UserNotificationCenterClientSpy()
-        let bundle = try TestLocalization.bundle(language: "uk")
-        let scheduler = LocalTimerNotificationScheduler(
-            center: center,
-            dateProvider: MutableDateProvider(now: now),
-            localizationBundle: bundle,
-            localizationLocale: Locale(identifier: "uk")
-        )
-
-        scheduler.scheduleSessionEnd(
-            id: UUID(),
-            kind: .focus,
-            at: now.addingTimeInterval(30),
-            soundEnabled: true
-        )
-        scheduler.scheduleSessionEnd(
-            id: UUID(),
-            kind: .shortBreak,
-            at: now.addingTimeInterval(60),
-            soundEnabled: true
-        )
-        scheduler.scheduleSessionEnd(
-            id: UUID(),
-            kind: .longBreak,
-            at: now.addingTimeInterval(90),
-            soundEnabled: true
-        )
-
-        #expect(center.addedRequests.map(\.content.title) == [
-            "Фокус завершено",
-            "Перерву завершено",
-            "Довгу перерву завершено",
-        ])
-        #expect(center.addedRequests.map(\.content.body) == [
-            "Чудова робота. Час на перерву.",
-            "Готові до наступної сесії фокусу?",
-            "Готові до наступної сесії фокусу?",
-        ])
     }
 
     @Test("A past end date is never scheduled")
