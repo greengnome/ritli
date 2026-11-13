@@ -109,12 +109,13 @@ final class TimerEngine {
             return
         }
 
+        let checkpoint = makeCheckpoint()
         session.actualActiveDuration = activeDuration(of: session, at: now)
         session.state = .paused
         session.pausedAt = now
         session.pausedRemainingTime = remaining
         session.endDate = nil
-        try saveChanges()
+        try saveChanges(restoring: checkpoint)
 
         cancelNotifications(for: session)
         synchronizeLiveActivity()
@@ -130,12 +131,13 @@ final class TimerEngine {
         }
 
         let now = dateProvider.now
+        let checkpoint = makeCheckpoint()
         closePause(on: session, at: now)
         let remaining = max(0, session.pausedRemainingTime ?? 0)
         session.pausedRemainingTime = nil
         session.state = .running
         session.endDate = now.addingTimeInterval(remaining)
-        try saveChanges()
+        try saveChanges(restoring: checkpoint)
 
         scheduleNotifications(for: session)
         synchronizeLiveActivity()
@@ -152,10 +154,11 @@ final class TimerEngine {
         }
 
         let now = dateProvider.now
+        let checkpoint = makeCheckpoint()
         closePause(on: session, at: now)
         session.actualActiveDuration = activeDuration(of: session, at: now)
         makeTerminal(session, state: .cancelled, at: now)
-        try saveChanges()
+        try saveChanges(restoring: checkpoint)
 
         cancelNotifications(for: session)
         synchronizeLiveActivity()
@@ -175,11 +178,12 @@ final class TimerEngine {
         }
 
         let now = dateProvider.now
+        let checkpoint = makeCheckpoint()
         closePause(on: session, at: now)
         session.actualActiveDuration = activeDuration(of: session, at: now)
         makeTerminal(session, state: .skipped, at: now)
         advanceCycle(after: session)
-        try saveChanges()
+        try saveChanges(restoring: checkpoint)
 
         cancelNotifications(for: session)
         synchronizeLiveActivity()
@@ -335,23 +339,18 @@ final class TimerEngine {
             throw TimerEngineError.activeSessionExists
         }
 
+        let checkpoint = makeCheckpoint()
         if updatesPreferredFocusTask {
             cycleState.preferredFocusTask = task
         }
 
-        let previousSession = currentSession
         let session = beginSession(
             kind: kind,
             task: task,
             startedAt: dateProvider.now,
             id: UUID()
         )
-        do {
-            try saveChanges()
-        } catch {
-            currentSession = previousSession
-            throw error
-        }
+        try saveChanges(restoring: checkpoint)
 
         scheduleNotifications(for: session)
         synchronizeLiveActivity()
@@ -417,8 +416,9 @@ final class TimerEngine {
 
         let completedRoutine = activeRoutine
         let completionDate = session.endDate ?? date
+        let checkpoint = makeCheckpoint()
         complete(session, at: date)
-        try saveChanges()
+        try saveChanges(restoring: checkpoint)
 
         synchronizeLiveActivity()
         if trigger == .live {
@@ -455,7 +455,7 @@ final class TimerEngine {
         trigger: CompletionTrigger
     ) throws {
         let now = dateProvider.now
-        let previousSession = currentSession
+        let checkpoint = makeCheckpoint()
         let session = beginSession(
             kind: kind,
             task: kind == .focus ? preferredFocusTaskForNextSession : nil,
@@ -467,12 +467,7 @@ final class TimerEngine {
             complete(session, at: now)
         }
 
-        do {
-            try saveChanges()
-        } catch {
-            currentSession = previousSession
-            throw error
-        }
+        try saveChanges(restoring: checkpoint)
 
         if !hasElapsed {
             scheduleNotifications(for: session)
@@ -553,6 +548,81 @@ final class TimerEngine {
             store.rollback()
             throw error
         }
+    }
+
+    /// Saves a transition, or puts back everything it changed.
+    /// `ModelContext.rollback()` discards an unsaved insert, but on iOS 26
+    /// and earlier it leaves the changed properties of models already in
+    /// memory, so the engine restores those itself.
+    private func saveChanges(restoring checkpoint: Checkpoint) throws {
+        do {
+            try store.save()
+        } catch {
+            store.rollback()
+            restore(checkpoint)
+            throw error
+        }
+    }
+
+    /// The values a single transition can change.
+    private struct Checkpoint {
+        struct SessionValues {
+            let state: SessionState
+            let finishedAt: Date?
+            let endDate: Date?
+            let pausedAt: Date?
+            let pausedRemainingTime: TimeInterval?
+            let actualActiveDuration: TimeInterval
+            let totalPausedDuration: TimeInterval
+            let taskCompletedAt: Date?
+        }
+
+        let currentSession: FocusSession?
+        let sessionValues: SessionValues?
+        let completedFocusesInCycle: Int
+        let nextSuggestedKind: SessionKind
+        let preferredFocusTask: FocusTask?
+        let routineSnapshot: TimerRoutineSnapshot?
+    }
+
+    private func makeCheckpoint() -> Checkpoint {
+        Checkpoint(
+            currentSession: currentSession,
+            sessionValues: currentSession.map { session in
+                Checkpoint.SessionValues(
+                    state: session.state,
+                    finishedAt: session.finishedAt,
+                    endDate: session.endDate,
+                    pausedAt: session.pausedAt,
+                    pausedRemainingTime: session.pausedRemainingTime,
+                    actualActiveDuration: session.actualActiveDuration,
+                    totalPausedDuration: session.totalPausedDuration,
+                    taskCompletedAt: session.task?.completedAt
+                )
+            },
+            completedFocusesInCycle: cycleState.completedFocusesInCycle,
+            nextSuggestedKind: cycleState.nextSuggestedKind,
+            preferredFocusTask: cycleState.preferredFocusTask,
+            routineSnapshot: cycleState.routineSnapshot
+        )
+    }
+
+    private func restore(_ checkpoint: Checkpoint) {
+        currentSession = checkpoint.currentSession
+        if let session = checkpoint.currentSession, let values = checkpoint.sessionValues {
+            session.state = values.state
+            session.finishedAt = values.finishedAt
+            session.endDate = values.endDate
+            session.pausedAt = values.pausedAt
+            session.pausedRemainingTime = values.pausedRemainingTime
+            session.actualActiveDuration = values.actualActiveDuration
+            session.totalPausedDuration = values.totalPausedDuration
+            session.task?.completedAt = values.taskCompletedAt
+        }
+        cycleState.completedFocusesInCycle = checkpoint.completedFocusesInCycle
+        cycleState.nextSuggestedKind = checkpoint.nextSuggestedKind
+        cycleState.preferredFocusTask = checkpoint.preferredFocusTask
+        cycleState.routineSnapshot = checkpoint.routineSnapshot
     }
 
     private func scheduleNotifications(for session: FocusSession) {
