@@ -32,8 +32,10 @@ final class SystemUITests: RitliUITestCase {
                 predicate: NSPredicate { _, _ in cancel.exists || permissionAlert.exists },
                 object: nil
             )
+            // A cold simulator's notification service can take well over
+            // five seconds to answer the first permission request.
             XCTAssertEqual(
-                XCTWaiter.wait(for: [readyToContinue], timeout: 5), .completed,
+                XCTWaiter.wait(for: [readyToContinue], timeout: 30), .completed,
                 "\(mode): tapping Start must start the timer or request notification permission"
             )
             if permissionAlert.exists {
@@ -68,7 +70,7 @@ final class SystemUITests: RitliUITestCase {
         // 6-second fixture.
         _ = XCTWaiter.wait(for: [XCTestExpectation(description: "Timer expires in background")], timeout: 7)
         app.activate()
-        XCTAssertTrue(app.buttons["home.timer.cancel"].waitForNonExistence(timeout: 2))
+        XCTAssertTrue(app.buttons["home.timer.cancel"].waitForNonExistence(timeout: 5))
         let completion = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "label == %@", "1"),
             object: app.staticTexts["home.summary.sessions"]

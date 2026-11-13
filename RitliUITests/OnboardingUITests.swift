@@ -86,6 +86,8 @@ final class OnboardingUITests: RitliUITestCase {
     func testOnboardingArtworkAnimatesOnEveryPageAndWhenRevisited() throws {
         let app = makeApp(onboarding: .reset)
         app.launch()
+        // The first wait includes the launch, which is slow on a cold runner.
+        XCTAssertTrue(app.buttons["onboarding.page.1"].waitForExistence(timeout: 15))
 
         for (index, page) in ["focus", "tasks", "insights"].enumerated() {
             XCTAssertTrue(waitForValue("Selected", of: app.buttons["onboarding.page.\(index + 1)"]))

@@ -91,10 +91,15 @@ struct ContentView: View {
         .notificationsOffAlert(isPresented: $isNotificationsOffAlertPresented)
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
-            await synchronizeNotificationPreference()
             await TimerRefreshLoop().run(engine: timerEngine) { error in
                 timerError = error.localizedDescription
             }
+        }
+        // Separate from the refresh loop: the permission query can be slow,
+        // and a timer that ran out must be reconciled without waiting for it.
+        .task(id: scenePhase) {
+            guard scenePhase == .active else { return }
+            await synchronizeNotificationPreference()
         }
     }
 
