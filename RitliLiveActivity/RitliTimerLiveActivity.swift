@@ -289,8 +289,8 @@ private extension TimerLiveActivityAttributes.Kind {
 // The extension can't see the app's RitliTheme, so it carries the few
 // values it needs. Keep them in step with Ritli/DesignSystem/RitliTheme.swift.
 private extension Color {
-    static let ritliTomato = Color(red: 1, green: 0.361, blue: 0.290)        // #FF5C4A
-    static let ritliTomatoFill = Color(red: 0.812, green: 0.227, blue: 0.141) // #CF3A24
+    static let ritliTomato = Color(red: 0.910, green: 0.518, blue: 0.420)    // #E8846B
+    static let ritliTomatoFill = Color(red: 0.710, green: 0.322, blue: 0.243) // #B5523E
     static let ritliLeafFill = Color(red: 0.173, green: 0.420, blue: 0.290)   // #2C6B4A
     static let ritliLeafBright = Color(red: 0.424, green: 0.780, blue: 0.565) // #6CC790
     static let ritliOnAccent = Color(red: 1, green: 0.965, blue: 0.925)       // #FFF6EC

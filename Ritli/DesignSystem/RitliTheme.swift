@@ -4,7 +4,8 @@ import UIKit
 /// Ritli's palette: flat, warm surfaces with one accent.
 ///
 /// - Paper, sand and surface give depth without shadows or gradients.
-/// - Tomato is the only colour on a resting screen. Leaf marks breaks and
+/// - Tomato (a soft coral, with terracotta for buttons) is the only colour
+///   on a resting screen. Leaf marks breaks and
 ///   finished work.
 /// - While a session runs, Home fills with the session's colour, so the
 ///   state is readable from across the desk.
@@ -31,19 +32,33 @@ enum RitliTheme {
     // MARK: Accent
 
     /// Large shapes only: the dial, chart bars, the category dot.
-    static let tomato = Color(hex: 0xFF5C4A)
-    /// Filled buttons, the focus screen and tinted text. White text on it
-    /// passes 4.5:1, which plain tomato does not.
-    static let tomatoInk = adaptiveColor(light: 0xCF3A24, dark: 0xFF6B5A)
-    /// Fill behind white content (the focus screen, primary buttons). Stays
-    /// dark enough for white text in both appearances.
-    static let tomatoFill = Color(hex: 0xCF3A24)
+    static let tomato = adaptiveColor(light: 0xE07A5F, dark: 0xE8846B)
+    /// Tinted text and small glyphs: links, the selected tab, play icons.
+    static let tomatoInk = adaptiveColor(light: 0xB5523E, dark: 0xEE9A85)
+    /// Fill behind white content (primary buttons). Light text on it passes
+    /// 4.5:1 in both appearances.
+    static let tomatoFill = Color(hex: 0xB5523E)
     /// Breaks and finished work, as a fill behind white content.
     static let leafFill = Color(hex: 0x2C6B4A)
     /// Leaf for text and glyphs on paper.
     static let leaf = adaptiveColor(light: 0x2C6B4A, dark: 0x6CC790)
     /// The soft track behind tomato progress on paper.
-    static let tomatoTrack = adaptiveColor(light: 0xF6D3CC, dark: 0x4A2A25)
+    static let tomatoTrack = adaptiveColor(light: 0xF0CDC2, dark: 0x5A3329)
+
+    // MARK: Session screens
+
+    // While a session runs, Home takes its colour. In light mode the whole
+    // screen fills with it; in dark mode a full-colour screen glares, so the
+    // screen becomes a deep tint and the ring and main button carry the colour.
+
+    /// The screen behind a focus session.
+    static let focusScreen = adaptiveColor(light: 0xB5523E, dark: 0x3A1E17)
+    /// The screen behind a break.
+    static let breakScreen = adaptiveColor(light: 0x2C6B4A, dark: 0x14271D)
+    /// The ring and main button during focus.
+    static let focusAccent = adaptiveColor(light: 0xFFF6EC, dark: 0xE8846B)
+    /// The ring and main button during a break.
+    static let breakAccent = adaptiveColor(light: 0xFFF6EC, dark: 0x6CC790)
 
     // MARK: Compatibility names used across features
 
@@ -72,13 +87,23 @@ enum RitliTheme {
         }
     }
 
-    /// The full-screen colour while a session of `kind` runs.
+    /// The screen colour while a session of `kind` runs.
     static func sessionFill(for kind: SessionKind) -> Color {
         switch kind {
         case .focus:
-            tomatoFill
+            focusScreen
         case .shortBreak, .longBreak:
-            leafFill
+            breakScreen
+        }
+    }
+
+    /// The ring and main-button colour while a session of `kind` runs.
+    static func sessionAccent(for kind: SessionKind) -> Color {
+        switch kind {
+        case .focus:
+            focusAccent
+        case .shortBreak, .longBreak:
+            breakAccent
         }
     }
 
