@@ -5,7 +5,7 @@ final class TaskLifecycleUITests: RitliUITestCase {
 
     @MainActor
     func testAutomaticallyCompletesTaskWhileViewingTasksAndCanReopen() throws {
-        let app = makeApp(showTasks: true, language: "en", locale: "en_US", taskTitle: "Finish proposal")
+        let app = makeApp(showTasks: true, taskTitle: "Finish proposal")
         app.launchArguments.append("--ui-testing-task-completion")
         app.launch()
 
@@ -18,18 +18,12 @@ final class TaskLifecycleUITests: RitliUITestCase {
         XCTAssertTrue(reopenButton.waitForExistence(timeout: 18))
         XCTAssertTrue(app.staticTexts["1 / 1 session"].exists)
         XCTAssertFalse(app.buttons["Start focus on Finish proposal"].exists)
-        let completedScreenshot = XCTAttachment(screenshot: app.screenshot())
-        completedScreenshot.name = "Task automatically completed at 1 of 1 sessions"
-        completedScreenshot.lifetime = .keepAlways
-        add(completedScreenshot)
+        addScreenshot(named: "Task automatically completed at 1 of 1 sessions")
 
         reopenButton.tap()
         XCTAssertTrue(app.buttons["Mark Finish proposal complete"].waitForExistence(timeout: 2))
         XCTAssertTrue(app.staticTexts["1 / 2 sessions"].exists)
-        let reopenedScreenshot = XCTAttachment(screenshot: app.screenshot())
-        reopenedScreenshot.name = "Reopened task with one remaining session"
-        reopenedScreenshot.lifetime = .keepAlways
-        add(reopenedScreenshot)
+        addScreenshot(named: "Reopened task with one remaining session")
         app.buttons["Start focus on Finish proposal"].tap()
         XCTAssertTrue(app.buttons["Pause"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["Start break"].waitForExistence(timeout: 18))

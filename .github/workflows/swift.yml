@@ -103,6 +103,7 @@ jobs:
       # Hosted simulators can drop the cross-app Settings foreground transition.
       # Its URL is unit-tested, and the complete handoff remains in the local UI suite.
       - name: Run background lifecycle UI tests in isolation
+        timeout-minutes: 10
         run: |
           xcodebuild \
             -project Ritli.xcodeproj \
@@ -112,11 +113,16 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
             -resultBundlePath "$RUNNER_TEMP/RitliSystemUITests.xcresult" \
             -parallel-testing-enabled NO \
+            -test-timeouts-enabled YES \
+            -default-test-execution-time-allowance 240 \
+            -maximum-test-execution-time-allowance 240 \
             -only-testing:RitliUITests/SystemUITests \
             -skip-testing:RitliUITests/SystemUITests/testOpensAppLanguageSettings \
             test-without-building
 
+      # Two attempts of a ~3-minute test plus a simulator restart.
       - name: Run Live Activity system UI tests in isolation
+        timeout-minutes: 15
         run: |
           for attempt in 1 2; do
             if xcodebuild \
@@ -127,6 +133,9 @@ jobs:
               -derivedDataPath "$RUNNER_TEMP/DerivedData" \
               -resultBundlePath "$RUNNER_TEMP/RitliLiveActivityUITests-attempt-${attempt}.xcresult" \
               -parallel-testing-enabled NO \
+              -test-timeouts-enabled YES \
+              -default-test-execution-time-allowance 300 \
+              -maximum-test-execution-time-allowance 300 \
               -only-testing:RitliUITests/LiveActivityUITests \
               test-without-building; then
               exit 0
