@@ -8,7 +8,6 @@ struct SettingsView: View {
     @Environment(NotificationPermissionService.self) private var notificationPermissionService
     @Environment(\.locale) private var locale
     @Environment(\.openURL) private var openURL
-    @Environment(\.scenePhase) private var scenePhase
     @Query private var sessions: [FocusSession]
 
     @State private var errorMessage: String?
@@ -48,33 +47,7 @@ struct SettingsView: View {
         } message: {
             Text(errorMessage ?? String(localized: .commonErrorTryAgain))
         }
-        .alert(
-            String(
-                localized: "settings.notifications.permission_required.title",
-                defaultValue: "Notifications are off"
-            ),
-            isPresented: $isNotificationSettingsAlertPresented
-        ) {
-            Button(
-                String(
-                    localized: "settings.notifications.open_settings",
-                    defaultValue: "Open Settings"
-                )
-            ) {
-                guard let url = URL(string: UIApplication.openSettingsURLString) else {
-                    return
-                }
-                openURL(url)
-            }
-            Button(String(localized: .commonActionCancel), role: .cancel) {}
-        } message: {
-            Text(
-                String(
-                    localized: "settings.notifications.permission_required",
-                    defaultValue: "Enable notifications for Ritli in System Settings to receive timer alerts."
-                )
-            )
-        }
+        .notificationsOffAlert(isPresented: $isNotificationSettingsAlertPresented)
         .confirmationDialog(
             String(localized: "settings.data.clear_confirmation.title", defaultValue: "Clear focus history?"),
             isPresented: $isClearHistoryConfirmationPresented,
@@ -98,34 +71,26 @@ struct SettingsView: View {
                 )
             )
         }
-        .task {
-            await synchronizeNotificationPreference()
-        }
-        .onChange(of: scenePhase) {
-            if scenePhase == .active {
-                Task { await synchronizeNotificationPreference() }
-            }
-        }
     }
 
     private var timerSection: some View {
         Section {
-            durationPicker(
+            MinutesPicker(
                 title: String(localized: "settings.timer.focus", defaultValue: "Focus"),
                 selection: durationBinding(\.focusDuration),
-                options: TimerSettingsDraft.focusMinuteOptions,
+                options: TimerDurationOptions.focusMinutes,
                 identifier: "settings.focusDuration"
             )
-            durationPicker(
+            MinutesPicker(
                 title: String(localized: "settings.timer.short_break", defaultValue: "Short break"),
                 selection: durationBinding(\.shortBreakDuration),
-                options: TimerSettingsDraft.shortBreakMinuteOptions,
+                options: TimerDurationOptions.shortBreakMinutes,
                 identifier: "settings.shortBreakDuration"
             )
-            durationPicker(
+            MinutesPicker(
                 title: String(localized: "settings.timer.long_break", defaultValue: "Long break"),
                 selection: durationBinding(\.longBreakDuration),
-                options: TimerSettingsDraft.longBreakMinuteOptions,
+                options: TimerDurationOptions.longBreakMinutes,
                 identifier: "settings.longBreakDuration"
             )
         } header: {
@@ -143,10 +108,13 @@ struct SettingsView: View {
     private var cycleSection: some View {
         Section(String(localized: "settings.cycle.section", defaultValue: "Cycle")) {
             Picker(
-                String(localized: "settings.timer.long_break", defaultValue: "Long break"),
+                String(
+                    localized: "settings.cycle.long_break_frequency",
+                    defaultValue: "Long break frequency"
+                ),
                 selection: settingBinding(\.longBreakEvery)
             ) {
-                ForEach(TimerSettingsDraft.longBreakIntervalOptions, id: \.self) { count in
+                ForEach(TimerDurationOptions.longBreakIntervals, id: \.self) { count in
                     Text(verbatim: SettingsPresentation.longBreakInterval(count)).tag(count)
                 }
             }
@@ -343,7 +311,7 @@ struct SettingsView: View {
     private var dataSection: some View {
         Section {
             LabeledContent(String(localized: "settings.data.recorded_sessions", defaultValue: "Recorded sessions")) {
-                Text("\(recordedSessionCount)")
+                Text(recordedSessionCount, format: .number)
                     .accessibilityIdentifier("settings.historyCount")
             }
 
@@ -357,20 +325,6 @@ struct SettingsView: View {
         } footer: {
             Text(String(localized: "settings.data.footer", defaultValue: "An active or paused timer is never removed."))
         }
-    }
-
-    private func durationPicker(
-        title: String,
-        selection: Binding<Int>,
-        options: [Int],
-        identifier: String
-    ) -> some View {
-        Picker(title, selection: selection) {
-            ForEach(options, id: \.self) { minutes in
-                Text(verbatim: SettingsPresentation.minutes(minutes)).tag(minutes)
-            }
-        }
-        .accessibilityIdentifier(identifier)
     }
 
     private var appVersion: String {
@@ -396,15 +350,13 @@ struct SettingsView: View {
     }
 
     private var errorIsPresented: Binding<Bool> {
-        Binding(
-            get: { errorMessage != nil },
-            set: { if !$0 { errorMessage = nil } }
-        )
+        Binding(isPresenting: $errorMessage)
     }
 
     private func persistSettings() {
         do {
             try modelContext.save()
+            timerEngine.applySettingsChanges()
         } catch {
             modelContext.rollback()
             errorMessage = error.localizedDescription
@@ -416,10 +368,10 @@ struct SettingsView: View {
     ) -> Binding<Int> {
         Binding(
             get: {
-                max(1, Int((settings[keyPath: keyPath] / 60).rounded()))
+                TimerDurationOptions.minutes(from: settings[keyPath: keyPath])
             },
             set: { minutes in
-                settings[keyPath: keyPath] = TimeInterval(max(1, minutes) * 60)
+                settings[keyPath: keyPath] = TimerDurationOptions.duration(fromMinutes: minutes)
                 persistSettings()
             }
         )
@@ -490,24 +442,10 @@ struct SettingsView: View {
         }
     }
 
-    private func synchronizeNotificationPreference() async {
-        await notificationPermissionService.refreshAuthorizationStatus()
-        guard
-            notificationPermissionService.isDenied,
-            settings.notificationsEnabled
-        else {
-            return
-        }
-
-        do {
-            try timerEngine.setNotificationsEnabled(false)
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-
     private func clearHistory() {
         do {
+            // The engine keeps the last finished session; let it go first.
+            timerEngine.releaseFinishedSession()
             try FocusHistoryCleaner.clearRecordedSessions(in: modelContext)
         } catch {
             modelContext.rollback()

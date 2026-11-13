@@ -80,7 +80,11 @@ struct TaskEditorDraft: Equatable {
     ) {
         task.title = normalizedTitle
         task.notes = normalizedNotes
-        task.category = selectedCategory(in: categories)
+        // The editor only lists active categories; keep an archived one the
+        // task already uses unless the user picked something else.
+        if task.category?.id != categoryID || !(task.category?.isArchived ?? false) {
+            task.category = selectedCategory(in: categories)
+        }
         task.timerRoutine = selectedRoutine(in: routines)
         task.estimatedPomodoros = max(1, estimatedPomodoros)
         task.priority = priority

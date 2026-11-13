@@ -1,6 +1,6 @@
 import UIKit
 
-enum TimerFeedbackEvent: Equatable, Sendable {
+nonisolated enum TimerFeedbackEvent: Equatable, Sendable {
     case started
     case paused
     case resumed

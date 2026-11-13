@@ -4,17 +4,15 @@ import UIKit
 final class SystemUITests: RitliUITestCase {
 
     @MainActor
-    func testFocusAndBreakNotificationsArriveWhileAppIsInBackground() throws {
+    func testFocusNotificationArrivesWhileAppIsInBackground() throws {
         let app = makeApp()
         app.launchArguments += ["--ui-testing-sound-completion", "--ui-testing-background-sound"]
         app.launch()
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
 
-        for (kind, mode, title) in [
-            ("focus", "Focus", "Focus complete"),
-            ("shortBreak", "Short break", "Break complete"),
-            ("longBreak", "Long break", "Long break complete")
-        ] {
+        // Per-kind titles are unit-tested (LocalTimerNotificationSchedulerTests);
+        // one real delivery covers the system path without three long waits.
+        for (kind, mode, title) in [("focus", "Focus", "Focus complete")] {
             XCTAssertTrue(app.wait(for: .runningForeground, timeout: 5))
             selectTimerMode(kind, titled: mode, in: app)
             let countdown = app.staticTexts["home.timer.countdown"]
@@ -34,8 +32,10 @@ final class SystemUITests: RitliUITestCase {
                 predicate: NSPredicate { _, _ in cancel.exists || permissionAlert.exists },
                 object: nil
             )
+            // A cold simulator's notification service can take well over
+            // five seconds to answer the first permission request.
             XCTAssertEqual(
-                XCTWaiter.wait(for: [readyToContinue], timeout: 5), .completed,
+                XCTWaiter.wait(for: [readyToContinue], timeout: 30), .completed,
                 "\(mode): tapping Start must start the timer or request notification permission"
             )
             if permissionAlert.exists {
@@ -57,16 +57,20 @@ final class SystemUITests: RitliUITestCase {
     }
 
     @MainActor
-    func testReturningToAnExpiredTimerDoesNotReplayCompletionSound() throws {
+    /// End-to-end catch-up of a timer that ran out in the background. Not
+    /// replaying its sound is unit-tested in TimerRefreshLoopTests.
+    func testReturningToAnExpiredTimerCompletesIt() throws {
         let app = makeApp()
         app.launchArguments.append("--ui-testing-sound-completion")
         app.launch()
         app.buttons["home.timer.primary"].tap()
         XCTAssertTrue(app.buttons["home.timer.cancel"].waitForExistence(timeout: 2))
         XCUIDevice.shared.press(.home)
+        // The app is suspended, so there is nothing to poll: wait past the
+        // 6-second fixture.
         _ = XCTWaiter.wait(for: [XCTestExpectation(description: "Timer expires in background")], timeout: 7)
         app.activate()
-        XCTAssertTrue(app.buttons["home.timer.cancel"].waitForNonExistence(timeout: 2))
+        XCTAssertTrue(app.buttons["home.timer.cancel"].waitForNonExistence(timeout: 5))
         let completion = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "label == %@", "1"),
             object: app.staticTexts["home.summary.sessions"]

@@ -25,6 +25,14 @@ final class FocusTask {
     @Relationship(deleteRule: .nullify, inverse: \FocusSession.task)
     var sessions: [FocusSession]
 
+    // Declaring the inverse lets SwiftData clear the timer's remembered task
+    // when this task is deleted, instead of leaving a dangling reference.
+    @Relationship(deleteRule: .nullify, inverse: \PomodoroCycleState.preferredFocusTask)
+    var preferringCycleStates: [PomodoroCycleState]
+
+    /// Completed focus sessions whose records were removed by clearing history.
+    var clearedPomodoroCount: Int = 0
+
     var priority: TaskPriority {
         get { TaskPriority(rawValue: priorityRawValue) ?? .normal }
         set { priorityRawValue = newValue.rawValue }
@@ -35,7 +43,7 @@ final class FocusTask {
     }
 
     var completedPomodoros: Int {
-        sessions.count {
+        clearedPomodoroCount + sessions.count {
             $0.kind == .focus && $0.state == .completed
         }
     }
@@ -67,6 +75,7 @@ final class FocusTask {
         self.sortOrder = sortOrder
         self.isArchived = isArchived
         self.sessions = []
+        self.preferringCycleStates = []
     }
 
     func complete(at date: Date = .now) {
@@ -81,12 +90,18 @@ final class FocusTask {
             .filter { $0.kind == .focus && $0.state == .completed }
             .map { $0.finishedAt ?? $0.startedAt }
             .sorted()
-        let estimate = max(1, estimatedPomodoros)
-        guard completionDates.count >= estimate else { return false }
+        let recordedNeeded = max(1, estimatedPomodoros) - clearedPomodoroCount
+        guard recordedNeeded > 0 else {
+            // Cleared history already covers the estimate; no record of the
+            // exact day survives, so use the latest one available.
+            complete(at: completionDates.last ?? .now)
+            return true
+        }
+        guard completionDates.count >= recordedNeeded else { return false }
 
         // Preserve the day the estimate was reached, including when an
         // overdue timer is restored or older task progress is reconciled.
-        complete(at: completionDates[estimate - 1])
+        complete(at: completionDates[recordedNeeded - 1])
         return true
     }
 

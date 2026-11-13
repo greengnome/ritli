@@ -5,6 +5,7 @@
 //  Created by Kirill Gladkov on 14/08/2026.
 //
 
+import OSLog
 import SwiftData
 import SwiftUI
 
@@ -69,6 +70,8 @@ struct RitliApp: App {
             self.dependencies = dependencies
             _onboardingStore = State(initialValue: OnboardingStore())
         } catch {
+            Logger(subsystem: "com.kirillgl.Ritli", category: "Startup")
+                .fault("Could not open the data store: \(error.localizedDescription, privacy: .public)")
             dependencies = nil
             _onboardingStore = State(initialValue: OnboardingStore())
         }

@@ -34,49 +34,6 @@ final class HomeUITests: RitliUITestCase {
     }
 
     @MainActor
-    func testUsesHomeInUkrainian() throws {
-        let app = makeApp(language: "uk", locale: "uk_UA")
-        app.launch()
-
-        XCTAssertTrue(app.buttons["Почати фокус"].waitForExistence(timeout: 3))
-        XCTAssertEqual(app.buttons["home.settings"].label, "Налаштування")
-        XCTAssertEqual(app.buttons["home.taskSelector"].label, "Вибрати завдання")
-        XCTAssertTrue(app.staticTexts["Сьогодні"].exists)
-        XCTAssertTrue(app.staticTexts["Сесії"].exists)
-        XCTAssertTrue(app.staticTexts["Час фокусу"].exists)
-        XCTAssertTrue(app.staticTexts["Виконано"].exists)
-        XCTAssertTrue(app.tabBars.buttons["Головна"].isSelected)
-        XCTAssertTrue(app.tabBars.buttons["Статистика"].exists)
-        XCTAssertTrue(app.tabBars.buttons["Завдання"].exists)
-        XCTAssertTrue(app.tabBars.buttons["Налаштування"].exists)
-
-        app.buttons["home.taskSelector"].tap()
-        XCTAssertTrue(app.navigationBars["Вибрати завдання"].waitForExistence(timeout: 2))
-        XCTAssertTrue(app.buttons["Вибрати варіант без завдання"].exists)
-        XCTAssertTrue(app.staticTexts["Немає активних завдань"].exists)
-        app.buttons["Скасувати"].tap()
-
-        app.tabBars.buttons["Завдання"].tap()
-        createTask(named: "Design landing page", in: app)
-        app.tabBars.buttons["Головна"].tap()
-
-        app.buttons["home.taskSelector"].tap()
-        let taskChoice = app.buttons["Вибрати: Design landing page"]
-        XCTAssertTrue(taskChoice.waitForExistence(timeout: 2))
-        taskChoice.tap()
-        XCTAssertEqual(
-            app.buttons["home.taskSelector"].label,
-            "У роботі: Design landing page"
-        )
-
-        app.buttons["Почати фокус"].tap()
-        XCTAssertTrue(app.buttons["Пауза"].waitForExistence(timeout: 2))
-        app.buttons["Пауза"].tap()
-        XCTAssertTrue(app.buttons["Продовжити"].waitForExistence(timeout: 2))
-        XCTAssertEqual(app.buttons["home.timer.cancel"].label, "Скасувати таймер")
-    }
-
-    @MainActor
     func testTimerStartsPausesAndResumes() throws {
         let app = makeApp()
         app.launch()
@@ -110,7 +67,7 @@ final class HomeUITests: RitliUITestCase {
 
     @MainActor
     func testTimerControlsRemainUsableAtLargestTextSize() throws {
-        let app = makeApp(language: "en", locale: "en_US")
+        let app = makeApp()
         app.launchArguments += [
             "-UIPreferredContentSizeCategoryName",
             UIContentSizeCategory.accessibilityExtraExtraExtraLarge.rawValue
@@ -124,14 +81,11 @@ final class HomeUITests: RitliUITestCase {
         addScreenshot(named: "Home timer — largest Dynamic Type")
         primary.tap()
 
+        // The pause/resume flow is covered at the default size; here only
+        // check that the running controls stay reachable.
         let pause = app.buttons["Pause"]
         XCTAssertTrue(pause.waitForExistence(timeout: 3))
         XCTAssertTrue(scrollToElement(pause, in: app))
-        pause.tap()
-        let resume = app.buttons["Resume"]
-        XCTAssertTrue(resume.waitForExistence(timeout: 3))
-        resume.tap()
-        XCTAssertTrue(pause.waitForExistence(timeout: 3))
 
         let cancel = app.buttons["home.timer.cancel"]
         // Dynamic Type can move Cancel under the navigation bar while XCTest

@@ -22,26 +22,17 @@ final class TimerEngine {
     private let feedback: any TimerFeedbackPlaying
     private let completionSound: any TimerCompletionSoundPlaying
 
-    var remainingTime: TimeInterval {
-        remainingTime(at: dateProvider.now)
+    /// How a session that ran out is being reconciled.
+    private enum CompletionTrigger {
+        /// The app observed the end as it happened: play sound and haptics.
+        case live
+        /// The end happened while the app was away (relaunch or returning to
+        /// the foreground): the notification already alerted the user.
+        case catchUp
     }
 
-    var progress: Double {
-        guard let session = currentSession, session.plannedDuration > 0 else {
-            return 0
-        }
-
-        let elapsed: TimeInterval
-        switch session.state {
-        case .running, .paused:
-            elapsed = session.plannedDuration - remainingTime
-        case .completed:
-            elapsed = session.plannedDuration
-        case .cancelled, .skipped:
-            elapsed = session.actualActiveDuration
-        }
-
-        return min(1, max(0, elapsed / session.plannedDuration))
+    var remainingTime: TimeInterval {
+        remainingTime(at: dateProvider.now)
     }
 
     var hasActiveSession: Bool {
@@ -85,6 +76,8 @@ final class TimerEngine {
         )
     }
 
+    // MARK: - Session transitions
+
     @discardableResult
     func startFocus(task: FocusTask? = nil) throws -> FocusSession {
         try start(kind: .focus, task: task, updatesPreferredFocusTask: true)
@@ -112,17 +105,19 @@ final class TimerEngine {
         let now = dateProvider.now
         let remaining = remainingTime(at: now)
         guard remaining > 0 else {
-            try finishCurrentSession(at: now)
+            try finishCurrentSession(at: now, trigger: .live)
             return
         }
 
+        let checkpoint = makeCheckpoint()
         session.actualActiveDuration = activeDuration(of: session, at: now)
         session.state = .paused
         session.pausedAt = now
         session.pausedRemainingTime = remaining
         session.endDate = nil
-        notifications.cancelSessionEnd(id: session.id)
-        try store.save()
+        try saveChanges(restoring: checkpoint)
+
+        cancelNotifications(for: session)
         synchronizeLiveActivity()
         playFeedback(.paused)
     }
@@ -136,20 +131,15 @@ final class TimerEngine {
         }
 
         let now = dateProvider.now
+        let checkpoint = makeCheckpoint()
         closePause(on: session, at: now)
         let remaining = max(0, session.pausedRemainingTime ?? 0)
         session.pausedRemainingTime = nil
         session.state = .running
         session.endDate = now.addingTimeInterval(remaining)
+        try saveChanges(restoring: checkpoint)
 
-        if let endDate = session.endDate {
-            scheduleSessionEndIfEnabled(
-                id: session.id,
-                kind: session.kind,
-                at: endDate
-            )
-        }
-        try store.save()
+        scheduleNotifications(for: session)
         synchronizeLiveActivity()
         playFeedback(.resumed)
     }
@@ -164,10 +154,13 @@ final class TimerEngine {
         }
 
         let now = dateProvider.now
+        let checkpoint = makeCheckpoint()
         closePause(on: session, at: now)
         session.actualActiveDuration = activeDuration(of: session, at: now)
         makeTerminal(session, state: .cancelled, at: now)
-        try store.save()
+        try saveChanges(restoring: checkpoint)
+
+        cancelNotifications(for: session)
         synchronizeLiveActivity()
         playFeedback(.cancelled)
     }
@@ -185,30 +178,33 @@ final class TimerEngine {
         }
 
         let now = dateProvider.now
+        let checkpoint = makeCheckpoint()
         closePause(on: session, at: now)
         session.actualActiveDuration = activeDuration(of: session, at: now)
         makeTerminal(session, state: .skipped, at: now)
         advanceCycle(after: session)
-        try store.save()
+        try saveChanges(restoring: checkpoint)
+
+        cancelNotifications(for: session)
         synchronizeLiveActivity()
         playFeedback(.skipped)
     }
 
-    func resetCycle() throws {
-        cycleState.reset()
-        try store.save()
-    }
+    // MARK: - Preferences
 
     func selectFocusTask(_ task: FocusTask?) throws {
         let previousTask = cycleState.preferredFocusTask
         cycleState.preferredFocusTask = task
 
         do {
-            try store.save()
+            try saveChanges()
         } catch {
             cycleState.preferredFocusTask = previousTask
             throw error
         }
+
+        // A focus that auto-starts after the current break uses this task.
+        updatePendingSessionNotifications()
     }
 
     func previewDuration(
@@ -227,13 +223,13 @@ final class TimerEngine {
         settings.notificationsEnabled = isEnabled
 
         do {
-            try store.save()
+            try saveChanges()
         } catch {
             settings.notificationsEnabled = previousValue
             throw error
         }
 
-        updatePendingSessionNotification()
+        updatePendingSessionNotifications()
     }
 
     func setTimerSound(_ sound: TimerSound) throws {
@@ -242,27 +238,14 @@ final class TimerEngine {
         settings.timerSound = sound
 
         do {
-            try store.save()
+            try saveChanges()
         } catch {
             settings.timerSoundRawValue = previousRawValue
             settings.soundEnabled = previousEnabled
             throw error
         }
 
-        updatePendingSessionNotification()
-    }
-
-    private func updatePendingSessionNotification() {
-        guard let session = currentSession, session.state == .running,
-              let endDate = session.endDate, endDate > dateProvider.now
-        else { return }
-
-        if settings.notificationsEnabled {
-            // Reusing the session identifier replaces its pending alert.
-            scheduleSessionEndIfEnabled(id: session.id, kind: session.kind, at: endDate)
-        } else {
-            notifications.cancelSessionEnd(id: session.id)
-        }
+        updatePendingSessionNotifications()
     }
 
     func setShowTaskTitlesOnLockScreen(_ isEnabled: Bool) throws {
@@ -270,7 +253,7 @@ final class TimerEngine {
         settings.showTaskTitlesOnLockScreen = isEnabled
 
         do {
-            try store.save()
+            try saveChanges()
         } catch {
             settings.showTaskTitlesOnLockScreen = previousValue
             throw error
@@ -279,35 +262,54 @@ final class TimerEngine {
         synchronizeLiveActivity()
     }
 
+    /// Call after timer settings were edited and saved elsewhere, so alerts
+    /// for an auto-starting next phase match the new durations and flags.
+    func applySettingsChanges() {
+        updatePendingSessionNotifications()
+    }
+
+    // MARK: - Lifecycle
+
     func restore() throws {
         currentSession = try store.fetchActiveSession()
         if clearUnavailablePreferredFocusTask() {
-            try store.save()
+            try saveChanges()
         }
         guard let session = currentSession else {
             synchronizeLiveActivity()
             return
         }
 
-        if session.state == .running {
-            if remainingTime(at: dateProvider.now) <= 0 {
-                try finishCurrentSession(at: dateProvider.now, playCompletionSound: false)
-                return
-            } else if let endDate = session.endDate {
-                scheduleSessionEndIfEnabled(
-                    id: session.id,
-                    kind: session.kind,
-                    at: endDate
-                )
-            }
+        if session.state == .running, remainingTime(at: dateProvider.now) <= 0 {
+            try finishCurrentSession(at: dateProvider.now, trigger: .catchUp)
+            return
         }
 
+        scheduleNotifications(for: session)
         synchronizeLiveActivity()
     }
 
+    /// Reconciles a session that ran out. Pass `catchingUp: true` for the
+    /// first check after returning to the app: the notification already
+    /// alerted the user, so the completion sound and haptics are skipped.
     @discardableResult
-    func refresh(playCompletionSound: Bool = true) throws -> Bool {
-        try synchronizeCompletionIfNeeded(playCompletionSound: playCompletionSound)
+    func refresh(catchingUp: Bool = false) throws -> Bool {
+        try synchronizeCompletionIfNeeded(catchingUp ? .catchUp : .live)
+    }
+
+    /// Re-applies the current session to the Live Activity, e.g. after
+    /// returning to the foreground when an earlier request could not start.
+    func resynchronizeLiveActivity() {
+        synchronizeLiveActivity()
+    }
+
+    /// Drops the reference to a finished session before its record is
+    /// deleted, so the engine never reads a deleted model.
+    func releaseFinishedSession() {
+        guard let session = currentSession, session.state.isTerminal else {
+            return
+        }
+        currentSession = nil
     }
 
     func remainingTime(at date: Date) -> TimeInterval {
@@ -324,6 +326,8 @@ final class TimerEngine {
         }
     }
 
+    // MARK: - Starting and finishing
+
     @discardableResult
     private func start(
         kind: SessionKind,
@@ -335,43 +339,61 @@ final class TimerEngine {
             throw TimerEngineError.activeSessionExists
         }
 
-        resolveSkippedRecommendationIfNeeded(starting: kind)
-
+        let checkpoint = makeCheckpoint()
         if updatesPreferredFocusTask {
             cycleState.preferredFocusTask = task
         }
 
-        if kind == .focus {
-            cycleState.routineSnapshot = resolvedRoutine(for: task)
-        } else if cycleState.routineSnapshot == nil {
-            cycleState.routineSnapshot = TimerRoutineSnapshot(settings: settings)
-        }
-
-        let now = dateProvider.now
-        let duration = activeRoutine.duration(for: kind)
-        let session = FocusSession(
+        let session = beginSession(
             kind: kind,
-            startedAt: now,
-            plannedDuration: duration,
-            endDate: now.addingTimeInterval(duration),
-            task: kind == .focus ? task : nil
+            task: task,
+            startedAt: dateProvider.now,
+            id: UUID()
         )
+        try saveChanges(restoring: checkpoint)
 
-        currentSession = session
-        store.insert(session)
-        scheduleSessionEndIfEnabled(
-            id: session.id,
-            kind: kind,
-            at: session.endDate!
-        )
-        try store.save()
+        scheduleNotifications(for: session)
         synchronizeLiveActivity()
         playFeedback(.started)
         return session
     }
 
+    /// Creates the session and updates the cycle. The caller saves.
+    private func beginSession(
+        kind: SessionKind,
+        task: FocusTask?,
+        startedAt: Date,
+        id: UUID
+    ) -> FocusSession {
+        resolveSkippedRecommendationIfNeeded(starting: kind)
+
+        if kind == .focus {
+            // Only a task's own routine is frozen for the cycle. Without one,
+            // the cycle follows the global settings, so edits apply to the
+            // next session as Settings promises.
+            cycleState.routineSnapshot = task?.timerRoutine
+                .map(TimerRoutineSnapshot.init(routine:))
+        }
+
+        let duration = activeRoutine.duration(for: kind)
+        let session = FocusSession(
+            id: id,
+            kind: kind,
+            startedAt: startedAt,
+            plannedDuration: duration,
+            endDate: startedAt.addingTimeInterval(duration),
+            task: kind == .focus ? task : nil
+        )
+
+        currentSession = session
+        store.insert(session)
+        return session
+    }
+
     @discardableResult
-    private func synchronizeCompletionIfNeeded(playCompletionSound: Bool = true) throws -> Bool {
+    private func synchronizeCompletionIfNeeded(
+        _ trigger: CompletionTrigger = .live
+    ) throws -> Bool {
         guard
             let session = currentSession,
             session.state == .running,
@@ -380,14 +402,13 @@ final class TimerEngine {
             return false
         }
 
-        try finishCurrentSession(at: dateProvider.now, playCompletionSound: playCompletionSound)
+        try finishCurrentSession(at: dateProvider.now, trigger: trigger)
         return true
     }
 
     private func finishCurrentSession(
         at date: Date,
-        autoStart: Bool = true,
-        playCompletionSound: Bool = true
+        trigger: CompletionTrigger
     ) throws {
         guard let session = currentSession, !session.state.isTerminal else {
             return
@@ -395,23 +416,13 @@ final class TimerEngine {
 
         let completedRoutine = activeRoutine
         let completionDate = session.endDate ?? date
-        closePause(on: session, at: date)
-        session.actualActiveDuration = session.plannedDuration
-        makeTerminal(
-            session,
-            state: .completed,
-            at: completionDate,
-            cancelNotification: false
-        )
-        if session.kind == .focus {
-            session.task?.completeIfEstimateReached()
-        }
-        advanceCycle(after: session)
-        clearUnavailablePreferredFocusTask()
-        try store.save()
+        let checkpoint = makeCheckpoint()
+        complete(session, at: date)
+        try saveChanges(restoring: checkpoint)
+
         synchronizeLiveActivity()
-        playFeedback(.completed)
-        if playCompletionSound {
+        if trigger == .live {
+            playFeedback(.completed)
             completionSound.playCompletion(
                 id: session.id,
                 sound: settings.timerSound,
@@ -419,49 +430,249 @@ final class TimerEngine {
             )
         }
 
-        guard autoStart else { return }
+        guard let nextKind = autoStartKind(after: completedRoutine) else {
+            notifications.cancelSessionEnd(id: FocusSession.followUpID(after: session.id))
+            return
+        }
 
+        try startAutomatically(
+            nextKind,
+            after: session,
+            at: completionDate,
+            trigger: trigger
+        )
+    }
+
+    /// Starts the next phase from the moment the previous one ended, so a
+    /// break that ran while the phone was locked keeps its real timing.
+    /// If that phase also ran out while the app was away, it is recorded as
+    /// completed and nothing further auto-starts: alerts are only scheduled
+    /// one phase ahead, and later phases must not be invented.
+    private func startAutomatically(
+        _ kind: SessionKind,
+        after previous: FocusSession,
+        at startDate: Date,
+        trigger: CompletionTrigger
+    ) throws {
+        let now = dateProvider.now
+        let checkpoint = makeCheckpoint()
+        let session = beginSession(
+            kind: kind,
+            task: kind == .focus ? preferredFocusTaskForNextSession : nil,
+            startedAt: startDate,
+            id: FocusSession.followUpID(after: previous.id)
+        )
+        let hasElapsed = (session.endDate ?? now) <= now
+        if hasElapsed {
+            complete(session, at: now)
+        }
+
+        try saveChanges(restoring: checkpoint)
+
+        if !hasElapsed {
+            scheduleNotifications(for: session)
+            if trigger == .live {
+                playFeedback(.started)
+            }
+        }
+        synchronizeLiveActivity()
+    }
+
+    /// Applies every model change of a natural completion. The caller saves.
+    private func complete(_ session: FocusSession, at date: Date) {
+        let completionDate = session.endDate ?? date
+        closePause(on: session, at: date)
+        session.actualActiveDuration = session.plannedDuration
+        makeTerminal(session, state: .completed, at: completionDate)
+        if session.kind == .focus {
+            session.task?.completeIfEstimateReached()
+        }
+        advanceCycle(after: session)
+        clearUnavailablePreferredFocusTask()
+    }
+
+    private func autoStartKind(after routine: TimerRoutineSnapshot) -> SessionKind? {
         switch cycleState.nextSuggestedKind {
-        case .focus where completedRoutine.autoStartFocus:
-            try start(kind: .focus, task: preferredFocusTaskForNextSession)
-        case .shortBreak where completedRoutine.autoStartBreaks:
-            try start(kind: .shortBreak)
-        case .longBreak where completedRoutine.autoStartBreaks:
-            try start(kind: .longBreak)
+        case .focus where routine.autoStartFocus:
+            .focus
+        case .shortBreak where routine.autoStartBreaks:
+            .shortBreak
+        case .longBreak where routine.autoStartBreaks:
+            .longBreak
         default:
-            break
+            nil
+        }
+    }
+
+    /// The phase that will auto-start when `session` completes, mirroring
+    /// `advanceCycle(after:)` and `autoStartKind(after:)`.
+    private func plannedFollowUp(
+        after session: FocusSession
+    ) -> (kind: SessionKind, duration: TimeInterval)? {
+        let routine = activeRoutine
+
+        switch session.kind {
+        case .focus:
+            guard routine.autoStartBreaks else { return nil }
+            let kind: SessionKind =
+                cycleState.completedFocusesInCycle + 1 >= routine.longBreakEvery
+                ? .longBreak
+                : .shortBreak
+            return (kind, routine.duration(for: kind))
+        case .shortBreak, .longBreak:
+            guard routine.autoStartFocus else { return nil }
+            let focusRoutine = resolvedRoutine(for: preferredFocusTaskForNextSession)
+            return (.focus, focusRoutine.duration(for: .focus))
         }
     }
 
     private func makeTerminal(
         _ session: FocusSession,
         state: SessionState,
-        at date: Date,
-        cancelNotification: Bool = true
+        at date: Date
     ) {
         session.state = state
         session.finishedAt = date
         session.endDate = nil
         session.pausedAt = nil
         session.pausedRemainingTime = nil
-        if cancelNotification {
-            notifications.cancelSessionEnd(id: session.id)
+    }
+
+    // MARK: - Side effects
+
+    /// Saves, or discards the unsaved changes so memory matches the store.
+    private func saveChanges() throws {
+        do {
+            try store.save()
+        } catch {
+            store.rollback()
+            throw error
         }
     }
 
-    private func scheduleSessionEndIfEnabled(
-        id: UUID,
-        kind: SessionKind,
-        at date: Date
-    ) {
-        guard settings.notificationsEnabled else { return }
+    /// Saves a transition, or puts back everything it changed.
+    /// `ModelContext.rollback()` discards an unsaved insert, but on iOS 26
+    /// and earlier it leaves the changed properties of models already in
+    /// memory, so the engine restores those itself.
+    private func saveChanges(restoring checkpoint: Checkpoint) throws {
+        do {
+            try store.save()
+        } catch {
+            store.rollback()
+            restore(checkpoint)
+            throw error
+        }
+    }
+
+    /// The values a single transition can change.
+    private struct Checkpoint {
+        struct SessionValues {
+            let state: SessionState
+            let finishedAt: Date?
+            let endDate: Date?
+            let pausedAt: Date?
+            let pausedRemainingTime: TimeInterval?
+            let actualActiveDuration: TimeInterval
+            let totalPausedDuration: TimeInterval
+            let taskCompletedAt: Date?
+        }
+
+        let currentSession: FocusSession?
+        let sessionValues: SessionValues?
+        let completedFocusesInCycle: Int
+        let nextSuggestedKind: SessionKind
+        let preferredFocusTask: FocusTask?
+        let routineSnapshot: TimerRoutineSnapshot?
+    }
+
+    private func makeCheckpoint() -> Checkpoint {
+        Checkpoint(
+            currentSession: currentSession,
+            sessionValues: currentSession.map { session in
+                Checkpoint.SessionValues(
+                    state: session.state,
+                    finishedAt: session.finishedAt,
+                    endDate: session.endDate,
+                    pausedAt: session.pausedAt,
+                    pausedRemainingTime: session.pausedRemainingTime,
+                    actualActiveDuration: session.actualActiveDuration,
+                    totalPausedDuration: session.totalPausedDuration,
+                    taskCompletedAt: session.task?.completedAt
+                )
+            },
+            completedFocusesInCycle: cycleState.completedFocusesInCycle,
+            nextSuggestedKind: cycleState.nextSuggestedKind,
+            preferredFocusTask: cycleState.preferredFocusTask,
+            routineSnapshot: cycleState.routineSnapshot
+        )
+    }
+
+    private func restore(_ checkpoint: Checkpoint) {
+        currentSession = checkpoint.currentSession
+        if let session = checkpoint.currentSession, let values = checkpoint.sessionValues {
+            session.state = values.state
+            session.finishedAt = values.finishedAt
+            session.endDate = values.endDate
+            session.pausedAt = values.pausedAt
+            session.pausedRemainingTime = values.pausedRemainingTime
+            session.actualActiveDuration = values.actualActiveDuration
+            session.totalPausedDuration = values.totalPausedDuration
+            session.task?.completedAt = values.taskCompletedAt
+        }
+        cycleState.completedFocusesInCycle = checkpoint.completedFocusesInCycle
+        cycleState.nextSuggestedKind = checkpoint.nextSuggestedKind
+        cycleState.preferredFocusTask = checkpoint.preferredFocusTask
+        cycleState.routineSnapshot = checkpoint.routineSnapshot
+    }
+
+    private func scheduleNotifications(for session: FocusSession) {
+        guard
+            settings.notificationsEnabled,
+            session.state == .running,
+            let endDate = session.endDate,
+            endDate > dateProvider.now
+        else {
+            return
+        }
+
         notifications.scheduleSessionEnd(
-            id: id,
-            kind: kind,
-            at: date,
+            id: session.id,
+            kind: session.kind,
+            at: endDate,
             soundEnabled: settings.soundEnabled,
             sound: settings.timerSound
         )
+
+        let followUpID = FocusSession.followUpID(after: session.id)
+        if let followUp = plannedFollowUp(after: session) {
+            notifications.scheduleSessionEnd(
+                id: followUpID,
+                kind: followUp.kind,
+                at: endDate.addingTimeInterval(followUp.duration),
+                soundEnabled: settings.soundEnabled,
+                sound: settings.timerSound
+            )
+        } else {
+            notifications.cancelSessionEnd(id: followUpID)
+        }
+    }
+
+    private func cancelNotifications(for session: FocusSession) {
+        notifications.cancelSessionEnd(id: session.id)
+        notifications.cancelSessionEnd(id: FocusSession.followUpID(after: session.id))
+    }
+
+    private func updatePendingSessionNotifications() {
+        guard let session = currentSession, session.state == .running else {
+            return
+        }
+
+        if settings.notificationsEnabled {
+            // Reusing the identifiers replaces the pending alerts.
+            scheduleNotifications(for: session)
+        } else {
+            cancelNotifications(for: session)
+        }
     }
 
     private func synchronizeLiveActivity() {
@@ -479,6 +690,8 @@ final class TimerEngine {
         guard settings.hapticsEnabled else { return }
         feedback.play(event)
     }
+
+    // MARK: - Cycle
 
     private var activeRoutine: TimerRoutineSnapshot {
         cycleState.routineSnapshot ?? TimerRoutineSnapshot(settings: settings)

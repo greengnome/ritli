@@ -132,6 +132,18 @@ enum StatsPeriod: String, CaseIterable, Identifiable, Sendable {
         return interval(containing: previousAnchor, calendar: calendar)
     }
 
+    /// The part of the previous period that had elapsed at the same point,
+    /// so "this week so far" is compared with "last week up to now", not
+    /// with the whole of last week.
+    func previousElapsedInterval(containing date: Date, calendar: Calendar) -> DateInterval {
+        let previous = previousInterval(containing: date, calendar: calendar)
+        let current = interval(containing: date, calendar: calendar)
+        let sameMoment = calendar.date(byAdding: periodComponent, value: -1, to: date)
+            ?? previous.start.addingTimeInterval(date.timeIntervalSince(current.start))
+        let end = min(max(sameMoment, previous.start), previous.end)
+        return DateInterval(start: previous.start, end: end)
+    }
+
     func bucketIntervals(containing date: Date, calendar: Calendar) -> [DateInterval] {
         let periodInterval = interval(containing: date, calendar: calendar)
         var buckets: [DateInterval] = []

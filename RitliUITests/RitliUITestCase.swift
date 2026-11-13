@@ -279,19 +279,40 @@ class RitliUITestCase: XCTestCase {
         return false
     }
 
+    enum OnboardingLaunch {
+        /// Mark onboarding as done so tests start on the tabs.
+        case skip
+        /// Show onboarding from the first page.
+        case reset
+        /// Keep whatever the previous launch stored.
+        case keep
+    }
+
+    /// Launches in English unless a test asks for another language, so label
+    /// queries don't depend on the simulator's language.
     func makeApp(
         showTasks: Bool = false,
         showStats: Bool = false,
         showSettings: Bool = false,
-        language: String? = nil,
-        locale: String? = nil,
-        taskTitle: String? = nil
+        language: String = "en",
+        locale: String = "en_US",
+        taskTitle: String? = nil,
+        onboarding: OnboardingLaunch = .skip,
+        showsSplash: Bool = false
     ) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = [
-            "--ui-testing",
-            "--ui-testing-skip-onboarding"
-        ]
+        app.launchArguments = ["--ui-testing"]
+        switch onboarding {
+        case .skip:
+            app.launchArguments.append("--ui-testing-skip-onboarding")
+        case .reset:
+            app.launchArguments.append("--ui-testing-reset-onboarding")
+        case .keep:
+            break
+        }
+        if showsSplash {
+            app.launchArguments.append("--ui-testing-show-splash")
+        }
         if let taskTitle {
             app.launchEnvironment["RITLI_UI_TEST_TASK_TITLE"] = taskTitle
         }
@@ -304,18 +325,10 @@ class RitliUITestCase: XCTestCase {
         if showSettings {
             app.launchArguments.append("--ui-testing-show-settings")
         }
-        if let language {
-            app.launchArguments.append(contentsOf: [
-                "-AppleLanguages",
-                "(\(language))"
-            ])
-        }
-        if let locale {
-            app.launchArguments.append(contentsOf: [
-                "-AppleLocale",
-                locale
-            ])
-        }
+        app.launchArguments.append(contentsOf: [
+            "-AppleLanguages", "(\(language))",
+            "-AppleLocale", locale
+        ])
         return app
     }
 }

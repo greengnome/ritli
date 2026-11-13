@@ -6,6 +6,8 @@ protocol TimerSessionStore: AnyObject {
     func insert(_ session: FocusSession)
     func fetchActiveSession() throws -> FocusSession?
     func save() throws
+    /// Discards unsaved changes after a failed save.
+    func rollback()
 }
 
 @MainActor
@@ -21,17 +23,24 @@ final class SwiftDataTimerSessionStore: TimerSessionStore {
     }
 
     func fetchActiveSession() throws -> FocusSession? {
+        let running = SessionState.running.rawValue
+        let paused = SessionState.paused.rawValue
         var descriptor = FetchDescriptor<FocusSession>(
+            predicate: #Predicate {
+                $0.stateRawValue == running || $0.stateRawValue == paused
+            },
             sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
         )
-        descriptor.fetchLimit = 2
+        descriptor.fetchLimit = 1
 
-        return try context.fetch(descriptor).first {
-            $0.state == .running || $0.state == .paused
-        }
+        return try context.fetch(descriptor).first
     }
 
     func save() throws {
         try context.save()
+    }
+
+    func rollback() {
+        context.rollback()
     }
 }

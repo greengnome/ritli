@@ -16,19 +16,7 @@ struct TaskRow: View {
                     .foregroundStyle(task.isCompleted ? .green : RitliTheme.accent)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(
-                Text(
-                    LocalizedStringResource(
-                        task.isCompleted
-                            ? "tasks.row.reopen.accessibility"
-                            : "tasks.row.complete.accessibility",
-                        defaultValue: task.isCompleted
-                            ? "Reopen \(task.title)"
-                            : "Mark \(task.title) complete",
-                        comment: "VoiceOver label for changing a task's completion state."
-                    )
-                )
-            )
+            .accessibilityLabel(completionToggleLabel)
 
             Button(action: onEdit) {
                 VStack(alignment: .leading, spacing: 7) {
@@ -140,6 +128,24 @@ struct TaskRow: View {
                 }
             }
             .tint(.blue)
+        }
+    }
+
+    /// Separate literal keys (rather than a ternary) so string extraction
+    /// doesn't add the English defaults to the catalog as keys of their own.
+    private var completionToggleLabel: Text {
+        if task.isCompleted {
+            Text(LocalizedStringResource(
+                "tasks.row.reopen.accessibility",
+                defaultValue: "Reopen \(task.title)",
+                comment: "VoiceOver label for changing a task's completion state."
+            ))
+        } else {
+            Text(LocalizedStringResource(
+                "tasks.row.complete.accessibility",
+                defaultValue: "Mark \(task.title) complete",
+                comment: "VoiceOver label for changing a task's completion state."
+            ))
         }
     }
 }

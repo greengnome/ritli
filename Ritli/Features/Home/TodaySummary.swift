@@ -11,8 +11,11 @@ struct TodaySummary: Equatable {
         now: Date = .now,
         calendar: Calendar = .current
     ) {
+        // Only finished sessions have a final duration, matching Stats and History.
         let todaysFocusSessions = sessions.filter {
-            $0.kind == .focus && calendar.isDate($0.startedAt, inSameDayAs: now)
+            $0.kind == .focus
+                && $0.state.isTerminal
+                && calendar.isDate($0.startedAt, inSameDayAs: now)
         }
 
         self.completedSessions = todaysFocusSessions.count {

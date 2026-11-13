@@ -74,7 +74,7 @@ final class LiveActivityUITests: RitliUITestCase {
 
     @MainActor
     func testDisplaysFinishedTimerOutsideApp() throws {
-        let app = makeApp(language: "en", locale: "en_US")
+        let app = makeApp()
         app.launchArguments.append("--ui-testing-short-session")
         defer {
             app.activate()

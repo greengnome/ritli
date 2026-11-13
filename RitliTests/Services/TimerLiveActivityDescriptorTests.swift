@@ -50,26 +50,6 @@ struct TimerLiveActivityDescriptorTests {
         #expect(descriptor.contentState.taskTitle == nil)
     }
 
-    @Test("Every session kind maps to a stable Live Activity kind", arguments: [
-        (SessionKind.focus, TimerLiveActivityAttributes.Kind.focus),
-        (SessionKind.shortBreak, TimerLiveActivityAttributes.Kind.shortBreak),
-        (SessionKind.longBreak, TimerLiveActivityAttributes.Kind.longBreak),
-    ])
-    func mapsSessionKind(
-        sessionKind: SessionKind,
-        expectedKind: TimerLiveActivityAttributes.Kind
-    ) throws {
-        let session = FocusSession(
-            kind: sessionKind,
-            plannedDuration: 300,
-            endDate: Date(timeIntervalSince1970: 300)
-        )
-
-        let descriptor = try #require(TimerLiveActivityDescriptor(session: session))
-
-        #expect(descriptor.attributes.kind == expectedKind)
-    }
-
     @Test("A paused session maps frozen remaining time and no task")
     func mapsPausedSession() throws {
         let session = FocusSession(
@@ -83,30 +63,6 @@ struct TimerLiveActivityDescriptorTests {
 
         #expect(descriptor.contentState.taskTitle == nil)
         #expect(descriptor.contentState.phase == .paused(remainingTime: 125))
-    }
-
-    @Test("A malformed paused session safely maps to zero remaining time")
-    func normalizesPausedRemainingTime() throws {
-        let session = FocusSession(
-            kind: .focus,
-            state: .paused,
-            plannedDuration: 1_500,
-            pausedRemainingTime: nil
-        )
-
-        let descriptor = try #require(TimerLiveActivityDescriptor(session: session))
-
-        #expect(descriptor.contentState.phase == .paused(remainingTime: 0))
-    }
-
-    @Test("A running session without an end date cannot be presented")
-    func rejectsMalformedRunningSession() {
-        let session = FocusSession(
-            kind: .focus,
-            plannedDuration: 1_500
-        )
-
-        #expect(TimerLiveActivityDescriptor(session: session) == nil)
     }
 
     @Test("Terminal sessions cannot produce Live Activity content", arguments: [

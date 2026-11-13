@@ -1,3 +1,4 @@
+import OSLog
 import SwiftData
 
 @MainActor
@@ -5,6 +6,8 @@ struct AppDependencies {
     let modelContainer: ModelContainer
     let timerEngine: TimerEngine
     let notificationPermissionService: NotificationPermissionService
+
+    private static let logger = Logger(subsystem: "com.kirillgl.Ritli", category: "Startup")
 
     static func live(
         inMemory: Bool = false,
@@ -36,7 +39,13 @@ struct AppDependencies {
             feedback: SystemTimerFeedbackPlayer(),
             completionSound: TimerCompletionSoundPlayer.shared
         )
-        try engine.restore()
+        do {
+            try engine.restore()
+        } catch {
+            // A session that can't be reconciled shouldn't lock the user out
+            // of the app; it is retried on the next refresh or launch.
+            logger.error("Could not restore the timer: \(error.localizedDescription, privacy: .public)")
+        }
 
         return AppDependencies(
             modelContainer: container,

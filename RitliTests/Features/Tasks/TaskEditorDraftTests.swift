@@ -70,6 +70,22 @@ struct TaskEditorDraftTests {
         #expect(task.dueDate == nil)
     }
 
+    @Test("Editing keeps an archived category the editor doesn't list")
+    func keepsArchivedCategory() {
+        let archived = FocusCategory(name: "Old team", colorToken: "blue", isArchived: true)
+        let active = FocusCategory(name: "Work", colorToken: "coral")
+        let task = FocusTask(title: "Report", category: archived)
+        var draft = TaskEditorDraft(task: task)
+        draft.title = "Quarterly report"
+
+        draft.apply(to: task, categories: [active])
+        #expect(task.category === archived)
+
+        draft.categoryID = active.id
+        draft.apply(to: task, categories: [active])
+        #expect(task.category === active)
+    }
+
     @Test("Reducing the estimate to completed progress marks a task done")
     func loweredEstimateCompletesTask() {
         let completionDate = Date(timeIntervalSince1970: 1_000)

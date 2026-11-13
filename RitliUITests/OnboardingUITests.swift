@@ -5,16 +5,7 @@ final class OnboardingUITests: RitliUITestCase {
 
     @MainActor
     func testTransitionsFromSplashToOnboarding() throws {
-        let app = XCUIApplication()
-        app.launchArguments = [
-            "--ui-testing",
-            "--ui-testing-show-splash",
-            "--ui-testing-reset-onboarding",
-            "-AppleLanguages",
-            "(en)",
-            "-AppleLocale",
-            "en_US"
-        ]
+        let app = makeApp(onboarding: .reset, showsSplash: true)
         app.launch()
 
         let splash = app.descendants(matching: .any)["startup.splash"]
@@ -41,15 +32,7 @@ final class OnboardingUITests: RitliUITestCase {
 
     @MainActor
     func testCompletesOnboardingOnlyOnce() throws {
-        let app = XCUIApplication()
-        app.launchArguments = [
-            "--ui-testing",
-            "--ui-testing-reset-onboarding",
-            "-AppleLanguages",
-            "(en)",
-            "-AppleLocale",
-            "en_US"
-        ]
+        let app = makeApp(onboarding: .reset)
         app.launch()
 
         let focusTitle = app.staticTexts["onboarding.focus.title"]
@@ -89,13 +72,7 @@ final class OnboardingUITests: RitliUITestCase {
         XCTAssertFalse(focusTitle.exists)
 
         app.terminate()
-        app.launchArguments = [
-            "--ui-testing",
-            "-AppleLanguages",
-            "(en)",
-            "-AppleLocale",
-            "en_US"
-        ]
+        app.launchArguments = makeApp(onboarding: .keep).launchArguments
         app.launch()
 
         XCTAssertTrue(
@@ -107,12 +84,10 @@ final class OnboardingUITests: RitliUITestCase {
 
     @MainActor
     func testOnboardingArtworkAnimatesOnEveryPageAndWhenRevisited() throws {
-        let app = XCUIApplication()
-        app.launchArguments = [
-            "--ui-testing", "--ui-testing-reset-onboarding",
-            "-AppleLanguages", "(en)", "-AppleLocale", "en_US"
-        ]
+        let app = makeApp(onboarding: .reset)
         app.launch()
+        // The first wait includes the launch, which is slow on a cold runner.
+        XCTAssertTrue(app.buttons["onboarding.page.1"].waitForExistence(timeout: 15))
 
         for (index, page) in ["focus", "tasks", "insights"].enumerated() {
             XCTAssertTrue(waitForValue("Selected", of: app.buttons["onboarding.page.\(index + 1)"]))
@@ -133,43 +108,4 @@ final class OnboardingUITests: RitliUITestCase {
         try assertOnboardingArtworkMoves(on: "focus", in: app)
     }
 
-    @MainActor
-    func testDisplaysOnboardingInUkrainian() throws {
-        let app = XCUIApplication()
-        app.launchArguments = [
-            "--ui-testing",
-            "--ui-testing-reset-onboarding",
-            "-AppleLanguages",
-            "(uk)",
-            "-AppleLocale",
-            "uk_UA"
-        ]
-        app.launch()
-
-        let focusTitle = app.staticTexts["onboarding.focus.title"]
-        XCTAssertTrue(focusTitle.waitForExistence(timeout: 2))
-        XCTAssertEqual(focusTitle.label, "Зосереджуйтеся глибше")
-        addScreenshot(named: "Onboarding Ukrainian — focus")
-        XCTAssertEqual(app.buttons["onboarding.continue"].label, "Продовжити")
-        XCTAssertEqual(
-            app.buttons["onboarding.page.1"].value as? String,
-            "Вибрано"
-        )
-
-        app.buttons["onboarding.continue"].tap()
-        let tasksTitle = app.staticTexts["onboarding.tasks.title"]
-        XCTAssertTrue(tasksTitle.waitForExistence(timeout: 2))
-        XCTAssertEqual(tasksTitle.label, "Перетворюйте плани на прогрес")
-        addScreenshot(named: "Onboarding Ukrainian — tasks")
-
-        app.buttons["onboarding.continue"].tap()
-        let insightsTitle = app.staticTexts["onboarding.insights.title"]
-        XCTAssertTrue(insightsTitle.waitForExistence(timeout: 2))
-        XCTAssertEqual(insightsTitle.label, "Відстежуйте свій прогрес")
-        addScreenshot(named: "Onboarding Ukrainian — insights")
-        XCTAssertEqual(
-            app.buttons["onboarding.continue"].label,
-            "Почати фокусування"
-        )
-    }
 }

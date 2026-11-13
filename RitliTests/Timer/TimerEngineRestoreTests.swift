@@ -2,44 +2,62 @@ import Foundation
 import Testing
 @testable import Ritli
 
+/// Relaunch and returning to the foreground: reconciling what happened
+/// while the app was away, without replaying alerts.
 @MainActor
 struct TimerEngineRestoreTests {
-    @Test("Restore clears a persisted task whose estimate is already complete")
-    func clearsExhaustedPreferredTask() throws {
-        let task = FocusTask(title: "Ship Ritli", estimatedPomodoros: 1)
-        task.sessions = [
-            FocusSession(
-                kind: .focus,
-                state: .completed,
-                plannedDuration: 60,
-                task: task
-            )
-        ]
-        let cycle = PomodoroCycleState(preferredFocusTask: task)
-        let harness = TimerEngineHarness(cycle: cycle)
+    private let start = Date(timeIntervalSince1970: 20_000)
 
-        try harness.engine.restore()
-
-        #expect(harness.cycle.preferredFocusTask == nil)
-        #expect(harness.store.saveCount == 1)
-    }
-
-    @Test("Restoring an overdue session finalizes it and applies auto-start")
-    func finalizesOverdueSessionAndAutoStarts() throws {
-        let start = Date(timeIntervalSince1970: 20_000)
-        let session = FocusSession(
+    private func runningFocus(duration: TimeInterval = 60) -> FocusSession {
+        FocusSession(
             kind: .focus,
             startedAt: start,
-            plannedDuration: 60,
-            endDate: start.addingTimeInterval(60)
+            plannedDuration: duration,
+            endDate: start.addingTimeInterval(duration)
         )
-        let settings = PomodoroSettings(
-            focusDuration: 60,
-            autoStartBreaks: true
+    }
+
+    @Test("Restore resumes running and paused sessions and clears a stale Live Activity")
+    func restoresActiveSessions() throws {
+        let running = runningFocus(duration: 1_500)
+        let runningHarness = TimerEngineHarness(
+            startDate: start.addingTimeInterval(100),
+            sessions: [running]
         )
+        let paused = FocusSession(
+            kind: .longBreak,
+            state: .paused,
+            startedAt: start,
+            plannedDuration: 900,
+            pausedRemainingTime: 450
+        )
+        let pausedHarness = TimerEngineHarness(
+            startDate: start.addingTimeInterval(100),
+            sessions: [paused]
+        )
+        let emptyHarness = TimerEngineHarness()
+
+        try runningHarness.engine.restore()
+        try pausedHarness.engine.restore()
+        try emptyHarness.engine.restore()
+
+        #expect(runningHarness.engine.currentSession === running)
+        #expect(runningHarness.notifications.pending[running.id]?.date == running.endDate)
+        #expect(runningHarness.liveActivities.lastDescriptor?.attributes.sessionID == running.id)
+        #expect(pausedHarness.notifications.pending.isEmpty)
+        #expect(
+            pausedHarness.liveActivities.lastDescriptor?.contentState.phase
+                == .paused(remainingTime: 450)
+        )
+        #expect(emptyHarness.liveActivities.events == [.ended])
+    }
+
+    @Test("An overdue session is finalized at its end date without sound or haptics")
+    func catchesUpSilently() throws {
+        let session = runningFocus()
         let harness = TimerEngineHarness(
             startDate: start.addingTimeInterval(600),
-            settings: settings,
+            settings: PomodoroSettings(focusDuration: 60, timerSound: .gentleBell),
             sessions: [session]
         )
 
@@ -47,42 +65,114 @@ struct TimerEngineRestoreTests {
 
         #expect(session.state == .completed)
         #expect(session.finishedAt == start.addingTimeInterval(60))
-        #expect(harness.store.sessions.count == 2)
         #expect(harness.cycle.completedFocusesInCycle == 1)
-        #expect(harness.engine.currentSession?.kind == .shortBreak)
-        #expect(harness.engine.currentSession?.state == .running)
+        #expect(harness.liveActivities.events == [.ended])
+        #expect(harness.completionSound.playbacks.isEmpty)
+        #expect(harness.feedback.events.isEmpty)
+    }
+
+    @Test("Returning while the auto-started break is still due continues it from the real start")
+    func catchUpContinuesRunningFollowUp() throws {
+        let session = runningFocus()
+        let harness = TimerEngineHarness(
+            startDate: start.addingTimeInterval(60 + 120),
+            settings: PomodoroSettings(
+                focusDuration: 60,
+                shortBreakDuration: 300,
+                autoStartBreaks: true
+            ),
+            sessions: [session]
+        )
+
+        try harness.engine.restore()
+
+        let breakSession = try #require(harness.engine.currentSession)
+        #expect(breakSession.id == FocusSession.followUpID(after: session.id))
+        #expect(breakSession.kind == .shortBreak)
+        #expect(breakSession.state == .running)
+        #expect(breakSession.startedAt == start.addingTimeInterval(60))
+        #expect(harness.engine.remainingTime == 180)
+        #expect(harness.notifications.pending[breakSession.id]?.date == breakSession.endDate)
+        #expect(harness.feedback.events.isEmpty)
 
         try harness.engine.restore()
         #expect(harness.cycle.completedFocusesInCycle == 1)
         #expect(harness.store.sessions.count == 2)
     }
 
-    @Test("Restoring a running session reschedules its notification")
-    func restoresRunningSession() throws {
-        let start = Date(timeIntervalSince1970: 30_000)
-        let end = start.addingTimeInterval(1_500)
-        let session = FocusSession(
-            kind: .focus,
-            startedAt: start,
-            plannedDuration: 1_500,
-            endDate: end
-        )
+    @Test("A follow-up that also ran out is recorded, and nothing further auto-starts")
+    func catchUpStopsAfterOnePhase() throws {
+        let session = runningFocus()
         let harness = TimerEngineHarness(
-            startDate: start.addingTimeInterval(100),
+            startDate: start.addingTimeInterval(12 * 3_600),
+            settings: PomodoroSettings(
+                focusDuration: 60,
+                shortBreakDuration: 300,
+                autoStartBreaks: true,
+                autoStartFocus: true
+            ),
             sessions: [session]
         )
 
         try harness.engine.restore()
 
-        #expect(harness.engine.currentSession === session)
-        #expect(harness.engine.remainingTime == 1_400)
-        #expect(harness.notifications.schedules == [
-            .init(
-                id: session.id,
-                kind: .focus,
-                date: end,
-                soundEnabled: true
-            )
-        ])
+        #expect(harness.store.sessions.count == 2)
+        let breakSession = try #require(harness.engine.currentSession)
+        #expect(breakSession.kind == .shortBreak)
+        #expect(breakSession.state == .completed)
+        #expect(breakSession.finishedAt == start.addingTimeInterval(60 + 300))
+        #expect(!harness.engine.hasActiveSession)
+        #expect(harness.cycle.nextSuggestedKind == .focus)
+        #expect(harness.liveActivities.events.last == .ended)
+        #expect(harness.completionSound.playbacks.isEmpty)
+    }
+
+    @Test("The first refresh after returning catches up silently; later ones play the sound")
+    func refreshCatchUpIsSilent() throws {
+        let harness = TimerEngineHarness(settings: PomodoroSettings(focusDuration: 1, timerSound: .gentleBell))
+        try harness.engine.startFocus()
+        harness.clock.advance(by: 10)
+
+        try harness.engine.refresh(catchingUp: true)
+        #expect(harness.completionSound.playbacks.isEmpty)
+
+        let session = try harness.engine.startFocus()
+        try harness.completeCurrent()
+        #expect(harness.completionSound.playbacks.map(\.id) == [session.id])
+    }
+
+    @Test("Restore forgets a remembered task that is already finished")
+    func clearsExhaustedPreferredTask() throws {
+        let task = FocusTask(title: "Done", estimatedPomodoros: 1)
+        let completed = FocusSession(
+            kind: .focus,
+            state: .completed,
+            startedAt: start,
+            finishedAt: start.addingTimeInterval(60),
+            plannedDuration: 60,
+            task: task
+        )
+        task.sessions.append(completed)
+        let harness = TimerEngineHarness(
+            cycle: PomodoroCycleState(preferredFocusTask: task),
+            sessions: [completed]
+        )
+
+        try harness.engine.restore()
+
+        #expect(harness.cycle.preferredFocusTask == nil)
+        #expect(harness.store.saveCount == 1)
+    }
+
+    @Test("Releasing a finished session leaves an active one alone")
+    func releasesOnlyFinishedSessions() throws {
+        let harness = TimerEngineHarness()
+        try harness.engine.startFocus()
+        harness.engine.releaseFinishedSession()
+        #expect(harness.engine.hasActiveSession)
+
+        try harness.engine.cancel()
+        harness.engine.releaseFinishedSession()
+        #expect(harness.engine.currentSession == nil)
     }
 }

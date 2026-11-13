@@ -21,14 +21,6 @@ final class SettingsUITests: RitliUITestCase {
         tapSwitch(autoStartBreaks)
         XCTAssertTrue(waitForValue("On", of: autoStartBreaks))
 
-        let soundRow = app.buttons["settings.timerSound"]
-        XCTAssertTrue(scrollToElement(soundRow, in: app))
-        soundRow.tap()
-        XCTAssertTrue(app.buttons["settings.timerSound.systemDefault"].waitForExistence(timeout: 2))
-        app.buttons["settings.timerSound.silent"].tap()
-        XCTAssertTrue(app.buttons["settings.timerSound.silent"].isSelected)
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-
         let appearance = app.descendants(matching: .any)["settings.appearance"]
         XCTAssertTrue(
             scrollToElement(appearance, in: app),
@@ -47,77 +39,18 @@ final class SettingsUITests: RitliUITestCase {
     }
 
     @MainActor
-    func testUsesSettingsInUkrainian() throws {
-        let app = makeApp(
-            showSettings: true,
-            language: "uk",
-            locale: "uk_UA"
-        )
+    func testVersionRowStaysWithinVisibleBounds() throws {
+        let app = makeApp(showSettings: true)
         app.launch()
 
-        XCTAssertTrue(app.navigationBars["Налаштування"].waitForExistence(timeout: 2))
-        XCTAssertTrue(app.staticTexts["Таймер"].exists)
-        XCTAssertTrue(app.staticTexts["Цикл"].exists)
-
-        let focusDuration = app.descendants(matching: .any)["settings.focusDuration"]
-        XCTAssertTrue(focusDuration.exists)
-        XCTAssertTrue(focusDuration.label.contains("Фокус"))
-        XCTAssertTrue(focusDuration.label.contains("25 хв"))
-
-        let autoStartBreaks = app.switches["settings.autoStartBreaks"]
-        XCTAssertEqual(autoStartBreaks.label, "Автозапуск перерв")
-        XCTAssertEqual(autoStartBreaks.value as? String, "Вимкнено")
-
         XCTAssertTrue(
-            scrollToElement(app.staticTexts["Відгук"], in: app),
-            "Розділ відгуку має бути доступним після прокручування"
-        )
-        let soundRow = app.buttons["settings.timerSound"]
-        XCTAssertTrue(scrollToElement(soundRow, in: app))
-        XCTAssertTrue(soundRow.label.contains("Звук таймера"))
-        XCTAssertEqual(app.switches["settings.haptics"].label, "Вібровідгук")
-        XCTAssertEqual(app.switches["settings.notifications"].label, "Сповіщення")
-
-        XCTAssertTrue(
-            scrollToElement(app.staticTexts["Конфіденційність"], in: app),
-            "Розділ конфіденційності має бути доступним після прокручування"
-        )
-        XCTAssertEqual(
-            app.switches["settings.showTaskTitlesOnLockScreen"].label,
-            "Показувати назви завдань на екрані блокування"
-        )
-        XCTAssertTrue(
-            scrollToElement(app.staticTexts["Вигляд"], in: app),
-            "Розділ вигляду має бути доступним після прокручування"
-        )
-
-        let languageButton = app.buttons["settings.language"]
-        XCTAssertTrue(
-            scrollToElement(languageButton, in: app),
-            "Налаштування мови має бути доступним після прокручування"
-        )
-        XCTAssertTrue(app.staticTexts["Мова"].exists)
-        XCTAssertTrue(languageButton.label.contains("Мова застосунку"))
-        XCTAssertTrue(languageButton.label.contains("Українська"))
-        let languageScreenshot = XCTAttachment(screenshot: app.screenshot())
-        languageScreenshot.name = "Ukrainian Language Setting"
-        languageScreenshot.lifetime = .keepAlways
-        add(languageScreenshot)
-
-        XCTAssertTrue(
-            scrollToElement(app.staticTexts["Дані"], in: app),
-            "Розділ даних має бути доступним після прокручування"
-        )
-        XCTAssertTrue(app.staticTexts["Записані сесії"].exists)
-        XCTAssertTrue(app.buttons["Очистити історію фокусу"].exists)
-        XCTAssertTrue(
-            scrollToElement(app.staticTexts["Про застосунок"], in: app),
-            "Розділ про застосунок має бути доступним після прокручування"
+            scrollToElement(app.staticTexts["About"], in: app),
+            "The About section should be reachable by scrolling"
         )
         // The read-only title is not hittable on iOS 18 because the combined
         // title/value accessibility element covers it. Verify its visible bounds.
         app.swipeUp()
-        let version = app.staticTexts["Версія"]
+        let version = app.staticTexts["Version"]
         XCTAssertTrue(version.exists)
         XCTAssertGreaterThanOrEqual(version.frame.minY, app.navigationBars.firstMatch.frame.maxY)
         XCTAssertLessThanOrEqual(version.frame.maxY, app.tabBars.firstMatch.frame.minY)

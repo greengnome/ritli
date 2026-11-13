@@ -1,23 +1,30 @@
 import Charts
 import SwiftData
 import SwiftUI
+import UIKit
 
 struct StatsView: View {
     @Query private var sessions: [FocusSession]
     @Query private var tasks: [FocusTask]
 
     @State private var selectedPeriod = StatsPeriod.week
+    /// Refreshed on appearance, data changes and midnight, so the periods
+    /// and the "so far" comparison never go stale.
+    @State private var referenceDate = Date.now
+    @Environment(\.scenePhase) private var scenePhase
 
     private let calendar = Calendar.current
 
     var body: some View {
+        let snapshot = makeSnapshot()
+
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
                     periodPicker
-                    focusTimeCard
-                    sessionsCard
-                    tasksCard
+                    focusTimeCard(snapshot)
+                    sessionsCard(snapshot)
+                    tasksCard(snapshot)
                     StatsCategoryCard(categories: snapshot.categories)
                 }
                 .padding(.horizontal, RitliTheme.screenPadding)
@@ -41,13 +48,26 @@ struct StatsView: View {
                 }
             }
         }
+        .task { referenceDate = .now }
+        .onChange(of: sessions.count) { referenceDate = .now }
+        .onChange(of: scenePhase) {
+            if scenePhase == .active { referenceDate = .now }
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: UIApplication.significantTimeChangeNotification
+            )
+        ) { _ in
+            referenceDate = .now
+        }
     }
 
-    private var snapshot: StatsSnapshot {
+    private func makeSnapshot() -> StatsSnapshot {
         StatsCalculator(calendar: calendar).snapshot(
             sessions: sessions,
             tasks: tasks,
-            period: selectedPeriod
+            period: selectedPeriod,
+            now: referenceDate
         )
     }
 
@@ -61,7 +81,7 @@ struct StatsView: View {
         .accessibilityIdentifier("stats.period")
     }
 
-    private var focusTimeCard: some View {
+    private func focusTimeCard(_ snapshot: StatsSnapshot) -> some View {
         StatsMetricCard(
             title: String(localized: .homeSummaryFocusTime),
             value: TimerDisplayFormatter.focusedTime(snapshot.current.focusTime),
@@ -91,7 +111,7 @@ struct StatsView: View {
                 )
                 .cornerRadius(4)
             }
-            .chartXAxis { chartXAxis }
+            .chartXAxis { chartXAxis(snapshot) }
             .chartYAxis(.hidden)
             .overlay {
                 if snapshot.current.focusTime == 0 {
@@ -105,7 +125,7 @@ struct StatsView: View {
         }
     }
 
-    private var sessionsCard: some View {
+    private func sessionsCard(_ snapshot: StatsSnapshot) -> some View {
         StatsMetricCard(
             title: String(localized: .homeSummarySessions),
             value: "\(snapshot.current.completedSessions)",
@@ -160,14 +180,14 @@ struct StatsView: View {
                 .foregroundStyle(RitliTheme.success)
                 .symbolSize(22)
             }
-            .chartXAxis { chartXAxis }
+            .chartXAxis { chartXAxis(snapshot) }
             .chartYAxis(.hidden)
             .accessibilityLabel(Text(.statsChartSessionsAccessibility))
             .accessibilityIdentifier("stats.sessions.chart")
         }
     }
 
-    private var tasksCard: some View {
+    private func tasksCard(_ snapshot: StatsSnapshot) -> some View {
         StatsMetricCard(
             title: String(localized: .homeSummaryTasksDone),
             value: "\(snapshot.current.completedTasks)",
@@ -192,8 +212,8 @@ struct StatsView: View {
     }
 
     @AxisContentBuilder
-    private var chartXAxis: some AxisContent {
-        AxisMarks(values: axisDates) { value in
+    private func chartXAxis(_ snapshot: StatsSnapshot) -> some AxisContent {
+        AxisMarks(values: axisDates(snapshot)) { value in
             AxisValueLabel {
                 if let date = value.as(Date.self) {
                     Text(selectedPeriod.bucketLabel(for: date, calendar: calendar))
@@ -204,7 +224,7 @@ struct StatsView: View {
         }
     }
 
-    private var axisDates: [Date] {
+    private func axisDates(_ snapshot: StatsSnapshot) -> [Date] {
         let dates = snapshot.buckets.map(\.interval.start)
         let stride: Int
 

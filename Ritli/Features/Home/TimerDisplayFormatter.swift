@@ -27,20 +27,6 @@ enum TimerDisplayFormatter {
         return String(format: "%02d:%02d", minutes, seconds)
     }
 
-    static func durationLabel(
-        _ interval: TimeInterval,
-        bundle: Bundle = .main,
-        locale: Locale = .current
-    ) -> String {
-        let minutes = Int(interval / 60)
-        return String(
-            localized: "time.duration.minutes",
-            defaultValue: "\(minutes) min",
-            bundle: bundle,
-            locale: locale
-        )
-    }
-
     static func focusedTime(
         _ interval: TimeInterval,
         bundle: Bundle = .main,

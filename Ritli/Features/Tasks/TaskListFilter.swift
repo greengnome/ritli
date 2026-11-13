@@ -30,7 +30,8 @@ enum TaskListPresentation {
             .sorted(by: comesBefore)
     }
 
-    nonisolated private static func comesBefore(
+    /// Open tasks first, then manual order, creation date and title.
+    nonisolated static func comesBefore(
         _ lhs: FocusTask,
         _ rhs: FocusTask
     ) -> Bool {

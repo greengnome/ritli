@@ -14,7 +14,7 @@ final class AppNotificationDelegate: NSObject, UIApplicationDelegate,
     }
 
     nonisolated static func customCompletionSound(for request: UNNotificationRequest) -> (id: UUID, sound: TimerSound)? {
-        guard request.identifier.hasPrefix("ritli.timer.session."),
+        guard request.identifier.hasPrefix(LocalTimerNotificationScheduler.identifierPrefix + "."),
               request.content.sound != nil,
               let idString = request.content.userInfo["sessionID"] as? String,
               let id = UUID(uuidString: idString),

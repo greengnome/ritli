@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import UIKit
 
 struct HomeView: View {
     @Environment(TimerEngine.self) private var timerEngine
@@ -12,6 +13,10 @@ struct HomeView: View {
     @State private var isTaskPickerPresented = false
     @State private var isHistoryPresented = false
     @State private var errorMessage: String?
+    @State private var isNotificationsOffAlertPresented = false
+    @State private var isStartingSession = false
+    /// Re-read at midnight and on appearance so "Today" never shows yesterday.
+    @State private var summaryDate = Date.now
 
     let onOpenSettings: () -> Void
 
@@ -40,7 +45,11 @@ struct HomeView: View {
                     )
 
                     TodaySummaryView(
-                        summary: TodaySummary(sessions: sessions, tasks: tasks),
+                        summary: TodaySummary(
+                            sessions: sessions,
+                            tasks: tasks,
+                            now: summaryDate
+                        ),
                         onViewAll: { isHistoryPresented = true }
                     )
                 }
@@ -66,8 +75,16 @@ struct HomeView: View {
             }
         }
         .task {
+            summaryDate = .now
             selectedTaskID = timerEngine.cycleState.preferredFocusTask?.id
             synchronizeSuggestedKind()
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: UIApplication.significantTimeChangeNotification
+            )
+        ) { _ in
+            summaryDate = .now
         }
         .onChange(of: selectedTaskID) {
             persistSelectedTask()
@@ -93,6 +110,7 @@ struct HomeView: View {
         } message: {
             Text(errorMessage ?? String(localized: .commonErrorTryAgain))
         }
+        .notificationsOffAlert(isPresented: $isNotificationsOffAlertPresented)
     }
 
     private var displayedKind: SessionKind {
@@ -129,10 +147,7 @@ struct HomeView: View {
     }
 
     private var errorIsPresented: Binding<Bool> {
-        Binding(
-            get: { errorMessage != nil },
-            set: { if !$0 { errorMessage = nil } }
-        )
+        Binding(isPresenting: $errorMessage)
     }
 
     private func displayedRemainingTime(at date: Date) -> TimeInterval {
@@ -162,11 +177,24 @@ struct HomeView: View {
     }
 
     private func startSelectedMode() {
+        // Starting waits for the permission check; ignore repeated taps.
+        guard !isStartingSession else { return }
+        isStartingSession = true
         let kind = selectedKind
         let task = selectedTask
 
         Task { @MainActor in
-            await requestNotificationPermissionIfNeeded()
+            defer { isStartingSession = false }
+
+            do {
+                let readiness = try await TimerNotificationPreference.prepareForTimerStart(
+                    permissions: notificationPermissionService,
+                    engine: timerEngine
+                )
+                isNotificationsOffAlertPresented = readiness == .permissionDenied
+            } catch {
+                errorMessage = error.localizedDescription
+            }
 
             do {
                 switch kind {
@@ -180,24 +208,6 @@ struct HomeView: View {
             } catch {
                 errorMessage = error.localizedDescription
             }
-        }
-    }
-
-    private func requestNotificationPermissionIfNeeded() async {
-        guard timerEngine.settings.notificationsEnabled else { return }
-
-        do {
-            let isAuthorized = try await notificationPermissionService
-                .requestAuthorizationIfNeeded()
-            if !isAuthorized {
-                try timerEngine.setNotificationsEnabled(false)
-                errorMessage = String(
-                    localized: "settings.notifications.permission_required",
-                    defaultValue: "Enable notifications for Ritli in System Settings to receive timer alerts."
-                )
-            }
-        } catch {
-            errorMessage = error.localizedDescription
         }
     }
 
@@ -219,12 +229,14 @@ struct HomeView: View {
     }
 
     private func synchronizeSuggestedKind() {
-        guard
-            let state = timerEngine.currentSession?.state,
-            state == .completed || state == .skipped
-        else { return }
-
-        selectedKind = timerEngine.cycleState.nextSuggestedKind
+        // With no session in memory (e.g. after a relaunch) the persisted
+        // suggestion still applies; otherwise Start would discard it.
+        switch timerEngine.currentSession?.state {
+        case .none, .completed, .skipped:
+            selectedKind = timerEngine.cycleState.nextSuggestedKind
+        case .running, .paused, .cancelled:
+            break
+        }
     }
 
     private func persistSelectedTask() {
