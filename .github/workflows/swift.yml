@@ -18,9 +18,8 @@ concurrency:
 env:
   DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
 
-# The suites run on separate runners in parallel. Each macOS job boots its own
-# simulator, so system UI tests always start clean: app UI tests leave
-# ActivityKit state behind whose background launches can race XCTest.
+# The suites run on separate runners in parallel; each macOS job boots its own
+# simulator.
 jobs:
   script-tests:
     name: Simulator script tests
@@ -79,107 +78,38 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-  app-ui-tests:
-    name: App UI tests
+  ui-smoke-tests:
+    name: UI smoke tests
     runs-on: macos-26
-    timeout-minutes: 35
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/prepare-ios-tests
 
-      # One simulator: two workers regressed the small hosted runner despite
-      # improving wall time on a larger local Mac.
-      - name: Run app UI tests
-        timeout-minutes: 20
+      - name: Run UI smoke tests
+        timeout-minutes: 10
         run: |
           set -o pipefail
           .github/scripts/xcodebuild-ci.sh \
             -configuration Debug \
             -destination "platform=iOS Simulator,arch=arm64,id=$IOS_SIMULATOR_ID" \
-            -resultBundlePath "$RUNNER_TEMP/RitliAppUITests.xcresult" \
+            -resultBundlePath "$RUNNER_TEMP/RitliUITests.xcresult" \
             -parallel-testing-enabled NO \
             -test-timeouts-enabled YES \
             -default-test-execution-time-allowance 180 \
             -maximum-test-execution-time-allowance 180 \
             -collect-test-diagnostics on-failure \
             -only-testing:RitliUITests \
-            -skip-testing:RitliUITests/SystemUITests \
-            -skip-testing:RitliUITests/LiveActivityUITests \
-            test-without-building 2>&1 | tee "$RUNNER_TEMP/RitliAppUITests.log"
+            test-without-building 2>&1 | tee "$RUNNER_TEMP/RitliUITests.log"
 
       - name: Upload test results
         if: failure() || cancelled()
         uses: actions/upload-artifact@v7
         with:
-          name: Ritli-app-ui-test-results
+          name: Ritli-ui-test-results
           path: |
-            ${{ runner.temp }}/RitliAppUITests.xcresult
-            ${{ runner.temp }}/RitliAppUITests.log
-          if-no-files-found: ignore
-          retention-days: 7
-
-  system-ui-tests:
-    name: System UI tests
-    runs-on: macos-26
-    timeout-minutes: 40
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/prepare-ios-tests
-
-      # Hosted simulators can drop the cross-app Settings foreground transition.
-      # Its URL is unit-tested, and the complete handoff remains in the local UI suite.
-      - name: Run background lifecycle UI tests
-        timeout-minutes: 10
-        run: |
-          .github/scripts/xcodebuild-ci.sh \
-            -configuration Debug \
-            -destination "platform=iOS Simulator,arch=arm64,id=$IOS_SIMULATOR_ID" \
-            -resultBundlePath "$RUNNER_TEMP/RitliSystemUITests.xcresult" \
-            -parallel-testing-enabled NO \
-            -test-timeouts-enabled YES \
-            -default-test-execution-time-allowance 240 \
-            -maximum-test-execution-time-allowance 240 \
-            -only-testing:RitliUITests/SystemUITests \
-            -skip-testing:RitliUITests/SystemUITests/testOpensAppLanguageSettings \
-            test-without-building
-
-      # ActivityKit system UI is flaky on hosted simulators: two attempts of a
-      # ~3-minute test with a simulator restart in between.
-      - name: Run Live Activity UI tests
-        if: success() || failure()
-        timeout-minutes: 15
-        run: |
-          for attempt in 1 2; do
-            if .github/scripts/xcodebuild-ci.sh \
-              -configuration Debug \
-              -destination "platform=iOS Simulator,arch=arm64,id=$IOS_SIMULATOR_ID" \
-              -resultBundlePath "$RUNNER_TEMP/RitliLiveActivityUITests-attempt-${attempt}.xcresult" \
-              -parallel-testing-enabled NO \
-              -test-timeouts-enabled YES \
-              -default-test-execution-time-allowance 300 \
-              -maximum-test-execution-time-allowance 300 \
-              -only-testing:RitliUITests/LiveActivityUITests \
-              test-without-building; then
-              exit 0
-            fi
-
-            if [ "$attempt" -eq 1 ]; then
-              echo "Live Activity UI test failed; restarting the simulator and retrying once."
-              xcrun simctl shutdown "$IOS_SIMULATOR_ID" || true
-              xcrun simctl bootstatus "$IOS_SIMULATOR_ID" -b
-            fi
-          done
-
-          exit 1
-
-      - name: Upload test results
-        if: failure() || cancelled()
-        uses: actions/upload-artifact@v7
-        with:
-          name: Ritli-system-ui-test-results
-          path: |
-            ${{ runner.temp }}/RitliSystemUITests.xcresult
-            ${{ runner.temp }}/RitliLiveActivityUITests-attempt-*.xcresult
+            ${{ runner.temp }}/RitliUITests.xcresult
+            ${{ runner.temp }}/RitliUITests.log
           if-no-files-found: ignore
           retention-days: 7
 
@@ -188,7 +118,7 @@ jobs:
   build-and-test:
     name: Build and test
     if: always()
-    needs: [script-tests, unit-tests, app-ui-tests, system-ui-tests]
+    needs: [script-tests, unit-tests, ui-smoke-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
