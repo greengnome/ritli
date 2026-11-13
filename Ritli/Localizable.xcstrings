@@ -1,6 +1,42 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "onboarding.focus.next_break" : {
+      "comment" : "Chip under the onboarding timer: a short break follows this focus session.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Then a 5 min break"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Потім перерва 5 хв"
+          }
+        }
+      }
+    },
+    "onboarding.insights.week" : {
+      "comment" : "Label above the example weekly focus total in onboarding.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focused this week"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фокус цього тижня"
+          }
+        }
+      }
+    },
     "settings.timer.minutes_unit" : {
       "comment" : "Unit shown under a duration number on the Settings timer tiles.",
       "extractionState" : "manual",
