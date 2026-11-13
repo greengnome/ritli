@@ -82,11 +82,14 @@ private struct TimerLockScreenView: View {
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .layoutPriority(1)
 
+            // A running countdown (`Text(timerInterval:)`) takes all the width
+            // it is offered, so it gets a fixed width; given priority, it would
+            // squeeze the task and session text out of the row.
             TimerCountdownView(context: context)
                 .font(.system(size: 34, weight: .heavy, design: .rounded))
-                .frame(minWidth: 96, alignment: .trailing)
-                .layoutPriority(1)
+                .frame(width: 104, alignment: .trailing)
         }
         .foregroundStyle(Color.ritliOnAccent)
         .padding(.horizontal, 20)
