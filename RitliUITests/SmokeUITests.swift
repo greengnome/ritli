@@ -75,7 +75,15 @@ final class SmokeUITests: XCTestCase {
         }
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         titleField.typeText("План проєкту")
-        app.buttons["tasks.editor.save"].tap()
+        // On a cold hosted keyboard, queued characters can arrive after
+        // typeText returns. Save only once the whole title is in the field.
+        XCTAssertTrue(
+            waitUntil("value == %@", "План проєкту", on: titleField, timeout: 20),
+            "The title field should hold the whole title before saving"
+        )
+        let saveButton = app.buttons["tasks.editor.save"]
+        XCTAssertTrue(waitUntil("isEnabled == true AND isHittable == true", on: saveButton, timeout: 5))
+        saveButton.tap()
 
         XCTAssertTrue(app.buttons["Редагувати: План проєкту"].waitForExistence(timeout: 5))
         let completeButton = app.buttons["Позначити виконаним: План проєкту"]
@@ -116,6 +124,21 @@ final class SmokeUITests: XCTestCase {
 
         XCTAssertTrue(app.descendants(matching: .any)["history.screen"].waitForExistence(timeout: 2))
         XCTAssertTrue(app.descendants(matching: .any)["history.calendar"].exists)
+    }
+
+    // MARK: Waiting
+
+    private func waitUntil(
+        _ format: String,
+        _ arguments: Any...,
+        on element: XCUIElement,
+        timeout: TimeInterval
+    ) -> Bool {
+        let expectation = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: format, argumentArray: arguments),
+            object: element
+        )
+        return XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed
     }
 
     // MARK: Launching
