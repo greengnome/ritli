@@ -3,25 +3,32 @@ import Foundation
 import Testing
 @testable import Ritli
 
+/// Both audio suites share `AVAudioSession`, so they run one test at a time
+/// under this parent rather than each being serialized only internally.
 @MainActor
 @Suite(.serialized)
+struct AudioPlaybackTests {}
+
+extension AudioPlaybackTests {
+@MainActor
+@Suite
 struct TimerSoundPlayerTests {
     @Test("Each custom preview starts playback of its own bundled audio", arguments: [
-        (TimerSound.gentleBell, "ritli-gentle-bell.wav", 2.0),
-        (TimerSound.clearChime, "ritli-clear-chime.wav", 2.2),
-        (TimerSound.softPulse, "ritli-soft-pulse.wav", 1.3),
+        (TimerSound.gentleBell, "ritli-gentle-bell.wav"),
+        (TimerSound.clearChime, "ritli-clear-chime.wav"),
+        (TimerSound.softPulse, "ritli-soft-pulse.wav"),
     ])
-    func playsSelectedFile(sound: TimerSound, fileName: String, duration: Double) async throws {
+    func playsSelectedFile(sound: TimerSound, fileName: String) async throws {
         let preview = TimerSoundPlayer()
         defer { preview.stop() }
 
         try await preview.play(sound)
         let player = try #require(preview.audioPlayer)
         #expect(player.url?.lastPathComponent == fileName)
-        #expect(abs(player.duration - duration) < 0.01)
+        // A short cue, without pinning the generated file's exact length.
+        #expect(player.duration > 0.5 && player.duration < 5)
         #expect(player.isPlaying)
-        try await Task.sleep(for: .milliseconds(100))
-        #expect(player.currentTime > 0)
+        #expect(await waitUntil { player.currentTime > 0 })
         let category = await Task.detached { AVAudioSession.sharedInstance().category }.value
         #expect(category == .ambient)
     }
@@ -77,6 +84,7 @@ struct TimerSoundPlayerTests {
         #expect(player.isPlaying)
         #expect(preview.audioPlayer === player)
     }
+}
 }
 
 private final class PreviewTestBundle: NSObject {}

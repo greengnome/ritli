@@ -3,44 +3,56 @@ import Testing
 @testable import Ritli
 
 struct TimerLiveActivityAttributesTests {
-    @Test("Attributes survive the ActivityKit encoding boundary")
-    func attributesCodableRoundTrip() throws {
-        let attributes = TimerLiveActivityAttributes(
-            sessionID: UUID(),
-            kind: .focus,
-            startedAt: Date(timeIntervalSince1970: 1_000),
-            plannedDuration: 1_500
-        )
+    // Fixed payloads rather than round-trips: a running activity keeps the
+    // JSON it was started with, so renaming a case or key would break it
+    // after an app update, while a round-trip would still pass.
+    // Dates use JSONDecoder's default (seconds since 1 January 2001).
+    @Test("Attributes decode from their established wire format")
+    func decodesAttributes() throws {
+        let json = """
+        {"sessionID":"6F9619FF-8B86-D011-B42D-00C04FC964FF","kind":"shortBreak",\
+        "startedAt":-978306200,"plannedDuration":1500}
+        """
 
-        let encoded = try JSONEncoder().encode(attributes)
         let decoded = try JSONDecoder().decode(
             TimerLiveActivityAttributes.self,
-            from: encoded
+            from: Data(json.utf8)
         )
 
-        #expect(decoded == attributes)
+        #expect(decoded == TimerLiveActivityAttributes(
+            sessionID: try #require(UUID(uuidString: "6F9619FF-8B86-D011-B42D-00C04FC964FF")),
+            kind: .shortBreak,
+            startedAt: Date(timeIntervalSince1970: 1_000),
+            plannedDuration: 1_500
+        ))
     }
 
-    @Test("Content state survives the ActivityKit encoding boundary", arguments: [
-        TimerLiveActivityAttributes.ContentState(
-            phase: .running(endDate: Date(timeIntervalSince1970: 2_000)),
-            taskTitle: "Prepare release"
+    @Test("Content state decodes from its established wire format", arguments: [
+        (
+            #"{"phase":{"running":{"endDate":-978305200}},"taskTitle":"Prepare release"}"#,
+            TimerLiveActivityAttributes.ContentState(
+                phase: .running(endDate: Date(timeIntervalSince1970: 2_000)),
+                taskTitle: "Prepare release"
+            )
         ),
-        TimerLiveActivityAttributes.ContentState(
-            phase: .paused(remainingTime: 625),
-            taskTitle: nil
+        (
+            #"{"phase":{"paused":{"remainingTime":625}}}"#,
+            TimerLiveActivityAttributes.ContentState(
+                phase: .paused(remainingTime: 625),
+                taskTitle: nil
+            )
         ),
     ])
-    func contentStateCodableRoundTrip(
-        contentState: TimerLiveActivityAttributes.ContentState
+    func decodesContentState(
+        json: String,
+        expected: TimerLiveActivityAttributes.ContentState
     ) throws {
-        let encoded = try JSONEncoder().encode(contentState)
         let decoded = try JSONDecoder().decode(
             TimerLiveActivityAttributes.ContentState.self,
-            from: encoded
+            from: Data(json.utf8)
         )
 
-        #expect(decoded == contentState)
+        #expect(decoded == expected)
     }
 
     @Test("Running content counts down and clamps at zero")

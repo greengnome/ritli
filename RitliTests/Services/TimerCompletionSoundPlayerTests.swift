@@ -3,15 +3,15 @@ import Foundation
 import Testing
 @testable import Ritli
 
+extension AudioPlaybackTests {
 @MainActor
-@Suite(.serialized)
+@Suite
 struct TimerCompletionSoundPlayerTests {
-    @Test("Real focus and break completions start their selected audio files", arguments: [
-        (SessionKind.focus, TimerSound.gentleBell, "ritli-gentle-bell.wav"),
-        (SessionKind.shortBreak, TimerSound.clearChime, "ritli-clear-chime.wav"),
-        (SessionKind.longBreak, TimerSound.softPulse, "ritli-soft-pulse.wav"),
-    ])
-    func playsOnCompletion(kind: SessionKind, sound: TimerSound, fileName: String) async throws {
+    /// Per-kind routing is covered by the engine tests and the file mapping by
+    /// `TimerSoundPlayerTests`; this checks the real player end to end once.
+    @Test("A real completion starts its selected audio file")
+    func playsOnCompletion() async throws {
+        let sound = TimerSound.gentleBell
         let playback = TimerCompletionSoundPlayer(isApplicationActive: { true })
         defer { playback.stop() }
         let clock = MutableDateProvider(now: Date(timeIntervalSince1970: 10_000))
@@ -25,21 +25,15 @@ struct TimerCompletionSoundPlayerTests {
             liveActivities: NoOpTimerLiveActivityCoordinator(), feedback: NoOpTimerFeedbackPlayer(),
             completionSound: playback
         )
-        let session: FocusSession
-        switch kind {
-        case .focus: session = try engine.startFocus()
-        case .shortBreak: session = try engine.startShortBreak()
-        case .longBreak: session = try engine.startLongBreak()
-        }
+        let session = try engine.startFocus()
         #expect(playback.audioPlayer == nil)
         clock.advance(by: 1)
         try engine.refresh()
         await playback.playbackTask?.value
         let player = try #require(playback.audioPlayer)
-        #expect(player.url?.lastPathComponent == fileName)
+        #expect(player.url?.lastPathComponent == "ritli-gentle-bell.wav")
         #expect(player.isPlaying)
-        try await Task.sleep(for: .milliseconds(100))
-        #expect(player.currentTime > 0)
+        #expect(await waitUntil { player.currentTime > 0 })
 
         // The notification delegate can arrive before or after the engine's refresh.
         #expect(playback.playCompletion(id: session.id, sound: sound, hasScheduledNotification: true))
@@ -77,4 +71,5 @@ struct TimerCompletionSoundPlayerTests {
         #expect(!playback.playCompletion(id: UUID(), sound: .systemDefault, hasScheduledNotification: true))
         #expect(playback.playbackTask == nil)
     }
+}
 }

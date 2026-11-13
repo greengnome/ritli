@@ -43,3 +43,19 @@ enum TestCalendar {
         )!
     }
 }
+
+/// Polls `condition` until it holds or `timeout` passes, instead of sleeping
+/// for a fixed time and hoping the system was fast enough.
+@MainActor
+func waitUntil(
+    timeout: Duration = .seconds(2),
+    _ condition: @MainActor () -> Bool
+) async -> Bool {
+    let clock = ContinuousClock()
+    let deadline = clock.now + timeout
+    while !condition() {
+        guard clock.now < deadline else { return false }
+        try? await Task.sleep(for: .milliseconds(20))
+    }
+    return true
+}

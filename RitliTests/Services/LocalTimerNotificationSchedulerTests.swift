@@ -38,7 +38,9 @@ struct LocalTimerNotificationSchedulerTests {
         let center = UserNotificationCenterClientSpy()
         let scheduler = LocalTimerNotificationScheduler(
             center: center,
-            dateProvider: MutableDateProvider(now: now)
+            dateProvider: MutableDateProvider(now: now),
+            localizationBundle: try TestLocalization.bundle(language: "en"),
+            localizationLocale: Locale(identifier: "en")
         )
 
         scheduler.scheduleSessionEnd(
@@ -71,7 +73,9 @@ struct LocalTimerNotificationSchedulerTests {
         let center = UserNotificationCenterClientSpy()
         let scheduler = LocalTimerNotificationScheduler(
             center: center,
-            dateProvider: MutableDateProvider(now: now)
+            dateProvider: MutableDateProvider(now: now),
+            localizationBundle: try TestLocalization.bundle(language: "en"),
+            localizationLocale: Locale(identifier: "en")
         )
 
         scheduler.scheduleSessionEnd(
@@ -90,7 +94,7 @@ struct LocalTimerNotificationSchedulerTests {
     func localizesNotificationsInUkrainian() throws {
         let now = Date(timeIntervalSince1970: 65_000)
         let center = UserNotificationCenterClientSpy()
-        let bundle = try localizedBundle(language: "uk")
+        let bundle = try TestLocalization.bundle(language: "uk")
         let scheduler = LocalTimerNotificationScheduler(
             center: center,
             dateProvider: MutableDateProvider(now: now),
@@ -182,12 +186,5 @@ struct LocalTimerNotificationSchedulerTests {
         #expect(center.removedIdentifierGroups == [[
             "ritli.timer.session.\(id.uuidString)"
         ]])
-    }
-
-    private func localizedBundle(language: String) throws -> Bundle {
-        let resourcePath = try #require(
-            Bundle.main.path(forResource: language, ofType: "lproj")
-        )
-        return try #require(Bundle(path: resourcePath))
     }
 }
