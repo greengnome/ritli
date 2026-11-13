@@ -5,44 +5,49 @@ struct StatsMetricCard<Content: View>: View {
     let value: String
     let comparison: StatsComparisonPresentation
     let valueIdentifier: String
+    /// The focus-time card leads the screen with a larger value.
+    var valueSize: CGFloat = 28
+    /// Charts get a fixed height; plain captions size to fit.
+    var contentHeight: CGFloat? = 132
     @ViewBuilder let content: Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(RitliTheme.stone)
 
                 Text(value)
-                    .font(.system(.title, design: .rounded, weight: .bold))
+                    .font(.system(size: valueSize, weight: .heavy, design: .rounded))
                     .monospacedDigit()
+                    .foregroundStyle(RitliTheme.ink)
                     .accessibilityIdentifier(valueIdentifier)
 
-                Label(comparison.text, systemImage: comparison.systemImage)
-                    .font(.caption.weight(.medium))
+                Text(comparison.text)
+                    .font(.footnote.weight(.medium))
                     .foregroundStyle(comparisonColor)
             }
 
             content
-                .frame(height: 132)
+                .frame(height: contentHeight)
         }
-        .padding(18)
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RitliTheme.surface,
             in: RoundedRectangle(cornerRadius: RitliTheme.cardRadius)
         )
-        .shadow(color: .black.opacity(0.045), radius: 16, y: 7)
     }
 
     private var comparisonColor: Color {
         switch comparison.tone {
         case .positive:
-            RitliTheme.success
+            RitliTheme.leaf
         case .negative:
-            RitliTheme.accent
+            RitliTheme.tomatoInk
         case .neutral:
-            .secondary
+            RitliTheme.stone
         }
     }
 }

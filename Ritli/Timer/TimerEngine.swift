@@ -218,6 +218,21 @@ final class TimerEngine {
         return activeRoutine.duration(for: kind)
     }
 
+    /// How many focus sessions come before the long break in the cycle the
+    /// session belongs to: the running session's frozen routine, or for an
+    /// idle preview, the routine that session would use (the task's own for
+    /// focus, as in `previewDuration`).
+    func cycleLength(
+        previewing kind: SessionKind? = nil,
+        task: FocusTask? = nil
+    ) -> Int {
+        if kind == .focus, !hasActiveSession {
+            return resolvedRoutine(for: task).longBreakEvery
+        }
+
+        return activeRoutine.longBreakEvery
+    }
+
     func setNotificationsEnabled(_ isEnabled: Bool) throws {
         let previousValue = settings.notificationsEnabled
         settings.notificationsEnabled = isEnabled

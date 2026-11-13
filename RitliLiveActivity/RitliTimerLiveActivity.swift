@@ -2,6 +2,9 @@ import ActivityKit
 import SwiftUI
 import WidgetKit
 
+/// The Lock Screen card takes the session's colour (tomato for focus, leaf
+/// for breaks), matching Home while a session runs. The Dynamic Island uses
+/// one small progress ring as its signature in every presentation.
 struct RitliTimerLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TimerLiveActivityAttributes.self) { context in
@@ -9,42 +12,44 @@ struct RitliTimerLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    TimerKindLabel(
-                        kind: context.attributes.kind,
-                        isFinished: context.isFinished
-                    )
+                    TimerRing(context: context, tint: context.attributes.kind.islandTint)
+                        .frame(width: 44, height: 44)
+                        .padding(.leading, 6)
                 }
 
                 DynamicIslandExpandedRegion(.trailing) {
                     TimerCountdownView(context: context)
-                        .font(.title3.weight(.semibold))
-                        .frame(width: 64, alignment: .trailing)
+                        .font(.system(size: 40, weight: .heavy, design: .rounded))
+                        .foregroundStyle(Color.ritliOnAccent)
+                        .frame(maxWidth: 140, alignment: .trailing)
+                        .padding(.trailing, 6)
                 }
 
                 DynamicIslandExpandedRegion(.bottom) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        TimerTaskLabel(
-                            taskTitle: context.state.taskTitle,
-                            state: context.state,
-                            isFinished: context.isFinished
-                        )
-                        .foregroundStyle(.secondary)
-                        TimerProgressView(context: context)
+                    VStack(alignment: .leading, spacing: 2) {
+                        TimerHeadline(context: context)
+                            .font(.system(.headline, design: .rounded).weight(.heavy))
+                            .foregroundStyle(Color.ritliOnAccent)
+                        TimerSubtitle(context: context)
+                            .font(.footnote)
+                            .foregroundStyle(Color.ritliIslandSecondary)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 6)
                 }
             } compactLeading: {
-                Image(systemName: context.attributes.kind.systemImage)
-                    .foregroundStyle(context.attributes.kind.accentColor)
+                TimerRing(context: context, tint: context.attributes.kind.islandTint)
+                    .frame(width: 20, height: 20)
             } compactTrailing: {
                 TimerCountdownView(context: context)
-                    .font(.caption.weight(.semibold))
-                    .frame(maxWidth: 48)
+                    .font(.system(.subheadline, design: .rounded).weight(.heavy))
+                    .foregroundStyle(context.attributes.kind.islandTint)
+                    .frame(maxWidth: 52)
             } minimal: {
-                TimerCountdownView(context: context)
-                    .font(.caption2.weight(.bold))
-                    .minimumScaleFactor(0.45)
+                TimerRing(context: context, tint: context.attributes.kind.islandTint)
+                    .frame(width: 20, height: 20)
             }
-            .keylineTint(context.attributes.kind.accentColor)
+            .keylineTint(context.attributes.kind.islandTint)
         }
     }
 }
@@ -54,79 +59,148 @@ private struct TimerLockScreenView: View {
 
     let context: ActivityViewContext<TimerLiveActivityAttributes>
 
-    private var theme: TimerLiveActivityTheme {
-        colorScheme == .dark ? .dark : .light
-    }
-
     var body: some View {
-        VStack(spacing: 14) {
-            HStack(spacing: 12) {
-                Image(systemName: context.attributes.kind.systemImage)
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .frame(width: 38, height: 38)
-                    .background(
-                        context.attributes.kind.accentColor,
-                        in: Circle()
-                    )
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(context.attributes.kind.titleKey(isFinished: context.isFinished))
-                        .font(.headline)
-
-                    TimerTaskLabel(
-                        taskTitle: context.state.taskTitle,
-                        state: context.state,
-                        isFinished: context.isFinished
-                    )
-                    .foregroundStyle(Color(theme.secondaryText))
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                TimerCountdownView(context: context)
-                    .font(.system(.title2, design: .rounded, weight: .semibold))
-                    .frame(width: 76, alignment: .trailing)
-                    .layoutPriority(1)
-            }
-
-            TimerProgressView(context: context)
+        if context.isFinished {
+            finished
+        } else {
+            running
         }
-        .foregroundStyle(Color(theme.primaryText))
-        .padding(16)
-        .activityBackgroundTint(Color(theme.background))
-        .activitySystemActionForegroundColor(.ritliCoral)
     }
-}
 
-private struct TimerKindLabel: View {
-    let kind: TimerLiveActivityAttributes.Kind
-    let isFinished: Bool
+    private var running: some View {
+        HStack(spacing: 14) {
+            TimerRing(context: context, tint: .ritliOnAccent)
+                .frame(width: 48, height: 48)
 
-    var body: some View {
-        Label(kind.titleKey(isFinished: isFinished), systemImage: kind.systemImage)
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(kind.accentColor)
-    }
-}
-
-private struct TimerTaskLabel: View {
-    let taskTitle: String?
-    let state: TimerLiveActivityAttributes.ContentState
-    let isFinished: Bool
-
-    var body: some View {
-        HStack(spacing: 5) {
-            if state.isPaused {
-                Image(systemName: "pause.fill")
-                Text("live_activity.paused")
-            } else if let taskTitle, !taskTitle.isEmpty {
-                Text(taskTitle)
+            VStack(alignment: .leading, spacing: 2) {
+                TimerHeadline(context: context)
+                    .font(.system(.title3, design: .rounded).weight(.heavy))
                     .lineLimit(1)
-            } else if !isFinished {
-                Text("live_activity.stay_focused")
+                TimerSubtitle(context: context)
+                    .font(.footnote)
+                    .foregroundStyle(Color.ritliOnAccent.opacity(0.88))
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            TimerCountdownView(context: context)
+                .font(.system(size: 34, weight: .heavy, design: .rounded))
+                .frame(minWidth: 96, alignment: .trailing)
+                .layoutPriority(1)
+        }
+        .foregroundStyle(Color.ritliOnAccent)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 18)
+        .activityBackgroundTint(context.attributes.kind.fill)
+        .activitySystemActionForegroundColor(.ritliOnAccent)
+    }
+
+    private var finished: some View {
+        HStack(spacing: 14) {
+            Image(systemName: "checkmark")
+                .font(.system(size: 20, weight: .heavy))
+                .foregroundStyle(.white)
+                .frame(width: 48, height: 48)
+                .background(Color.ritliLeafFill, in: Circle())
+                .accessibilityHidden(true)
+
+            Text(context.attributes.kind.titleKey(isFinished: true))
+                .font(.system(.title3, design: .rounded).weight(.heavy))
+                .foregroundStyle(colorScheme == .dark ? Color.ritliOnAccent : Color.ritliInk)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 18)
+        .activityBackgroundTint(colorScheme == .dark ? Color.ritliPaperDark : Color.ritliPaper)
+        .activitySystemActionForegroundColor(colorScheme == .dark ? .ritliOnAccent : .ritliInk)
+    }
+}
+
+/// The task when there is one (and the user allows it on the Lock Screen),
+/// otherwise the session kind.
+private struct TimerHeadline: View {
+    let context: ActivityViewContext<TimerLiveActivityAttributes>
+
+    var body: some View {
+        if context.isFinished {
+            Text(context.attributes.kind.titleKey(isFinished: true))
+        } else if let taskTitle = context.state.taskTitle, !taskTitle.isEmpty {
+            Text(verbatim: taskTitle)
+        } else {
+            Text(context.attributes.kind.titleKey(isFinished: false))
+        }
+    }
+}
+
+/// "Focus · 10:24" while running, "Paused" while paused.
+private struct TimerSubtitle: View {
+    let context: ActivityViewContext<TimerLiveActivityAttributes>
+
+    var body: some View {
+        switch context.state.phase {
+        case .paused:
+            Text("live_activity.paused")
+        case let .running(endDate):
+            if hasTaskTitle {
+                HStack(spacing: 0) {
+                    Text(context.attributes.kind.titleKey(isFinished: false))
+                    Text(verbatim: " · ")
+                    Text(endDate, style: .time)
+                }
+            } else {
+                Text(endDate, style: .time)
             }
         }
-        .font(.caption)
+    }
+
+    private var hasTaskTitle: Bool {
+        guard let taskTitle = context.state.taskTitle else { return false }
+        return !taskTitle.isEmpty
+    }
+}
+
+/// Time left in the session as a ring. It is the app icon's outer ring,
+/// and the one shape the Island keeps when it shrinks to a dot.
+private struct TimerRing: View {
+    let context: ActivityViewContext<TimerLiveActivityAttributes>
+    let tint: Color
+
+    var body: some View {
+        Group {
+            if context.isFinished {
+                Image(systemName: "checkmark.circle.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(tint)
+            } else {
+                progress
+                    .progressViewStyle(.circular)
+                    .tint(tint)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private var progress: some View {
+        switch context.state.phase {
+        case let .running(endDate):
+            ProgressView(
+                timerInterval: endDate.addingTimeInterval(
+                    -context.attributes.plannedDuration
+                )...endDate,
+                countsDown: true,
+                label: { EmptyView() },
+                currentValueLabel: { EmptyView() }
+            )
+        case let .paused(remainingTime):
+            ProgressView(
+                value: 1 - TimerLiveActivityPresentation.progress(
+                    remainingTime: remainingTime,
+                    plannedDuration: context.attributes.plannedDuration
+                )
+            )
+        }
     }
 }
 
@@ -136,14 +210,16 @@ private struct TimerCountdownView: View {
     var body: some View {
         Group {
             if context.isFinished {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(context.attributes.kind.accentColor)
+                Image(systemName: "checkmark")
                     .accessibilityLabel(Text("live_activity.finished"))
             } else {
                 countdown
             }
         }
         .monospacedDigit()
+        .lineLimit(1)
+        .minimumScaleFactor(0.6)
+        .multilineTextAlignment(.trailing)
         .contentTransition(.numericText(countsDown: true))
     }
 
@@ -161,43 +237,6 @@ private struct TimerCountdownView: View {
             Text(
                 verbatim: TimerLiveActivityPresentation.pausedCountdown(
                     remainingTime
-                )
-            )
-        }
-    }
-}
-
-private struct TimerProgressView: View {
-    let context: ActivityViewContext<TimerLiveActivityAttributes>
-
-    var body: some View {
-        Group {
-            if context.isFinished {
-                ProgressView(value: 1)
-            } else {
-                progress
-            }
-        }
-        .labelsHidden()
-        .tint(context.attributes.kind.accentColor)
-    }
-
-    @ViewBuilder
-    private var progress: some View {
-        switch context.state.phase {
-        case let .running(endDate):
-            let timerInterval = endDate.addingTimeInterval(
-                -context.attributes.plannedDuration
-            )...endDate
-            ProgressView(
-                timerInterval: timerInterval,
-                countsDown: false
-            )
-        case let .paused(remainingTime):
-            ProgressView(
-                value: TimerLiveActivityPresentation.progress(
-                    remainingTime: remainingTime,
-                    plannedDuration: context.attributes.plannedDuration
                 )
             )
         }
@@ -226,41 +265,39 @@ private extension TimerLiveActivityAttributes.Kind {
         }
     }
 
-    var systemImage: String {
+    /// The Lock Screen card's fill. White text on it passes 4.5:1.
+    var fill: Color {
         switch self {
         case .focus:
-            "scope"
-        case .shortBreak:
-            "cup.and.saucer.fill"
-        case .longBreak:
-            "leaf.fill"
+            .ritliTomatoFill
+        case .shortBreak, .longBreak:
+            .ritliLeafFill
         }
     }
 
-    var accentColor: Color {
+    /// Colour on the Island's black: brighter versions of the same two hues.
+    var islandTint: Color {
         switch self {
         case .focus:
-            .ritliCoral
-        case .shortBreak:
-            .ritliGreen
-        case .longBreak:
-            .ritliBlue
+            .ritliTomato
+        case .shortBreak, .longBreak:
+            .ritliLeafBright
         }
     }
 }
 
+// The extension can't see the app's RitliTheme, so it carries the few
+// values it needs. Keep them in step with Ritli/DesignSystem/RitliTheme.swift.
 private extension Color {
-    init(_ components: TimerLiveActivityColorComponents) {
-        self.init(
-            red: components.red,
-            green: components.green,
-            blue: components.blue
-        )
-    }
-
-    static let ritliCoral = Color(red: 1, green: 0.36, blue: 0.29)
-    static let ritliGreen = Color(red: 0.31, green: 0.75, blue: 0.45)
-    static let ritliBlue = Color(red: 0.27, green: 0.55, blue: 0.96)
+    static let ritliTomato = Color(red: 0.910, green: 0.518, blue: 0.420)    // #E8846B
+    static let ritliTomatoFill = Color(red: 0.710, green: 0.322, blue: 0.243) // #B5523E
+    static let ritliLeafFill = Color(red: 0.173, green: 0.420, blue: 0.290)   // #2C6B4A
+    static let ritliLeafBright = Color(red: 0.424, green: 0.780, blue: 0.565) // #6CC790
+    static let ritliOnAccent = Color(red: 1, green: 0.965, blue: 0.925)       // #FFF6EC
+    static let ritliInk = Color(red: 0.122, green: 0.102, blue: 0.090)        // #1F1A17
+    static let ritliPaper = Color(red: 0.980, green: 0.969, blue: 0.949)      // #FAF7F2
+    static let ritliPaperDark = Color(red: 0.090, green: 0.078, blue: 0.071)  // #171412
+    static let ritliIslandSecondary = Color(red: 0.788, green: 0.741, blue: 0.682) // #C9BDAE
 }
 
 private extension TimerLiveActivityAttributes {

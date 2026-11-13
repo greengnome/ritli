@@ -1,5 +1,7 @@
 import SwiftUI
 
+/// The top of Home at rest: the task for the next focus, set as a title,
+/// with a round button that opens the picker.
 struct HomeTaskPickerButton: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let task: FocusTask?
@@ -7,57 +9,40 @@ struct HomeTaskPickerButton: View {
 
     var body: some View {
         Button(action: action) {
-            contentLayout {
-                Image(systemName: task?.category?.iconName ?? "checklist")
-                    .font(.system(size: 20))
-                    .foregroundStyle(task?.category?.presentationColor ?? RitliTheme.accent)
-                    .frame(width: 38, height: 38)
-                    .background(Color.secondary.opacity(0.1))
-                    .clipShape(Circle())
-                    .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(.homeTaskWorkingOn)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.footnote)
+                        .foregroundStyle(RitliTheme.stone)
 
                     Group {
                         if let task {
                             Text(verbatim: task.title)
                         } else {
-                            Text(.homeTaskChooseOptional)
+                            Text(.homeTaskChoose)
                         }
                     }
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                    .font(.system(.title, design: .rounded).weight(.heavy))
+                    .foregroundStyle(RitliTheme.ink)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
                     .fixedSize(horizontal: false, vertical: true)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                if !dynamicTypeSize.isAccessibilitySize {
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                }
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(RitliTheme.ink)
+                    .frame(width: 44, height: 44)
+                    .background(RitliTheme.sand, in: Circle())
+                    .accessibilityHidden(true)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
-            .background(.background)
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-            .shadow(color: .black.opacity(0.05), radius: 14, y: 6)
+            .frame(minHeight: 64)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint(Text(.homeTaskPickerHint))
         .accessibilityIdentifier("home.taskSelector")
-    }
-
-    private var contentLayout: AnyLayout {
-        dynamicTypeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
-            : AnyLayout(HStackLayout(spacing: 12))
     }
 
     private var accessibilityLabel: Text {

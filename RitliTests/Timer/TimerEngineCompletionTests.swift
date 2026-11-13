@@ -260,6 +260,23 @@ struct TimerEngineCompletionTests {
         #expect(harness.engine.previewDuration(for: .focus) == 25 * 60)
     }
 
+    @Test("The idle cycle preview uses the selected task's long-break interval")
+    func cyclePreviewUsesTaskRoutine() throws {
+        let task = FocusTask(
+            title: "Write chapter",
+            timerRoutine: TimerRoutine(name: "Writing", longBreakEvery: 2)
+        )
+        let harness = TimerEngineHarness(settings: PomodoroSettings(longBreakEvery: 4))
+
+        #expect(harness.engine.cycleLength(previewing: .focus, task: task) == 2)
+        #expect(harness.engine.cycleLength(previewing: .focus) == 4)
+        #expect(harness.engine.cycleLength(previewing: .shortBreak) == 4)
+
+        // Once the task's focus starts, its routine is frozen for the cycle.
+        try harness.engine.startFocus(task: task)
+        #expect(harness.engine.cycleLength() == 2)
+    }
+
     @Test("Pausing or cancelling withdraws the follow-up alert; resuming reschedules it")
     func followUpAlertTracksTheRunningSession() throws {
         let harness = TimerEngineHarness(settings: PomodoroSettings(

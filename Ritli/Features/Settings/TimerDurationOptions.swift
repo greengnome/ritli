@@ -16,20 +16,3 @@ enum TimerDurationOptions {
         TimeInterval(max(1, minutes) * 60)
     }
 }
-
-struct MinutesPicker: View {
-    let title: String
-    @Binding var selection: Int
-    let options: [Int]
-    let identifier: String
-
-    var body: some View {
-        Picker(title, selection: $selection) {
-            ForEach(options, id: \.self) { minutes in
-                Text(verbatim: SettingsPresentation.minutes(minutes))
-                    .tag(minutes)
-            }
-        }
-        .accessibilityIdentifier(identifier)
-    }
-}

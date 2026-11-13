@@ -1,77 +1,85 @@
 import SwiftUI
 
+/// Today's totals as one quiet row under the timer: numbers and words, no
+/// icons, and a link to the full history.
 struct TodaySummaryView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let summary: TodaySummary
+    let style: HomeStyle
     let onViewAll: () -> Void
 
     var body: some View {
-        VStack(spacing: 18) {
-            contentLayout {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
                 Text(.homeSummaryToday)
-                    .font(.headline)
-                if !dynamicTypeSize.isAccessibilitySize {
-                    Spacer()
-                }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(style.foreground)
+
+                Spacer(minLength: 12)
+
                 Button(action: onViewAll) {
-                    Text(.homeSummaryViewAll)
+                    HStack(spacing: 4) {
+                        Text(.homeSummaryViewAll)
+                        Image(systemName: "chevron.right")
+                            .font(.footnote.weight(.bold))
+                            .accessibilityHidden(true)
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(style.secondary)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
                 }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .buttonStyle(.plain)
                 .accessibilityIdentifier("home.summary.viewAll")
             }
 
-            contentLayout {
+            metricsLayout {
                 metric(
                     value: "\(summary.completedSessions)",
                     title: .homeSummarySessions,
-                    systemImage: "clock",
-                    color: RitliTheme.accent,
                     identifier: "home.summary.sessions"
                 )
                 metric(
                     value: TimerDisplayFormatter.focusedTime(summary.focusTime),
                     title: .homeSummaryFocusTime,
-                    systemImage: "scope",
-                    color: .orange,
                     identifier: "home.summary.focusTime"
                 )
                 metric(
                     value: "\(summary.completedTasks)",
                     title: .homeSummaryTasksDone,
-                    systemImage: "checkmark.circle",
-                    color: RitliTheme.success,
                     identifier: "home.summary.tasks"
                 )
             }
         }
+        .padding(.top, 12)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(style == .resting ? RitliTheme.hairline : style.track)
+                .frame(height: 1)
+        }
     }
 
-    private var contentLayout: AnyLayout {
+    private var metricsLayout: AnyLayout {
         dynamicTypeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 18))
-            : AnyLayout(HStackLayout())
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: 16))
     }
 
     private func metric(
         value: String,
         title: LocalizedStringResource,
-        systemImage: String,
-        color: Color,
         identifier: String
     ) -> some View {
-        VStack(spacing: 7) {
-            Image(systemName: systemImage)
-                .font(.title3)
-                .foregroundStyle(color)
+        VStack(alignment: .leading, spacing: 2) {
             Text(verbatim: value)
-                .font(.title3.weight(.semibold))
+                .font(.system(.title2, design: .rounded).weight(.heavy))
                 .monospacedDigit()
+                .foregroundStyle(style.foreground)
                 .accessibilityIdentifier(identifier)
             Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.footnote)
+                .foregroundStyle(style.secondary)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

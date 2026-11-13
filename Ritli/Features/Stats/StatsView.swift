@@ -30,7 +30,7 @@ struct StatsView: View {
                 .padding(.horizontal, RitliTheme.screenPadding)
                 .padding(.bottom, 24)
             }
-            .background(RitliTheme.background)
+            .background(RitliTheme.paper)
             .navigationTitle(Text(.appTabStats))
             .accessibilityIdentifier("stats.screen")
             .toolbar {
@@ -89,7 +89,8 @@ struct StatsView: View {
                 comparison: snapshot.focusTimeComparison,
                 period: selectedPeriod
             ),
-            valueIdentifier: "stats.focusTime.value"
+            valueIdentifier: "stats.focusTime.value",
+            valueSize: 34
         ) {
             Chart(snapshot.buckets) { bucket in
                 BarMark(
@@ -103,13 +104,9 @@ struct StatsView: View {
                     )
                 )
                 .foregroundStyle(
-                    LinearGradient(
-                        colors: [RitliTheme.accentSoft, RitliTheme.accent],
-                        startPoint: .bottom,
-                        endPoint: .top
-                    )
+                    isCurrentBucket(bucket) ? RitliTheme.tomato : RitliTheme.tomatoTrack
                 )
-                .cornerRadius(4)
+                .cornerRadius(6)
             }
             .chartXAxis { chartXAxis(snapshot) }
             .chartYAxis(.hidden)
@@ -117,7 +114,7 @@ struct StatsView: View {
                 if snapshot.current.focusTime == 0 {
                     Text(.statsEmptyNoFocusRecorded)
                         .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(RitliTheme.stone)
                 }
             }
             .accessibilityLabel(Text(.statsChartFocusTimeAccessibility))
@@ -136,24 +133,6 @@ struct StatsView: View {
             valueIdentifier: "stats.sessions.value"
         ) {
             Chart(snapshot.buckets) { bucket in
-                AreaMark(
-                    x: .value(
-                        String(localized: .statsChartAxisPeriod),
-                        bucket.interval.start
-                    ),
-                    y: .value(
-                        String(localized: .homeSummarySessions),
-                        bucket.completedSessions
-                    )
-                )
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [RitliTheme.success.opacity(0.3), .clear],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-
                 LineMark(
                     x: .value(
                         String(localized: .statsChartAxisPeriod),
@@ -164,8 +143,8 @@ struct StatsView: View {
                         bucket.completedSessions
                     )
                 )
-                .foregroundStyle(RitliTheme.success)
-                .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                .foregroundStyle(RitliTheme.ink)
+                .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
 
                 PointMark(
                     x: .value(
@@ -177,8 +156,8 @@ struct StatsView: View {
                         bucket.completedSessions
                     )
                 )
-                .foregroundStyle(RitliTheme.success)
-                .symbolSize(22)
+                .foregroundStyle(RitliTheme.ink)
+                .symbolSize(18)
             }
             .chartXAxis { chartXAxis(snapshot) }
             .chartYAxis(.hidden)
@@ -195,20 +174,20 @@ struct StatsView: View {
                 comparison: snapshot.completedTasksComparison,
                 period: selectedPeriod
             ),
-            valueIdentifier: "stats.tasks.value"
+            valueIdentifier: "stats.tasks.value",
+            contentHeight: nil
         ) {
-            VStack(spacing: 12) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(RitliTheme.success)
-
-                Text(verbatim: selectedPeriod.completedTasksDescription())
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            Text(verbatim: selectedPeriod.completedTasksDescription())
+                .font(.subheadline)
+                .foregroundStyle(RitliTheme.stone)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    /// The bucket that holds the reference date, drawn in full tomato so
+    /// "now" stands out from the past.
+    private func isCurrentBucket(_ bucket: StatsBucket) -> Bool {
+        bucket.interval.start <= referenceDate && referenceDate < bucket.interval.end
     }
 
     @AxisContentBuilder
@@ -217,6 +196,7 @@ struct StatsView: View {
             AxisValueLabel {
                 if let date = value.as(Date.self) {
                     Text(selectedPeriod.bucketLabel(for: date, calendar: calendar))
+                        .foregroundStyle(RitliTheme.stone)
                 }
             }
             AxisTick().foregroundStyle(.clear)

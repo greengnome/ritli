@@ -50,3 +50,16 @@ extension FocusCategory {
         RitliTheme.categoryColor(for: colorToken)
     }
 }
+
+extension FocusTask {
+    /// The task's note without surrounding whitespace, or nil when it has none.
+    var trimmedNote: String? {
+        guard let notes else { return nil }
+        let trimmed = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    var hasNote: Bool {
+        trimmedNote != nil
+    }
+}

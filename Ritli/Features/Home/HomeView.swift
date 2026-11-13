@@ -5,6 +5,8 @@ import UIKit
 struct HomeView: View {
     @Environment(TimerEngine.self) private var timerEngine
     @Environment(NotificationPermissionService.self) private var notificationPermissionService
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
     @Query private var sessions: [FocusSession]
     @Query private var tasks: [FocusTask]
 
@@ -23,9 +25,9 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 26) {
+                VStack(alignment: .leading, spacing: 24) {
                     if let task = activeTask {
-                        CurrentTaskBanner(task: task)
+                        CurrentTaskBanner(task: task, style: style)
                     } else if showsTaskSelector {
                         HomeTaskPickerButton(task: selectedTask) {
                             isTaskPickerPresented = true
@@ -37,12 +39,15 @@ struct HomeView: View {
                         state: timerEngine.currentSession?.state,
                         remainingTime: displayedRemainingTime,
                         duration: displayedDuration,
+                        cycle: cycleProgress,
+                        style: style,
                         isModeSelectionEnabled: !timerEngine.hasActiveSession,
                         onSelectMode: selectMode,
                         onPrimaryAction: primaryAction,
                         onCancel: cancelSession,
                         onSkipBreak: skipBreak
                     )
+                    .frame(maxWidth: .infinity)
 
                     TodaySummaryView(
                         summary: TodaySummary(
@@ -50,14 +55,21 @@ struct HomeView: View {
                             tasks: tasks,
                             now: summaryDate
                         ),
+                        style: style,
                         onViewAll: { isHistoryPresented = true }
                     )
                 }
                 .padding(.horizontal, RitliTheme.screenPadding)
+                .padding(.top, 8)
                 .padding(.bottom, 24)
             }
-            .background(RitliTheme.background)
+            .background(style.background.ignoresSafeArea())
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: style)
             .navigationTitle(Text(verbatim: "Ritli"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(toolbarFill, for: .navigationBar)
+            .toolbarBackground(isSessionActive ? .visible : .automatic, for: .navigationBar)
+            .toolbarColorScheme(isSessionActive ? .dark : nil, for: .navigationBar)
             .navigationDestination(isPresented: $isHistoryPresented) {
                 FocusHistoryView()
             }
@@ -70,6 +82,7 @@ struct HomeView: View {
                             Image(systemName: "slider.horizontal.3")
                         }
                     }
+                    .tint(style.foreground)
                     .accessibilityIdentifier("home.settings")
                 }
             }
@@ -111,6 +124,43 @@ struct HomeView: View {
             Text(errorMessage ?? String(localized: .commonErrorTryAgain))
         }
         .notificationsOffAlert(isPresented: $isNotificationsOffAlertPresented)
+    }
+
+    /// Running or paused: Home takes the session's colour.
+    private var isSessionActive: Bool {
+        switch timerEngine.currentSession?.state {
+        case .running, .paused:
+            true
+        case .completed, .cancelled, .skipped, .none:
+            false
+        }
+    }
+
+    /// The bar is switched to a dark colour scheme during a session so its
+    /// title turns light. An adaptive colour would then resolve to its
+    /// dark-mode value there, so resolve it for the app's real appearance.
+    private var toolbarFill: Color {
+        var environment = EnvironmentValues()
+        environment.colorScheme = colorScheme
+        return Color(style.background.resolve(in: environment))
+    }
+
+    private var style: HomeStyle {
+        isSessionActive ? .active(displayedKind) : .resting
+    }
+
+    private var cycleProgress: HomeCycleProgress {
+        // At rest, preview the cycle the next session would use: a selected
+        // task's own routine can have a different long-break interval.
+        HomeCycleProgress(
+            completed: timerEngine.cycleState.completedFocusesInCycle,
+            length: timerEngine.hasActiveSession
+                ? timerEngine.cycleLength()
+                : timerEngine.cycleLength(
+                    previewing: selectedKind,
+                    task: selectedKind == .focus ? selectedTask : nil
+                )
+        )
     }
 
     private var displayedKind: SessionKind {

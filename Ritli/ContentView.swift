@@ -19,8 +19,6 @@ struct ContentView: View {
             initialTab = .stats
         } else if arguments.contains("--ui-testing-show-tasks") {
             initialTab = .tasks
-        } else if arguments.contains("--ui-testing-show-settings") {
-            initialTab = .settings
         } else {
             initialTab = .home
         }
@@ -36,21 +34,23 @@ struct ContentView: View {
             HomeView {
                 selectedTab = .settings
             }
+            .tint(RitliTheme.accent)
             .tabItem {
                 Label {
                     Text(.appTabHome)
                 } icon: {
-                    Image(systemName: "house.fill")
+                    RitliTabIcon.home.image
                 }
             }
             .tag(AppTab.home)
 
             StatsView()
+                .tint(RitliTheme.accent)
                 .tabItem {
                     Label {
                         Text(.appTabStats)
                     } icon: {
-                        Image(systemName: "chart.bar.fill")
+                        RitliTabIcon.stats.image
                     }
                 }
                 .tag(AppTab.stats)
@@ -59,26 +59,28 @@ struct ContentView: View {
                 canStartFocus: !timerEngine.hasActiveSession,
                 onStartFocus: startFocus
             )
+                .tint(RitliTheme.accent)
                 .tabItem {
                     Label {
                         Text(.appTabTasks)
                     } icon: {
-                        Image(systemName: "checklist")
+                        RitliTabIcon.tasks.image
                     }
                 }
                 .tag(AppTab.tasks)
 
             SettingsView(settings: timerEngine.settings)
+                .tint(RitliTheme.accent)
                 .tabItem {
                     Label {
                         Text(.appTabSettings)
                     } icon: {
-                        Image(systemName: "gearshape.fill")
+                        RitliTabIcon.settings.image
                     }
                 }
                 .tag(AppTab.settings)
         }
-        .tint(RitliTheme.accent)
+        .tint(tabBarTint)
         .preferredColorScheme(timerEngine.settings.appearance.preferredColorScheme)
         .alert(
             String(localized: .homeAlertTimerUnavailable),
@@ -100,6 +102,20 @@ struct ContentView: View {
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
             await synchronizeNotificationPreference()
+        }
+    }
+
+    /// The selected tab is always neutral: the colour of the text on the
+    /// screen behind the bar. On Home during a session that's the light text
+    /// on the session colour; everywhere else it's ink. The screen colour
+    /// already says which mode you're in.
+    private var tabBarTint: Color {
+        guard selectedTab == .home else { return RitliTheme.ink }
+        switch timerEngine.currentSession?.state {
+        case .running, .paused:
+            return RitliTheme.onAccent
+        case .completed, .cancelled, .skipped, .none:
+            return RitliTheme.ink
         }
     }
 

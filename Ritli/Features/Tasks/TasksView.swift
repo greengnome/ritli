@@ -23,7 +23,7 @@ struct TasksView: View {
                     emptyState
                 } else {
                     List {
-                        ForEach(visibleTasks) { task in
+                        ForEach(visibleTasks, id: \.id) { task in
                             TaskRow(
                                 task: task,
                                 canStartFocus: canStartFocus,
@@ -32,13 +32,24 @@ struct TasksView: View {
                                 onEdit: { editorDestination = .edit(task) },
                                 onArchive: { archive(task) }
                             )
+                            .listRowBackground(RitliTheme.paper)
+                            .listRowSeparatorTint(RitliTheme.hairline)
+                            .listRowInsets(
+                                EdgeInsets(
+                                    top: 4,
+                                    leading: RitliTheme.screenPadding - 12,
+                                    bottom: 4,
+                                    trailing: RitliTheme.screenPadding - 8
+                                )
+                            )
                         }
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
+                    .background(RitliTheme.paper)
                 }
             }
-            .background(RitliTheme.background)
+            .background(RitliTheme.paper)
             .navigationTitle(Text(.appTabTasks))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -108,42 +119,42 @@ struct TasksView: View {
 
     private var filterBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
+            HStack(spacing: 4) {
                 filterButton(
                     title: String(localized: .tasksFilterAll),
                     identifier: "tasks.filter.all",
-                    filter: .all,
-                    color: RitliTheme.accent
+                    filter: .all
                 )
 
-                ForEach(activeCategories) { category in
+                ForEach(activeCategories, id: \.id) { category in
                     filterButton(
                         title: category.displayName,
                         identifier: "tasks.filter.category.\(category.id)",
-                        filter: .category(category.id),
-                        color: category.presentationColor
+                        filter: .category(category.id)
                     )
                 }
             }
             .padding(.horizontal, RitliTheme.screenPadding)
-            .padding(.vertical, 12)
+            .padding(.vertical, 8)
         }
-        .background(.background)
+        .background(RitliTheme.paper)
     }
 
     private var emptyState: some View {
         ContentUnavailableView {
-            Label(emptyTitle, systemImage: "checklist")
+            Text(emptyTitle)
+                .font(.system(.title2, design: .rounded).weight(.heavy))
+                .foregroundStyle(RitliTheme.ink)
         } description: {
             Text(emptyDescription)
+                .foregroundStyle(RitliTheme.stone)
         } actions: {
             Button {
                 editorDestination = .create
             } label: {
                 Text(.tasksActionCreate)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(RitliTheme.accent)
+            .buttonStyle(RitliFilledButtonStyle())
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityIdentifier("tasks.empty")
@@ -164,8 +175,7 @@ struct TasksView: View {
     private func filterButton(
         title: String,
         identifier: String,
-        filter: TaskListFilter,
-        color: Color
+        filter: TaskListFilter
     ) -> some View {
         let isSelected = selectedFilter == filter
 
@@ -174,11 +184,11 @@ struct TasksView: View {
         } label: {
             Text(verbatim: title)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(isSelected ? .white : .primary)
-                .padding(.horizontal, 17)
-                .padding(.vertical, 9)
-                .background(isSelected ? color : Color.secondary.opacity(0.1))
-                .clipShape(Capsule())
+                .foregroundStyle(isSelected ? RitliTheme.paper : RitliTheme.stone)
+                .padding(.horizontal, 16)
+                .frame(minHeight: 44)
+                .background(isSelected ? RitliTheme.ink : Color.clear, in: Capsule())
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(identifier)

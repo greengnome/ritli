@@ -24,10 +24,10 @@ struct TimerSoundPickerView: View {
                         } label: {
                             HStack(spacing: 12) {
                                 Image(systemName: sound == selectedSound ? "checkmark" : "circle")
-                                    .foregroundStyle(sound == selectedSound ? RitliTheme.accent : .secondary)
+                                    .foregroundStyle(sound == selectedSound ? RitliTheme.tomatoInk : RitliTheme.stone)
                                     .accessibilityHidden(true)
                                 Text(sound.title)
-                                    .foregroundStyle(.primary)
+                                    .foregroundStyle(RitliTheme.ink)
                                 Spacer(minLength: 0)
                             }
                             .frame(minHeight: 44)
@@ -52,7 +52,7 @@ struct TimerSoundPickerView: View {
                                     .frame(minWidth: 44, minHeight: 44)
                             }
                             .buttonStyle(.plain)
-                            .foregroundStyle(RitliTheme.accent)
+                            .foregroundStyle(RitliTheme.tomatoInk)
                             .accessibilityLabel(Text(String(
                                 localized: "settings.timer_sound.preview_named",
                                 defaultValue: "Preview \(String(localized: sound.title))"
@@ -60,6 +60,7 @@ struct TimerSoundPickerView: View {
                             .accessibilityIdentifier("settings.timerSound.preview.\(sound.rawValue)")
                         }
                     }
+                    .listRowBackground(RitliTheme.surface)
                 }
             } footer: {
                 Text(String(
@@ -68,6 +69,8 @@ struct TimerSoundPickerView: View {
                 ))
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(RitliTheme.paper)
         .navigationTitle(String(localized: "settings.timer_sound.title", defaultValue: "Timer sound"))
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("settings.timerSound.screen")

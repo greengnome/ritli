@@ -19,6 +19,9 @@ struct WelcomeView: View {
             .tabViewStyle(.page(indexDisplayMode: .never))
 
             pageIndicator
+                .frame(maxWidth: .infinity, alignment: .leading)
+                // Each dot sits in a 44pt target; line its visible edge up with the text.
+                .padding(.horizontal, RitliTheme.screenPadding - 10)
                 .padding(.top, 8)
 
             Button(action: advance) {
@@ -32,15 +35,8 @@ struct WelcomeView: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
                 .frame(maxWidth: .infinity, minHeight: 58)
-                .background(
-                    LinearGradient(
-                        colors: [RitliTheme.accent, .orange],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    ),
-                    in: RoundedRectangle(cornerRadius: 16)
-                )
-                .contentShape(RoundedRectangle(cornerRadius: 16))
+                .background(RitliTheme.tomatoFill, in: Capsule())
+                .contentShape(Capsule())
             }
             .buttonStyle(.plain)
             .padding(.horizontal, RitliTheme.screenPadding)
@@ -48,7 +44,7 @@ struct WelcomeView: View {
             .accessibilityIdentifier("onboarding.continue")
         }
         .padding(.bottom, 28)
-        .background(RitliTheme.background)
+        .background(RitliTheme.paper)
     }
 
     private var pageIndicator: some View {
@@ -62,11 +58,11 @@ struct WelcomeView: View {
                     Capsule()
                         .fill(
                             index == selectedPage
-                                ? RitliTheme.accent
-                                : .secondary.opacity(0.18)
+                                ? RitliTheme.ink
+                                : RitliTheme.hairline
                         )
                         .frame(
-                            width: index == selectedPage ? 22 : 8,
+                            width: index == selectedPage ? 24 : 8,
                             height: 8
                         )
                         .frame(width: 44, height: 44)
@@ -144,29 +140,33 @@ private struct OnboardingPageView: View {
             let artworkSize: CGFloat = isCompact ? 220 : 300
 
             ScrollView {
-                VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 0) {
                     Spacer(minLength: 24)
 
                     AnimatedOnboardingArtwork(page: page, isActive: isActive)
                         .frame(width: 300, height: 300)
                         .scaleEffect(artworkSize / 300)
                         .frame(width: artworkSize, height: artworkSize)
+                        .frame(maxWidth: .infinity)
                         .accessibilityHidden(true)
-                        .padding(.bottom, isCompact ? 20 : 32)
+                        .padding(.bottom, isCompact ? 20 : 36)
 
-                    VStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 10) {
                         Text(page.title)
-                            .font(.system(size: isCompact ? 32 : 38, weight: .bold, design: .rounded))
-                            .multilineTextAlignment(.center)
+                            .font(.system(size: isCompact ? 30 : 34, weight: .heavy, design: .rounded))
+                            .foregroundStyle(RitliTheme.ink)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("onboarding.\(page.rawValue).title")
 
                         Text(page.message)
-                            .font(isCompact ? .body : .title3)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
+                            .font(.body)
+                            .foregroundStyle(RitliTheme.stone)
+                            .multilineTextAlignment(.leading)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    .padding(.horizontal, 28)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, RitliTheme.screenPadding)
 
                     Spacer(minLength: 24)
                 }
@@ -195,8 +195,7 @@ private struct AnimatedOnboardingArtwork: View {
         TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !isAnimating)) { context in
             OnboardingArtwork(
                 page: page,
-                elapsed: isAnimating ? max(0, context.date.timeIntervalSince(animationStart)) : 0,
-                isAnimating: isAnimating
+                elapsed: isAnimating ? max(0, context.date.timeIntervalSince(animationStart)) : nil
             )
         }
         .onChange(of: isAnimating, initial: true) {
@@ -207,18 +206,24 @@ private struct AnimatedOnboardingArtwork: View {
     }
 }
 
+/// Each page acts out what it says, using the app's own pieces: the Home
+/// dial counts down, a task fills its sessions and gets checked off, and the
+/// week's focus adds up. Pages 2 and 3 replay every few seconds while open.
+/// With no `elapsed` (Reduce Motion, or a preloaded page) everything shows
+/// in its finished state.
 private struct OnboardingArtwork: View {
     let page: OnboardingPage
-    let elapsed: TimeInterval
-    let isAnimating: Bool
+    let elapsed: TimeInterval?
 
-    private var entrance: Double {
-        guard isAnimating else { return 1 }
-        return 1 - pow(1 - min(elapsed / 0.85, 1), 3)
-    }
+    /// One pass of the task and stats stories, in seconds.
+    private static let loop: TimeInterval = 6
+    /// A moment in the loop where everything is shown, for the still state.
+    private static let settled: TimeInterval = 3.6
 
-    private func wave(delay: Double = 0) -> Double {
-        isAnimating ? sin(elapsed * .pi / 2 - delay) : 0
+    /// Time within the current loop.
+    private var time: TimeInterval {
+        guard let elapsed else { return Self.settled }
+        return elapsed.truncatingRemainder(dividingBy: Self.loop)
     }
 
     var body: some View {
@@ -232,218 +237,285 @@ private struct OnboardingArtwork: View {
         }
     }
 
+    // MARK: Focus: the Home dial, counting down
+
     private var focusArtwork: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [RitliTheme.accentSoft.opacity(0.5), RitliTheme.accentSoft.opacity(0.04)],
-                        center: .center,
-                        startRadius: 65,
-                        endRadius: 145
-                    )
-                )
-                .frame(width: 290, height: 290)
-                .scaleEffect(1 + wave() * 0.035)
+        let remaining = max(0, 1_122 - (elapsed ?? 0))
+        let chip = OnboardingTiming.progress(elapsed ?? 2, from: 1.2, to: 1.6)
+        return VStack(spacing: 20) {
+            HomeTimerReadout(
+                kind: .focus,
+                state: .running,
+                duration: 1_500,
+                cycle: HomeCycleProgress(completed: 1, length: 4),
+                style: .resting,
+                remainingTime: { _ in remaining }
+            )
+            .frame(width: 236, height: 236)
 
-            Circle()
-                .fill(RitliTheme.surface)
-                .frame(width: 232, height: 232)
-                .shadow(color: RitliTheme.accent.opacity(0.12), radius: 24, y: 12)
-
-            ForEach(0..<60) { tick in
-                Capsule()
-                    .fill(RitliTheme.accent.opacity(tick.isMultiple(of: 5) ? 0.45 : 0.16))
-                    .frame(width: 2, height: tick.isMultiple(of: 5) ? 9 : 4)
-                    .offset(y: -105)
-                    .rotationEffect(.degrees(Double(tick) * 6))
-            }
-
-            Circle()
-                .stroke(RitliTheme.accentSoft.opacity(0.3), lineWidth: 9)
-                .frame(width: 180, height: 180)
-
-            Circle()
-                .trim(from: 0, to: entrance * max(0, 1_122 - elapsed) / 1_500)
-                .stroke(
-                    AngularGradient(
-                        colors: [.orange, RitliTheme.accent],
-                        center: .center,
-                        startAngle: .zero,
-                        endAngle: .degrees(270)
-                    ),
-                    style: StrokeStyle(lineWidth: 9, lineCap: .round)
-                )
-                .frame(width: 180, height: 180)
-                .rotationEffect(.degrees(-90))
-
-            VStack(spacing: 8) {
-                Text(.homeTimerModeFocus)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(RitliTheme.accent)
-
-                Text(verbatim: TimerDisplayFormatter.countdown(max(0, 1_122 - elapsed)))
-                    .font(.system(size: 43, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
-                    .contentTransition(.identity)
-
-                HStack(spacing: 4) {
-                    ForEach(0..<4) { index in
-                        Capsule()
-                            .fill(RitliTheme.accent.opacity(index == 0 ? 1 : 0.2))
-                            .frame(width: index == 0 ? 16 : 5, height: 5)
-                    }
-                }
-            }
-
-            Image(systemName: "moon.zzz.fill")
-                .font(.system(size: 22, weight: .medium))
-                .foregroundStyle(RitliTheme.accent)
-                .frame(width: 52, height: 52)
-                .background(RitliTheme.surface, in: RoundedRectangle(cornerRadius: 18))
-                .rotationEffect(.degrees(-12))
-                .shadow(color: .black.opacity(0.05), radius: 12, y: 6)
-                .offset(x: -105, y: -82 + wave() * 5)
-
-            HStack(spacing: 9) {
-                Image(systemName: "cup.and.saucer.fill")
-                    .foregroundStyle(RitliTheme.success)
-                Text(verbatim: "05:00")
-                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                    .monospacedDigit()
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(RitliTheme.leaf)
+                    .frame(width: 8, height: 8)
+                Text(.onboardingFocusNextBreak)
+                    .font(.footnote)
+                    .foregroundStyle(RitliTheme.ink)
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .frame(height: 36)
             .background(RitliTheme.surface, in: Capsule())
-            .shadow(color: .black.opacity(0.06), radius: 12, y: 6)
-            .rotationEffect(.degrees(8))
-            .offset(x: 83, y: 102 - wave() * 5)
+            .overlay {
+                Capsule().stroke(RitliTheme.hairline, lineWidth: 1)
+            }
+            .opacity(chip)
+            .offset(y: (1 - chip) * 8)
         }
-        .scaleEffect(0.92 + entrance * 0.08)
-        .opacity(0.3 + entrance * 0.7)
     }
+
+    // MARK: Tasks: a session lands, a task gets done
 
     private var tasksArtwork: some View {
-        VStack(spacing: 14) {
-            taskCard(
+        let t = time
+        let thirdDot = OnboardingTiming.progress(t, from: 1.3, to: 1.6)
+        let check = OnboardingTiming.progress(t, from: 2.4, to: 2.75)
+        let strike = OnboardingTiming.progress(t, from: 2.7, to: 3.3)
+        // The last task's session is under way: its ring fills like the dial's
+        // current arc. It grows through the whole loop, so the page never holds
+        // still, even after the task above is done.
+        let session = OnboardingTiming.progress(t, from: 0.6, to: 5.5, curve: .linear)
+
+        return VStack(spacing: 0) {
+            taskRow(
+                index: 0,
                 title: .onboardingTasksProjectRoadmap,
-                progress: Text(verbatim: "2 / 4"),
-                color: RitliTheme.accent
+                category: "Work",
+                dots: [.done, .done, .filling(thirdDot), .empty]
             )
-            .offset(x: -8 - (1 - entrance) * 25, y: wave() * 4)
-
-            taskCard(
+            OnboardingDivider()
+            taskRow(
+                index: 1,
                 title: .onboardingTasksReadPages,
-                progress: Text(.onboardingTasksDone),
-                color: RitliTheme.success,
-                isComplete: true
+                category: "Study",
+                dots: [.done, .done],
+                completion: check,
+                strike: strike
             )
-            .offset(x: 10 + (1 - entrance) * 25, y: wave(delay: 0.8) * 4)
-
-            taskCard(
+            OnboardingDivider()
+            taskRow(
+                index: 2,
                 title: .onboardingTasksLearnSpanish,
-                progress: Text(verbatim: "1 / 3"),
-                color: .purple
+                category: "Personal",
+                dots: [.done, .current(session), .empty]
             )
-            .offset(x: -4 - (1 - entrance) * 25, y: wave(delay: 1.6) * 4)
         }
-        .padding(.horizontal, 8)
-        .opacity(0.3 + entrance * 0.7)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 4)
+        .frame(width: 300)
+        .background(RitliTheme.surface, in: RoundedRectangle(cornerRadius: RitliTheme.cardRadius, style: .continuous))
     }
+
+    private func taskRow(
+        index: Int,
+        title: LocalizedStringResource,
+        category: String,
+        dots: [OnboardingDot],
+        completion: Double = 0,
+        strike: Double = 0
+    ) -> some View {
+        let entrance = rowEntrance(index)
+        return HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .stroke(RitliTheme.stone.opacity(0.6), lineWidth: 2)
+                Circle()
+                    .fill(RitliTheme.leafFill)
+                    .opacity(completion)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 10, weight: .heavy))
+                    .foregroundStyle(.white)
+                    .opacity(completion)
+            }
+            .frame(width: 20, height: 20)
+            .scaleEffect(1 + 0.2 * sin(completion * .pi))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(strike > 0.5 ? RitliTheme.stone : RitliTheme.ink)
+                    .overlay(alignment: .leading) {
+                        GeometryReader { proxy in
+                            Rectangle()
+                                .fill(RitliTheme.stone)
+                                .frame(width: proxy.size.width * strike, height: 1.5)
+                                .frame(maxHeight: .infinity)
+                        }
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(verbatim: FocusCategoryNamePresentation.displayName(for: category))
+                    .font(.caption)
+                    .foregroundStyle(RitliTheme.stone)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack(spacing: 4) {
+                ForEach(dots.indices, id: \.self) { dotIndex in
+                    dotView(dots[dotIndex])
+                }
+            }
+        }
+        .frame(minHeight: 60)
+        .opacity(entrance)
+        .offset(y: (1 - entrance) * 12)
+    }
+
+    @ViewBuilder
+    private func dotView(_ dot: OnboardingDot) -> some View {
+        switch dot {
+        case .done:
+            Circle().fill(RitliTheme.tomato).frame(width: 8, height: 8)
+        case .empty:
+            Circle().stroke(RitliTheme.stone.opacity(0.6), lineWidth: 1.5).frame(width: 7, height: 7)
+                .frame(width: 8, height: 8)
+        case let .filling(progress):
+            ZStack {
+                Circle().stroke(RitliTheme.stone.opacity(0.6), lineWidth: 1.5).frame(width: 7, height: 7)
+                Circle().fill(RitliTheme.tomato).opacity(progress)
+            }
+            .frame(width: 8, height: 8)
+            .scaleEffect(1 + 0.4 * sin(progress * .pi))
+        case let .current(progress):
+            ZStack {
+                Circle().stroke(RitliTheme.tomatoTrack, lineWidth: 1.5)
+                Circle()
+                    .trim(from: 0, to: progress)
+                    .stroke(RitliTheme.tomato, style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+            }
+            .frame(width: 7, height: 7)
+            .frame(width: 8, height: 8)
+        }
+    }
+
+    /// Rows slide in one after another, then fade before the loop restarts.
+    private func rowEntrance(_ index: Int) -> Double {
+        let start = Double(index) * 0.12
+        let enter = OnboardingTiming.progress(time, from: start, to: start + 0.48)
+        let leave = OnboardingTiming.progress(time, from: 5.5, to: 6)
+        return enter * (1 - leave)
+    }
+
+    // MARK: Insights: the week adds up
+
+    private static let barHeights: [CGFloat] = [0.18, 0.62, 0.48, 0.88, 0.40, 0.72, 0.06]
+    private static let todayIndex = 5
 
     private var insightsArtwork: some View {
-        VStack(spacing: 22) {
-            HStack(alignment: .bottom, spacing: 13) {
-                bar(height: 48, color: RitliTheme.accentSoft, index: 0)
-                bar(height: 72, color: RitliTheme.accentSoft, index: 1)
-                bar(height: 102, color: RitliTheme.accent, index: 2)
-                bar(height: 64, color: RitliTheme.accentSoft, index: 3)
-                bar(height: 88, color: RitliTheme.accentSoft, index: 4)
-            }
-            .frame(height: 112, alignment: .bottom)
+        let t = time
+        let leave = OnboardingTiming.progress(t, from: 5.5, to: 6)
+        let count = OnboardingTiming.progress(t, from: 0, to: 1.2)
+        let minutes = (135 * count).rounded()
 
-            HStack(spacing: 16) {
-                insightMetric(
-                    value: Text(.onboardingInsightsFocusValue),
-                    label: .onboardingInsightsFocusLabel
-                )
-                insightMetric(
-                    value: Text(verbatim: "5"),
-                    label: .onboardingInsightsSessionsLabel
-                )
+        return VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(.onboardingInsightsWeek)
+                    .font(.caption)
+                    .foregroundStyle(RitliTheme.stone)
+                Text(verbatim: TimerDisplayFormatter.focusedTime(minutes * 60))
+                    .font(.system(size: 32, weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(RitliTheme.ink)
             }
-        }
-        .padding(24)
-        .background(RitliTheme.surface, in: RoundedRectangle(cornerRadius: 28))
-        .shadow(color: .black.opacity(0.06), radius: 20, y: 10)
-        .padding(10)
-        .offset(y: (1 - entrance) * 18)
-        .opacity(0.3 + entrance * 0.7)
-    }
 
-    private func taskCard(
-        title: LocalizedStringResource,
-        progress: Text,
-        color: Color,
-        isComplete: Bool = false
-    ) -> some View {
-        HStack(spacing: 13) {
-            Circle()
-                .stroke(color, lineWidth: 3)
-                .frame(width: 25, height: 25)
-                .overlay {
-                    if isComplete {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(color)
-                            .scaleEffect(entrance)
-                    }
+            HStack(alignment: .bottom, spacing: 8) {
+                ForEach(Self.barHeights.indices, id: \.self) { index in
+                    bar(index: index, t: t)
                 }
+            }
+            .frame(height: 96, alignment: .bottom)
 
-            Text(title)
-                .font(.headline)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Spacer()
-
-            progress
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(color)
-                .fixedSize()
+            categoryBar(t: t)
         }
-        .padding(17)
-        .background(RitliTheme.surface, in: RoundedRectangle(cornerRadius: 18))
-        .overlay(alignment: .leading) {
-            RoundedRectangle(cornerRadius: 3)
-                .fill(color)
-                .frame(width: 5)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 18))
-        .shadow(color: .black.opacity(0.05), radius: 12, y: 6)
+        .padding(18)
+        .frame(width: 300)
+        .background(RitliTheme.surface, in: RoundedRectangle(cornerRadius: RitliTheme.cardRadius, style: .continuous))
+        .opacity(1 - leave)
     }
 
-    private func bar(height: CGFloat, color: Color, index: Int) -> some View {
-        RoundedRectangle(cornerRadius: 6)
-            .fill(color)
-            .frame(width: 25, height: height)
-            .scaleEffect(
-                y: max(0.05, entrance * (0.9 + wave(delay: Double(index) * 0.65) * 0.1)),
-                anchor: .bottom
-            )
+    private func bar(index: Int, t: TimeInterval) -> some View {
+        let start = Double(index) * 0.06
+        let grow = OnboardingTiming.progress(t, from: start, to: start + 0.84)
+        var height = Self.barHeights[index]
+        if index == Self.todayIndex {
+            // Today keeps adding up while you watch.
+            height += CGFloat(0.08 * OnboardingTiming.progress(t, from: 1, to: 5.5, curve: .linear))
+        }
+        return RoundedRectangle(cornerRadius: 6, style: .continuous)
+            .fill(index == Self.todayIndex ? RitliTheme.tomato : RitliTheme.tomatoTrack)
+            .frame(height: 96 * height)
+            .frame(maxWidth: .infinity)
+            .scaleEffect(y: max(0.01, grow), anchor: .bottom)
     }
 
-    private func insightMetric(
-        value: Text,
-        label: LocalizedStringResource
-    ) -> some View {
-        VStack(spacing: 4) {
-            value
-                .font(.title3.weight(.bold))
-                .monospacedDigit()
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+    private func categoryBar(t: TimeInterval) -> some View {
+        let segments: [(share: CGFloat, color: Color)] = [
+            (0.52, RitliTheme.tomato),
+            (0.31, RitliTheme.categoryColor(for: "blue")),
+            (0.17, RitliTheme.categoryColor(for: "purple")),
+        ]
+        return GeometryReader { proxy in
+            let available = proxy.size.width - 6
+            HStack(spacing: 3) {
+                ForEach(segments.indices, id: \.self) { index in
+                    let start = 0.72 + Double(index) * 0.1
+                    let grow = OnboardingTiming.progress(t, from: start, to: start + 0.8)
+                    Capsule()
+                        .fill(segments[index].color)
+                        .frame(width: available * segments[index].share)
+                        .scaleEffect(x: max(0.01, grow), anchor: .leading)
+                }
+            }
         }
-        .frame(maxWidth: .infinity)
+        .frame(height: 10)
+    }
+}
+
+private enum OnboardingDot {
+    case done
+    case empty
+    /// Filling in, 0...1.
+    case filling(Double)
+    /// The session under way, its ring filled this far, 0...1.
+    case current(Double)
+}
+
+private struct OnboardingDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(RitliTheme.hairline)
+            .frame(height: 1)
+    }
+}
+
+private enum OnboardingTiming {
+    enum Curve {
+        case easeOut
+        case linear
+    }
+
+    /// How far `time` is between `start` and `end`, eased, clamped to 0...1.
+    static func progress(
+        _ time: TimeInterval,
+        from start: TimeInterval,
+        to end: TimeInterval,
+        curve: Curve = .easeOut
+    ) -> Double {
+        guard end > start else { return time >= end ? 1 : 0 }
+        let linear = min(1, max(0, (time - start) / (end - start)))
+        switch curve {
+        case .easeOut:
+            return 1 - pow(1 - linear, 3)
+        case .linear:
+            return linear
+        }
     }
 }
