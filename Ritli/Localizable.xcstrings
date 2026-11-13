@@ -1,6 +1,204 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "tasks.editor.sessions.estimate" : {
+      "comment" : "Beside the session dots in the task editor: the focus time the planned sessions add up to. %@ is a duration such as 1h 15m.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About %@ of focus"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Приблизно %@ фокусу"
+          }
+        }
+      }
+    },
+    "tasks.editor.sessions.fewer" : {
+      "comment" : "VoiceOver label for the button that lowers a task's planned sessions.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fewer sessions"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Менше сесій"
+          }
+        }
+      }
+    },
+    "tasks.editor.sessions.more" : {
+      "comment" : "VoiceOver label for the button that raises a task's planned sessions.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More sessions"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Більше сесій"
+          }
+        }
+      }
+    },
+    "tasks.editor.due" : {
+      "comment" : "Label above the due-date choices in the task editor.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Due"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Термін"
+          }
+        }
+      }
+    },
+    "tasks.editor.due.none" : {
+      "comment" : "Due-date choice: the task has no due date.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Без терміну"
+          }
+        }
+      }
+    },
+    "tasks.editor.due.today" : {
+      "comment" : "Due-date choice: due today.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сьогодні"
+          }
+        }
+      }
+    },
+    "tasks.editor.due.tomorrow" : {
+      "comment" : "Due-date choice: due tomorrow.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomorrow"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Завтра"
+          }
+        }
+      }
+    },
+    "tasks.editor.add_note" : {
+      "comment" : "Button in the task editor that reveals the notes field.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a note"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Додати нотатку"
+          }
+        }
+      }
+    },
+    "tasks.routine.editor.cycle" : {
+      "comment" : "Heading of the routine editor's to-scale preview of one focus cycle.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One cycle"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Один цикл"
+          }
+        }
+      }
+    },
+    "tasks.routine.editor.shorter" : {
+      "comment" : "VoiceOver label for the button that shortens a routine duration.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shorter"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коротше"
+          }
+        }
+      }
+    },
+    "tasks.routine.editor.longer" : {
+      "comment" : "VoiceOver label for the button that lengthens a routine duration.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Longer"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Довше"
+          }
+        }
+      }
+    },
     "onboarding.focus.next_break" : {
       "comment" : "Chip under the onboarding timer: a short break follows this focus session.",
       "extractionState" : "manual",
