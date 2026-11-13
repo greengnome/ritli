@@ -279,8 +279,10 @@ private struct OnboardingArtwork: View {
         let thirdDot = OnboardingTiming.progress(t, from: 1.3, to: 1.6)
         let check = OnboardingTiming.progress(t, from: 2.4, to: 2.75)
         let strike = OnboardingTiming.progress(t, from: 2.7, to: 3.3)
-        // The next session on the last task pulses, like the dial's current arc.
-        let pulse = elapsed.map { 0.6 + 0.4 * cos($0 * .pi / 0.75) } ?? 1
+        // The last task's session is under way: its ring fills like the dial's
+        // current arc. It grows through the whole loop, so the page never holds
+        // still, even after the task above is done.
+        let session = OnboardingTiming.progress(t, from: 0.6, to: 5.5, curve: .linear)
 
         return VStack(spacing: 0) {
             taskRow(
@@ -303,7 +305,7 @@ private struct OnboardingArtwork: View {
                 index: 2,
                 title: .onboardingTasksLearnSpanish,
                 category: "Personal",
-                dots: [.done, .current(pulse), .empty]
+                dots: [.done, .current(session), .empty]
             )
         }
         .padding(.horizontal, 16)
@@ -381,8 +383,16 @@ private struct OnboardingArtwork: View {
             }
             .frame(width: 8, height: 8)
             .scaleEffect(1 + 0.4 * sin(progress * .pi))
-        case let .current(opacity):
-            Circle().fill(RitliTheme.tomato).opacity(opacity).frame(width: 8, height: 8)
+        case let .current(progress):
+            ZStack {
+                Circle().stroke(RitliTheme.tomatoTrack, lineWidth: 1.5)
+                Circle()
+                    .trim(from: 0, to: progress)
+                    .stroke(RitliTheme.tomato, style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+            }
+            .frame(width: 7, height: 7)
+            .frame(width: 8, height: 8)
         }
     }
 
@@ -474,7 +484,7 @@ private enum OnboardingDot {
     case empty
     /// Filling in, 0...1.
     case filling(Double)
-    /// The next session, pulsing at this opacity.
+    /// The session under way, its ring filled this far, 0...1.
     case current(Double)
 }
 
