@@ -311,7 +311,7 @@ struct SettingsView: View {
     private var dataSection: some View {
         Section {
             LabeledContent(String(localized: "settings.data.recorded_sessions", defaultValue: "Recorded sessions")) {
-                Text("\(recordedSessionCount)")
+                Text(recordedSessionCount, format: .number)
                     .accessibilityIdentifier("settings.historyCount")
             }
 

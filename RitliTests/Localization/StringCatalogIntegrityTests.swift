@@ -17,19 +17,9 @@ struct StringCatalogIntegrityTests {
     /// Known failures, excluded so the check guards every other key.
     /// Remove an entry once its catalog entry is fixed or deleted; the
     /// `allowlistIsCurrent` test fails while an entry here is stale.
-    static let allowlistedKeys: Set<String> = [
-        // Xcode extracted these English `defaultValue:` literals (built from
-        // ternaries in TaskRow and TimerRoutineEditorView) as keys of their own.
-        // The app looks up the `tasks.*` keys instead, so these entries are
-        // unused, have no localizations, and should be removed from the catalog.
-        "Edit Timer Routine",
-        "New Timer Routine",
-        "Mark %@ complete",
-        "Reopen %@",
-        // `Text("\(count)")` in SettingsView: a bare number that has nothing to
-        // translate. It should be marked "Don't translate" in the catalog.
-        "%lld",
-    ]
+    /// Keep it empty: fix the catalog (or the code that extracted a stray
+    /// key, such as a ternary inside `String(localized:)`) instead.
+    static let allowlistedKeys: Set<String> = []
 
     @Test("Every key has a finished Ukrainian translation with English's format arguments",
           arguments: catalogPaths)

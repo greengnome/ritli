@@ -128,14 +128,15 @@ struct TimerRoutineEditorView: View {
                 }
             }
             .navigationTitle(
-                String(
-                    localized: routine == nil
-                        ? "tasks.routine.editor.new.title"
-                        : "tasks.routine.editor.edit.title",
-                    defaultValue: routine == nil
-                        ? "New Timer Routine"
-                        : "Edit Timer Routine"
-                )
+                routine == nil
+                    ? String(
+                        localized: "tasks.routine.editor.new.title",
+                        defaultValue: "New Timer Routine"
+                    )
+                    : String(
+                        localized: "tasks.routine.editor.edit.title",
+                        defaultValue: "Edit Timer Routine"
+                    )
             )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

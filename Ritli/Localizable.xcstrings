@@ -289,9 +289,6 @@
         }
       }
     },
-    "%lld" : {
-
-    },
     "app.alert.focus_start_failed" : {
       "comment" : "Title shown when a focus session cannot be started.",
       "extractionState" : "manual",
@@ -633,9 +630,6 @@
           }
         }
       }
-    },
-    "Edit Timer Routine" : {
-
     },
     "history.date_picker.label" : {
       "comment" : "VoiceOver label for the date picker in Focus History.",
@@ -1429,12 +1423,6 @@
         }
       }
     },
-    "Mark %@ complete" : {
-
-    },
-    "New Timer Routine" : {
-
-    },
     "notification.break.body" : {
       "comment" : "Notification message shown when a break finishes.",
       "extractionState" : "manual",
@@ -1848,9 +1836,6 @@
           }
         }
       }
-    },
-    "Reopen %@" : {
-
     },
     "settings.about.privacy_policy" : {
       "comment" : "Link to the app privacy policy.",
