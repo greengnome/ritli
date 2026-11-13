@@ -140,10 +140,16 @@ struct HomeView: View {
     }
 
     private var cycleProgress: HomeCycleProgress {
+        // At rest, preview the cycle the next session would use: a selected
+        // task's own routine can have a different long-break interval.
         HomeCycleProgress(
             completed: timerEngine.cycleState.completedFocusesInCycle,
-            length: timerEngine.cycleState.routineSnapshot?.longBreakEvery
-                ?? timerEngine.settings.longBreakEvery
+            length: timerEngine.hasActiveSession
+                ? timerEngine.cycleLength()
+                : timerEngine.cycleLength(
+                    previewing: selectedKind,
+                    task: selectedKind == .focus ? selectedTask : nil
+                )
         )
     }
 
