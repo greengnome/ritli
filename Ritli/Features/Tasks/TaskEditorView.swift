@@ -32,6 +32,7 @@ struct TaskEditorView: View {
                 } header: {
                     Text(.tasksEditorTaskSection)
                 }
+                .listRowBackground(RitliTheme.surface)
 
                 Section {
                     Picker(
@@ -82,6 +83,7 @@ struct TaskEditorView: View {
                 } footer: {
                     Text(.tasksEditorAutoCompletionHint)
                 }
+                .listRowBackground(RitliTheme.surface)
 
                 timerRoutineSection
 
@@ -96,7 +98,10 @@ struct TaskEditorView: View {
                 } header: {
                     Text(.tasksEditorNotesSection)
                 }
+                .listRowBackground(RitliTheme.surface)
             }
+            .scrollContentBackground(.hidden)
+            .background(RitliTheme.paper)
             .navigationTitle(
                 Text(task == nil ? .tasksEditorNewTitle : .tasksEditorEditTitle)
             )
@@ -231,6 +236,7 @@ struct TaskEditorView: View {
                 )
             )
         }
+        .listRowBackground(RitliTheme.surface)
     }
 
     private var sortedRoutines: [TimerRoutine] {

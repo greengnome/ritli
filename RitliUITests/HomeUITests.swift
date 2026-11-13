@@ -15,22 +15,26 @@ final class HomeUITests: RitliUITestCase {
     }
 
     @MainActor
-    func testTimerModeMenuRemainsUsableAcrossRefreshIntervals() throws {
+    func testTimerModeSegmentsRemainUsableAcrossRefreshIntervals() throws {
         let app = makeApp()
         app.launch()
 
         for (kind, mode, countdown) in [
             ("shortBreak", "Short break", "05:00"),
-            // Reselect the current mode: the trigger and menu item share a label.
+            // Reselecting the current mode keeps it selected.
             ("shortBreak", "Short break", "05:00"),
             ("longBreak", "Long break", "15:00"),
             ("focus", "Focus", "25:00")
         ] {
-            // Exercise the menu across the old one-second whole-card refresh boundary.
-            selectTimerMode(kind, titled: mode, in: app, menuOpenDuration: 1.2)
+            selectTimerMode(kind, titled: mode, in: app)
+            // Wait past the one-second refresh so a re-render can't drop the selection.
+            _ = XCTWaiter.wait(
+                for: [XCTestExpectation(description: "Cross a refresh interval")],
+                timeout: 1.2
+            )
             XCTAssertEqual(app.staticTexts["home.timer.countdown"].label, countdown)
         }
-        addScreenshot(named: "Quiet ring — Focus mode menu")
+        addScreenshot(named: "Quiet ring — Focus mode selected")
     }
 
     @MainActor

@@ -32,15 +32,8 @@ struct WelcomeView: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
                 .frame(maxWidth: .infinity, minHeight: 58)
-                .background(
-                    LinearGradient(
-                        colors: [RitliTheme.accent, .orange],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    ),
-                    in: RoundedRectangle(cornerRadius: 16)
-                )
-                .contentShape(RoundedRectangle(cornerRadius: 16))
+                .background(RitliTheme.tomatoFill, in: Capsule())
+                .contentShape(Capsule())
             }
             .buttonStyle(.plain)
             .padding(.horizontal, RitliTheme.screenPadding)
@@ -48,7 +41,7 @@ struct WelcomeView: View {
             .accessibilityIdentifier("onboarding.continue")
         }
         .padding(.bottom, 28)
-        .background(RitliTheme.background)
+        .background(RitliTheme.paper)
     }
 
     private var pageIndicator: some View {
@@ -62,11 +55,11 @@ struct WelcomeView: View {
                     Capsule()
                         .fill(
                             index == selectedPage
-                                ? RitliTheme.accent
-                                : .secondary.opacity(0.18)
+                                ? RitliTheme.ink
+                                : RitliTheme.hairline
                         )
                         .frame(
-                            width: index == selectedPage ? 22 : 8,
+                            width: index == selectedPage ? 24 : 8,
                             height: 8
                         )
                         .frame(width: 44, height: 44)
@@ -156,13 +149,14 @@ private struct OnboardingPageView: View {
 
                     VStack(spacing: 12) {
                         Text(page.title)
-                            .font(.system(size: isCompact ? 32 : 38, weight: .bold, design: .rounded))
+                            .font(.system(size: isCompact ? 32 : 38, weight: .heavy, design: .rounded))
+                            .foregroundStyle(RitliTheme.ink)
                             .multilineTextAlignment(.center)
                             .accessibilityIdentifier("onboarding.\(page.rawValue).title")
 
                         Text(page.message)
                             .font(isCompact ? .body : .title3)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(RitliTheme.stone)
                             .multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -234,44 +228,35 @@ private struct OnboardingArtwork: View {
 
     private var focusArtwork: some View {
         ZStack {
+            // A flat sand disc that breathes, behind the white dial.
             Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [RitliTheme.accentSoft.opacity(0.5), RitliTheme.accentSoft.opacity(0.04)],
-                        center: .center,
-                        startRadius: 65,
-                        endRadius: 145
-                    )
-                )
+                .fill(RitliTheme.sand)
                 .frame(width: 290, height: 290)
                 .scaleEffect(1 + wave() * 0.035)
 
             Circle()
                 .fill(RitliTheme.surface)
                 .frame(width: 232, height: 232)
-                .shadow(color: RitliTheme.accent.opacity(0.12), radius: 24, y: 12)
+                .overlay {
+                    Circle().stroke(RitliTheme.hairline, lineWidth: 1)
+                }
 
             ForEach(0..<60) { tick in
                 Capsule()
-                    .fill(RitliTheme.accent.opacity(tick.isMultiple(of: 5) ? 0.45 : 0.16))
+                    .fill(tick.isMultiple(of: 5) ? RitliTheme.stone : RitliTheme.hairline)
                     .frame(width: 2, height: tick.isMultiple(of: 5) ? 9 : 4)
                     .offset(y: -105)
                     .rotationEffect(.degrees(Double(tick) * 6))
             }
 
             Circle()
-                .stroke(RitliTheme.accentSoft.opacity(0.3), lineWidth: 9)
+                .stroke(RitliTheme.tomatoTrack, lineWidth: 9)
                 .frame(width: 180, height: 180)
 
             Circle()
                 .trim(from: 0, to: entrance * max(0, 1_122 - elapsed) / 1_500)
                 .stroke(
-                    AngularGradient(
-                        colors: [.orange, RitliTheme.accent],
-                        center: .center,
-                        startAngle: .zero,
-                        endAngle: .degrees(270)
-                    ),
+                    RitliTheme.tomato,
                     style: StrokeStyle(lineWidth: 9, lineCap: .round)
                 )
                 .frame(width: 180, height: 180)
@@ -280,17 +265,18 @@ private struct OnboardingArtwork: View {
             VStack(spacing: 8) {
                 Text(.homeTimerModeFocus)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(RitliTheme.accent)
+                    .foregroundStyle(RitliTheme.tomatoInk)
 
                 Text(verbatim: TimerDisplayFormatter.countdown(max(0, 1_122 - elapsed)))
-                    .font(.system(size: 43, weight: .semibold, design: .rounded))
+                    .font(.system(size: 43, weight: .heavy, design: .rounded))
                     .monospacedDigit()
+                    .foregroundStyle(RitliTheme.ink)
                     .contentTransition(.identity)
 
                 HStack(spacing: 4) {
                     ForEach(0..<4) { index in
                         Capsule()
-                            .fill(RitliTheme.accent.opacity(index == 0 ? 1 : 0.2))
+                            .fill(index == 0 ? RitliTheme.tomato : RitliTheme.tomatoTrack)
                             .frame(width: index == 0 ? 16 : 5, height: 5)
                     }
                 }
@@ -298,24 +284,29 @@ private struct OnboardingArtwork: View {
 
             Image(systemName: "moon.zzz.fill")
                 .font(.system(size: 22, weight: .medium))
-                .foregroundStyle(RitliTheme.accent)
+                .foregroundStyle(RitliTheme.tomatoInk)
                 .frame(width: 52, height: 52)
                 .background(RitliTheme.surface, in: RoundedRectangle(cornerRadius: 18))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18).stroke(RitliTheme.hairline, lineWidth: 1)
+                }
                 .rotationEffect(.degrees(-12))
-                .shadow(color: .black.opacity(0.05), radius: 12, y: 6)
                 .offset(x: -105, y: -82 + wave() * 5)
 
             HStack(spacing: 9) {
                 Image(systemName: "cup.and.saucer.fill")
-                    .foregroundStyle(RitliTheme.success)
+                    .foregroundStyle(RitliTheme.leaf)
                 Text(verbatim: "05:00")
-                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                    .font(.system(.subheadline, design: .rounded, weight: .heavy))
                     .monospacedDigit()
+                    .foregroundStyle(RitliTheme.ink)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .background(RitliTheme.surface, in: Capsule())
-            .shadow(color: .black.opacity(0.06), radius: 12, y: 6)
+            .overlay {
+                Capsule().stroke(RitliTheme.hairline, lineWidth: 1)
+            }
             .rotationEffect(.degrees(8))
             .offset(x: 83, y: 102 - wave() * 5)
         }
@@ -328,14 +319,14 @@ private struct OnboardingArtwork: View {
             taskCard(
                 title: .onboardingTasksProjectRoadmap,
                 progress: Text(verbatim: "2 / 4"),
-                color: RitliTheme.accent
+                color: RitliTheme.tomato
             )
             .offset(x: -8 - (1 - entrance) * 25, y: wave() * 4)
 
             taskCard(
                 title: .onboardingTasksReadPages,
                 progress: Text(.onboardingTasksDone),
-                color: RitliTheme.success,
+                color: RitliTheme.leaf,
                 isComplete: true
             )
             .offset(x: 10 + (1 - entrance) * 25, y: wave(delay: 0.8) * 4)
@@ -343,7 +334,7 @@ private struct OnboardingArtwork: View {
             taskCard(
                 title: .onboardingTasksLearnSpanish,
                 progress: Text(verbatim: "1 / 3"),
-                color: .purple
+                color: RitliTheme.categoryColor(for: "purple")
             )
             .offset(x: -4 - (1 - entrance) * 25, y: wave(delay: 1.6) * 4)
         }
@@ -354,11 +345,11 @@ private struct OnboardingArtwork: View {
     private var insightsArtwork: some View {
         VStack(spacing: 22) {
             HStack(alignment: .bottom, spacing: 13) {
-                bar(height: 48, color: RitliTheme.accentSoft, index: 0)
-                bar(height: 72, color: RitliTheme.accentSoft, index: 1)
-                bar(height: 102, color: RitliTheme.accent, index: 2)
-                bar(height: 64, color: RitliTheme.accentSoft, index: 3)
-                bar(height: 88, color: RitliTheme.accentSoft, index: 4)
+                bar(height: 48, color: RitliTheme.tomatoTrack, index: 0)
+                bar(height: 72, color: RitliTheme.tomatoTrack, index: 1)
+                bar(height: 102, color: RitliTheme.tomato, index: 2)
+                bar(height: 64, color: RitliTheme.tomatoTrack, index: 3)
+                bar(height: 88, color: RitliTheme.tomatoTrack, index: 4)
             }
             .frame(height: 112, alignment: .bottom)
 
@@ -375,7 +366,9 @@ private struct OnboardingArtwork: View {
         }
         .padding(24)
         .background(RitliTheme.surface, in: RoundedRectangle(cornerRadius: 28))
-        .shadow(color: .black.opacity(0.06), radius: 20, y: 10)
+        .overlay {
+            RoundedRectangle(cornerRadius: 28).stroke(RitliTheme.hairline, lineWidth: 1)
+        }
         .padding(10)
         .offset(y: (1 - entrance) * 18)
         .opacity(0.3 + entrance * 0.7)
@@ -388,38 +381,45 @@ private struct OnboardingArtwork: View {
         isComplete: Bool = false
     ) -> some View {
         HStack(spacing: 13) {
-            Circle()
-                .stroke(color, lineWidth: 3)
-                .frame(width: 25, height: 25)
-                .overlay {
-                    if isComplete {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(color)
-                            .scaleEffect(entrance)
-                    }
+            ZStack {
+                if isComplete {
+                    Circle()
+                        .fill(RitliTheme.leafFill)
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(RitliTheme.onAccent)
+                        .scaleEffect(entrance)
+                } else {
+                    Circle()
+                        .stroke(RitliTheme.hairline, lineWidth: 2)
                 }
+            }
+            .frame(width: 25, height: 25)
 
-            Text(title)
-                .font(.headline)
-                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 8) {
+                // The task's category, as a small dot.
+                Circle()
+                    .fill(color)
+                    .frame(width: 8, height: 8)
+
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(RitliTheme.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             Spacer()
 
             progress
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(color)
+                .foregroundStyle(isComplete ? RitliTheme.leaf : RitliTheme.stone)
                 .fixedSize()
         }
         .padding(17)
         .background(RitliTheme.surface, in: RoundedRectangle(cornerRadius: 18))
-        .overlay(alignment: .leading) {
-            RoundedRectangle(cornerRadius: 3)
-                .fill(color)
-                .frame(width: 5)
+        .overlay {
+            RoundedRectangle(cornerRadius: 18).stroke(RitliTheme.hairline, lineWidth: 1)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 18))
-        .shadow(color: .black.opacity(0.05), radius: 12, y: 6)
     }
 
     private func bar(height: CGFloat, color: Color, index: Int) -> some View {
@@ -438,11 +438,12 @@ private struct OnboardingArtwork: View {
     ) -> some View {
         VStack(spacing: 4) {
             value
-                .font(.title3.weight(.bold))
+                .font(.system(.title3, design: .rounded, weight: .heavy))
                 .monospacedDigit()
+                .foregroundStyle(RitliTheme.ink)
             Text(label)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(RitliTheme.stone)
         }
         .frame(maxWidth: .infinity)
     }

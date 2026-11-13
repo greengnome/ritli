@@ -21,7 +21,7 @@ struct FocusHistoryView: View {
                     displayedComponents: .date
                 )
                 .datePickerStyle(.graphical)
-                .tint(RitliTheme.accent)
+                .tint(RitliTheme.tomatoInk)
                 .padding(10)
                 .background(
                     RitliTheme.surface,
@@ -31,7 +31,8 @@ struct FocusHistoryView: View {
 
                 VStack(alignment: .leading, spacing: 14) {
                     Text(selectedDate, format: .dateTime.weekday(.wide).month(.wide).day())
-                        .font(.title3.weight(.semibold))
+                        .font(.system(.title3, design: .rounded).weight(.heavy))
+                        .foregroundStyle(RitliTheme.ink)
 
                     FocusHistorySummaryCard(day: day)
                 }
@@ -41,7 +42,7 @@ struct FocusHistoryView: View {
             .padding(.horizontal, RitliTheme.screenPadding)
             .padding(.bottom, 24)
         }
-        .background(RitliTheme.background)
+        .background(RitliTheme.paper)
         .navigationTitle(Text(.historyTitle))
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("history.screen")
@@ -71,14 +72,18 @@ struct FocusHistoryView: View {
     private func sessionSection(_ day: FocusHistoryDay) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(.homeSummarySessions)
-                .font(.headline)
+                .font(.system(.headline, design: .rounded).weight(.heavy))
+                .foregroundStyle(RitliTheme.ink)
 
             if day.entries.isEmpty {
-                ContentUnavailableView(
-                    String(localized: .historyEmptyTitle),
-                    systemImage: "clock.badge.xmark",
-                    description: Text(.historyEmptyDescription)
-                )
+                ContentUnavailableView {
+                    Text(.historyEmptyTitle)
+                        .font(.system(.headline, design: .rounded).weight(.heavy))
+                        .foregroundStyle(RitliTheme.ink)
+                } description: {
+                    Text(.historyEmptyDescription)
+                        .foregroundStyle(RitliTheme.stone)
+                }
                 .frame(maxWidth: .infinity, minHeight: 180)
                 .background(
                     RitliTheme.surface,
@@ -93,7 +98,9 @@ struct FocusHistoryView: View {
                         FocusHistoryRow(entry: entry)
 
                         if index < day.entries.count - 1 {
-                            Divider()
+                            Rectangle()
+                                .fill(RitliTheme.hairline)
+                                .frame(height: 1)
                                 .padding(.leading, 80)
                         }
                     }
@@ -103,7 +110,6 @@ struct FocusHistoryView: View {
                     RitliTheme.surface,
                     in: RoundedRectangle(cornerRadius: RitliTheme.cardRadius)
                 )
-                .shadow(color: .black.opacity(0.045), radius: 16, y: 7)
             }
         }
     }

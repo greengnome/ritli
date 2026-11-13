@@ -46,6 +46,7 @@ struct TimerRoutineEditorView: View {
                         )
                     )
                 }
+                .listRowBackground(RitliTheme.surface)
 
                 Section(
                     String(
@@ -81,6 +82,7 @@ struct TimerRoutineEditorView: View {
                         identifier: "routine.editor.longBreakDuration"
                     )
                 }
+                .listRowBackground(RitliTheme.surface)
 
                 Section(
                     String(
@@ -126,7 +128,10 @@ struct TimerRoutineEditorView: View {
                     )
                     .accessibilityIdentifier("routine.editor.autoStartFocus")
                 }
+                .listRowBackground(RitliTheme.surface)
             }
+            .scrollContentBackground(.hidden)
+            .background(RitliTheme.paper)
             .navigationTitle(
                 routine == nil
                     ? String(

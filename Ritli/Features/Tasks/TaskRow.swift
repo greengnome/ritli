@@ -8,65 +8,44 @@ struct TaskRow: View {
     let onEdit: () -> Void
     let onArchive: () -> Void
 
+    /// Beyond this many sessions the dots stop being readable at a glance,
+    /// so the row falls back to the "x / y sessions" text.
+    private static let maximumProgressDots = 8
+
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: .center, spacing: 12) {
             Button(action: onToggleCompletion) {
-                Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.title2)
-                    .foregroundStyle(task.isCompleted ? .green : RitliTheme.accent)
+                completionMark
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(completionToggleLabel)
 
             Button(action: onEdit) {
-                VStack(alignment: .leading, spacing: 7) {
-                    HStack(alignment: .firstTextBaseline) {
-                        Text(task.title)
-                            .font(.headline)
-                            .strikethrough(task.isCompleted)
-                            .foregroundStyle(task.isCompleted ? .secondary : .primary)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(task.title)
+                        .font(.system(size: 17, weight: .semibold))
+                        .strikethrough(task.isCompleted)
+                        .foregroundStyle(task.isCompleted ? RitliTheme.stone : RitliTheme.ink)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                        Spacer(minLength: 12)
-
-                        if task.priority == .high {
-                            Image(systemName: "flag.fill")
-                                .foregroundStyle(RitliTheme.accent)
-                                .accessibilityLabel(Text(.tasksPriorityHighAccessibility))
-                        }
-                    }
-
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         if let category = task.category {
-                            Label {
-                                Text(verbatim: category.displayName)
-                            } icon: {
-                                Circle()
-                                    .fill(category.presentationColor)
-                                    .frame(width: 8, height: 8)
-                            }
-                        } else {
-                            Text(.commonCategoryNone)
+                            Circle()
+                                .fill(category.presentationColor)
+                                .frame(width: 8, height: 8)
+                                .accessibilityHidden(true)
                         }
 
-                        Text(verbatim: "•")
-
-                        Text(
-                            verbatim: "\(task.completedPomodoros) / \(TimerDisplayFormatter.sessionCount(task.estimatedPomodoros))"
-                        )
+                        Text(verbatim: metaLine)
+                            .font(.subheadline)
+                            .foregroundStyle(RitliTheme.stone)
                     }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
 
-                    if let dueDate = task.dueDate {
-                        Label {
-                            Text(dueDate, style: .date)
-                        } icon: {
-                            Image(systemName: "calendar")
-                        }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    }
+                    sessionProgress
                 }
+                .padding(.vertical, 4)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -82,11 +61,13 @@ struct TaskRow: View {
 
             if !task.isCompleted {
                 Button(action: onStartFocus) {
-                    Image(systemName: "play.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(canStartFocus ? RitliTheme.accent : Color.secondary)
+                    Image(systemName: "play.fill")
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(
+                    RitliIconButtonStyle(
+                        foreground: canStartFocus ? RitliTheme.tomatoInk : RitliTheme.stone
+                    )
+                )
                 .disabled(!canStartFocus)
                 .accessibilityLabel(
                     Text(
@@ -106,7 +87,7 @@ struct TaskRow: View {
                 )
             }
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button(role: .destructive) {
                 onArchive()
@@ -127,7 +108,73 @@ struct TaskRow: View {
                     Image(systemName: "pencil")
                 }
             }
-            .tint(.blue)
+            .tint(RitliTheme.stone)
+        }
+    }
+
+    @ViewBuilder
+    private var completionMark: some View {
+        if task.isCompleted {
+            Image(systemName: "checkmark")
+                .font(.system(size: 11, weight: .heavy))
+                .foregroundStyle(.white)
+                .frame(width: 22, height: 22)
+                .background(RitliTheme.leafFill, in: Circle())
+        } else {
+            Circle()
+                .strokeBorder(RitliTheme.stone, lineWidth: 2)
+                .frame(width: 22, height: 22)
+        }
+    }
+
+    /// Category, priority (when important) and due date on one line.
+    private var metaLine: String {
+        var parts: [String] = [
+            task.category?.displayName ?? String(localized: .commonCategoryNone)
+        ]
+        if task.priority == .high {
+            parts.append(String(localized: .tasksPriorityHigh))
+        }
+        if let dueDate = task.dueDate {
+            parts.append(dueDate.formatted(date: .abbreviated, time: .omitted))
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    private var sessionsText: String {
+        "\(task.completedPomodoros) / \(TimerDisplayFormatter.sessionCount(task.estimatedPomodoros))"
+    }
+
+    private var showsProgressDots: Bool {
+        task.estimatedPomodoros > 0
+            && task.estimatedPomodoros <= Self.maximumProgressDots
+            && task.completedPomodoros <= task.estimatedPomodoros
+    }
+
+    @ViewBuilder
+    private var sessionProgress: some View {
+        if showsProgressDots {
+            HStack(spacing: 5) {
+                ForEach(0..<task.estimatedPomodoros, id: \.self) { index in
+                    if index < task.completedPomodoros {
+                        Circle()
+                            .fill(RitliTheme.tomato)
+                            .frame(width: 8, height: 8)
+                    } else {
+                        Circle()
+                            .strokeBorder(RitliTheme.stone, lineWidth: 1.5)
+                            .frame(width: 8, height: 8)
+                    }
+                }
+            }
+            .padding(.top, 2)
+            .accessibilityRepresentation {
+                Text(verbatim: sessionsText)
+            }
+        } else {
+            Text(verbatim: sessionsText)
+                .font(.subheadline)
+                .foregroundStyle(RitliTheme.stone)
         }
     }
 

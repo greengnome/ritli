@@ -32,7 +32,8 @@ struct SettingsView: View {
                 aboutSection
             }
             .scrollContentBackground(.hidden)
-            .background(.background)
+            .background(RitliTheme.paper)
+            .tint(RitliTheme.tomatoInk)
             .navigationTitle(String(localized: .appTabSettings))
             .accessibilityIdentifier("settings.screen")
         }
@@ -75,24 +76,31 @@ struct SettingsView: View {
 
     private var timerSection: some View {
         Section {
-            MinutesPicker(
-                title: String(localized: "settings.timer.focus", defaultValue: "Focus"),
-                selection: durationBinding(\.focusDuration),
-                options: TimerDurationOptions.focusMinutes,
-                identifier: "settings.focusDuration"
-            )
-            MinutesPicker(
-                title: String(localized: "settings.timer.short_break", defaultValue: "Short break"),
-                selection: durationBinding(\.shortBreakDuration),
-                options: TimerDurationOptions.shortBreakMinutes,
-                identifier: "settings.shortBreakDuration"
-            )
-            MinutesPicker(
-                title: String(localized: "settings.timer.long_break", defaultValue: "Long break"),
-                selection: durationBinding(\.longBreakDuration),
-                options: TimerDurationOptions.longBreakMinutes,
-                identifier: "settings.longBreakDuration"
-            )
+            // Three tiles on paper, one per duration; each opens a menu of the
+            // same choices the routine editor offers.
+            HStack(spacing: 10) {
+                DurationTile(
+                    title: String(localized: "settings.timer.focus", defaultValue: "Focus"),
+                    selection: durationBinding(\.focusDuration),
+                    options: TimerDurationOptions.focusMinutes,
+                    identifier: "settings.focusDuration"
+                )
+                DurationTile(
+                    title: String(localized: "settings.timer.short_break", defaultValue: "Short break"),
+                    selection: durationBinding(\.shortBreakDuration),
+                    options: TimerDurationOptions.shortBreakMinutes,
+                    identifier: "settings.shortBreakDuration"
+                )
+                DurationTile(
+                    title: String(localized: "settings.timer.long_break", defaultValue: "Long break"),
+                    selection: durationBinding(\.longBreakDuration),
+                    options: TimerDurationOptions.longBreakMinutes,
+                    identifier: "settings.longBreakDuration"
+                )
+            }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
         } header: {
             Text(String(localized: "settings.timer.section", defaultValue: "Timer"))
         } footer: {
@@ -134,6 +142,7 @@ struct SettingsView: View {
             .accessibilityIdentifier("settings.autoStartFocus")
             .accessibilityValue(SettingsPresentation.toggleState(isOn: settings.autoStartFocus))
         }
+        .listRowBackground(RitliTheme.surface)
     }
 
     private var feedbackSection: some View {
@@ -170,6 +179,7 @@ struct SettingsView: View {
                 .accessibilityIdentifier("settings.notifications")
                 .accessibilityValue(SettingsPresentation.toggleState(isOn: settings.notificationsEnabled))
         }
+        .listRowBackground(RitliTheme.surface)
     }
 
     private var aboutSection: some View {
@@ -200,6 +210,7 @@ struct SettingsView: View {
 
             LabeledContent(String(localized: "settings.about.version", defaultValue: "Version"), value: appVersion)
         }
+        .listRowBackground(RitliTheme.surface)
     }
 
     private func externalLinkLabel(_ title: String) -> some View {
@@ -208,7 +219,7 @@ struct SettingsView: View {
             Spacer()
             Image(systemName: "arrow.up.right")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(RitliTheme.stone)
         }
     }
 
@@ -227,6 +238,7 @@ struct SettingsView: View {
                     isOn: settings.showTaskTitlesOnLockScreen
                 )
             )
+            .listRowBackground(RitliTheme.surface)
         } header: {
             Text(
                 String(
@@ -259,6 +271,7 @@ struct SettingsView: View {
             }
             .accessibilityIdentifier("settings.appearance")
         }
+        .listRowBackground(RitliTheme.surface)
     }
 
     private var languageSection: some View {
@@ -283,14 +296,15 @@ struct SettingsView: View {
                             locale: locale
                         )
                     )
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(RitliTheme.stone)
 
                     Image(systemName: "arrow.up.forward.app")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(RitliTheme.stone)
                 }
             }
             .accessibilityIdentifier("settings.language")
+            .listRowBackground(RitliTheme.surface)
         } header: {
             Text(
                 String(
@@ -314,12 +328,14 @@ struct SettingsView: View {
                 Text(recordedSessionCount, format: .number)
                     .accessibilityIdentifier("settings.historyCount")
             }
+            .listRowBackground(RitliTheme.surface)
 
             Button(String(localized: "settings.data.clear", defaultValue: "Clear focus history"), role: .destructive) {
                 isClearHistoryConfirmationPresented = true
             }
             .disabled(recordedSessionCount == 0)
             .accessibilityIdentifier("settings.clearHistory")
+            .listRowBackground(RitliTheme.surface)
         } header: {
             Text(String(localized: "settings.data.section", defaultValue: "Data"))
         } footer: {
@@ -451,5 +467,63 @@ struct SettingsView: View {
             modelContext.rollback()
             errorMessage = error.localizedDescription
         }
+    }
+}
+
+/// One duration as a tile: caption, big rounded number, unit. Tapping it
+/// opens a menu over the same choices the old picker row offered.
+private struct DurationTile: View {
+    let title: String
+    @Binding var selection: Int
+    let options: [Int]
+    let identifier: String
+
+    var body: some View {
+        Menu {
+            Picker(title, selection: $selection) {
+                ForEach(options, id: \.self) { minutes in
+                    Text(verbatim: SettingsPresentation.minutes(minutes))
+                        .tag(minutes)
+                }
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(RitliTheme.stone)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
+                Text(selection, format: .number)
+                    .font(.system(size: 28, weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(RitliTheme.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
+                Text(
+                    LocalizedStringResource(
+                        "settings.timer.minutes_unit",
+                        defaultValue: "min",
+                        comment: "Unit shown under a duration number on the Settings timer tiles."
+                    )
+                )
+                .font(.caption)
+                .foregroundStyle(RitliTheme.stone)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(
+                RitliTheme.surface,
+                in: RoundedRectangle(cornerRadius: RitliTheme.cardRadius, style: .continuous)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: RitliTheme.cardRadius, style: .continuous))
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(verbatim: title))
+        .accessibilityValue(Text(verbatim: SettingsPresentation.minutes(selection)))
+        .accessibilityIdentifier(identifier)
     }
 }

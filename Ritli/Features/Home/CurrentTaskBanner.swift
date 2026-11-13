@@ -1,37 +1,28 @@
 import SwiftUI
 
+/// The top of Home during a focus session: the task being worked on, set
+/// as a title on the session colour, with its session progress beneath.
 struct CurrentTaskBanner: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let task: FocusTask
+    let style: HomeStyle
 
     var body: some View {
-        contentLayout {
-            Image(systemName: task.category?.iconName ?? "checkmark.circle.fill")
-                .font(.system(size: 20))
-                .foregroundStyle(task.category?.presentationColor ?? RitliTheme.accent)
-                .frame(width: 38, height: 38)
-                .background(Color.secondary.opacity(0.1))
-                .clipShape(Circle())
-                .accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: 2) {
+            Text(.homeTaskWorkingOn)
+                .font(.footnote)
+                .foregroundStyle(style.secondary)
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text(.homeTaskWorkingOn)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            Text(verbatim: task.title)
+                .font(.system(.title, design: .rounded).weight(.heavy))
+                .foregroundStyle(style.foreground)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+                .fixedSize(horizontal: false, vertical: true)
 
-                Text(verbatim: task.title)
-                    .font(.headline)
-                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            if !dynamicTypeSize.isAccessibilitySize {
-                Spacer()
-            }
-
-            Text(verbatim: "\(task.completedPomodoros) / \(task.estimatedPomodoros)")
+            Text(verbatim: progressText)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .monospacedDigit()
+                .foregroundStyle(style.secondary)
                 .accessibilityLabel(
                     Text(
                         LocalizedStringResource(
@@ -42,11 +33,7 @@ struct CurrentTaskBanner: View {
                     )
                 )
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(.background)
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .shadow(color: .black.opacity(0.05), radius: 14, y: 6)
+        .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
             Text(
@@ -60,9 +47,10 @@ struct CurrentTaskBanner: View {
         .accessibilityIdentifier("home.currentTask")
     }
 
-    private var contentLayout: AnyLayout {
-        dynamicTypeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
-            : AnyLayout(HStackLayout(spacing: 12))
+    private var progressText: String {
+        if let category = task.category {
+            return "\(category.displayName) · \(task.completedPomodoros) / \(task.estimatedPomodoros)"
+        }
+        return "\(task.completedPomodoros) / \(task.estimatedPomodoros)"
     }
 }

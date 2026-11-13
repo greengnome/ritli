@@ -1,16 +1,16 @@
 import SwiftUI
 
+/// The timer area of Home: the mode picker (only at rest), the dial, the
+/// planned length and the controls. It sits straight on the screen colour.
 struct HomeTimerCard: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    private enum ControlMetrics {
-        static let height: CGFloat = 52
-        static let primaryWidth: CGFloat = 160
-    }
 
     let kind: SessionKind
     let state: SessionState?
     let remainingTime: (Date) -> TimeInterval
     let duration: TimeInterval
+    let cycle: HomeCycleProgress
+    let style: HomeStyle
     let isModeSelectionEnabled: Bool
     let onSelectMode: (SessionKind) -> Void
     let onPrimaryAction: () -> Void
@@ -19,136 +19,82 @@ struct HomeTimerCard: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            headerLayout {
-                Menu {
-                    modeButton(.focus)
-                    modeButton(.shortBreak)
-                    modeButton(.longBreak)
-                } label: {
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(RitliTheme.accent)
-                            .frame(width: 9, height: 9)
-                        Text(kind.title)
-                            .font(.subheadline.weight(.semibold))
-                            .fixedSize(horizontal: false, vertical: true)
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 11, weight: .bold))
-                    }
-                    .foregroundStyle(RitliTheme.accent)
-                }
-                .disabled(!isModeSelectionEnabled)
-                .accessibilityIdentifier("home.timer.mode")
-
-                if !dynamicTypeSize.isAccessibilitySize {
-                    Spacer()
-                }
-
-                Text(verbatim: TimerDisplayFormatter.sessionDurationLabel(duration))
-                    .font(.footnote)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .foregroundStyle(.secondary)
+            if isModeSelectionEnabled {
+                HomeModePicker(selection: kind, onSelect: onSelectMode)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
 
             HomeTimerReadout(
                 kind: kind,
                 state: isActive ? state : nil,
                 duration: duration,
+                cycle: cycle,
+                style: style,
                 remainingTime: remainingTime
             )
 
-            controlLayout {
-                if isActive {
-                    Button(role: .destructive, action: onCancel) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(.red)
-                            .frame(
-                                width: ControlMetrics.height,
-                                height: ControlMetrics.height
-                            )
-                            .background(.red.opacity(0.1), in: Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .frame(
-                        width: ControlMetrics.height,
-                        height: ControlMetrics.height
-                    )
-                    .contentShape(Circle())
-                    .accessibilityLabel(Text(.homeTimerActionCancel))
-                    .accessibilityIdentifier("home.timer.cancel")
-                }
+            VStack(spacing: 14) {
+                Text(verbatim: TimerDisplayFormatter.sessionDurationLabel(duration))
+                    .font(.subheadline)
+                    .foregroundStyle(style.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
-                Button(action: onPrimaryAction) {
-                    primaryLabelLayout {
-                        Image(systemName: primarySystemImage)
-                        Text(primaryTitle)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .font(.headline)
-                    .multilineTextAlignment(.center)
-                    .frame(
-                        width: dynamicTypeSize.isAccessibilitySize ? nil : ControlMetrics.primaryWidth,
-                        height: dynamicTypeSize.isAccessibilitySize ? nil : ControlMetrics.height
-                    )
-                    .padding(.horizontal, dynamicTypeSize.isAccessibilitySize ? 16 : 0)
-                    .padding(.vertical, dynamicTypeSize.isAccessibilitySize ? 12 : 0)
-                    .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.white)
-                .background(RitliTheme.accent, in: RoundedRectangle(cornerRadius: 26))
-                .contentShape(RoundedRectangle(cornerRadius: 26))
-                .accessibilityLabel(Text(primaryTitle))
-                .accessibilityIdentifier("home.timer.primary")
-
-                if isActive && kind != .focus {
-                    Button(action: onSkipBreak) {
-                        Image(systemName: "forward.end.fill")
-                            .font(.system(size: 17))
-                            .frame(
-                                width: ControlMetrics.height,
-                                height: ControlMetrics.height
-                            )
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.primary)
-                    .background(.thinMaterial, in: Circle())
-                    .overlay {
-                        Circle()
-                            .stroke(.secondary.opacity(0.25), lineWidth: 1)
-                    }
-                    .contentShape(Circle())
-                    .accessibilityLabel(Text(.homeTimerActionSkipBreak))
-                    .accessibilityIdentifier("home.timer.skip")
-                }
+                controls
             }
         }
-        .padding(22)
-        .background(
-            RitliTheme.surface,
-            in: RoundedRectangle(cornerRadius: RitliTheme.cardRadius)
-        )
-        .shadow(color: .black.opacity(0.055), radius: 18, y: 8)
     }
 
-    private var headerLayout: AnyLayout {
-        dynamicTypeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
-            : AnyLayout(HStackLayout())
+    private var controls: some View {
+        controlLayout {
+            if isActive {
+                Button(role: .destructive, action: onCancel) {
+                    Image(systemName: "xmark")
+                }
+                .buttonStyle(HomeRoundControlStyle(style: style))
+                .accessibilityLabel(Text(.homeTimerActionCancel))
+                .accessibilityIdentifier("home.timer.cancel")
+            }
+
+            Button(action: onPrimaryAction) {
+                primaryLabelLayout {
+                    Image(systemName: primarySystemImage)
+                    Text(primaryTitle)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .frame(height: dynamicTypeSize.isAccessibilitySize ? nil : RitliTheme.controlHeight)
+                .padding(.vertical, dynamicTypeSize.isAccessibilitySize ? 12 : 0)
+            }
+            .buttonStyle(
+                RitliFilledButtonStyle(
+                    fill: style.primaryFill,
+                    foreground: style.primaryForeground
+                )
+            )
+            .accessibilityLabel(Text(primaryTitle))
+            .accessibilityIdentifier("home.timer.primary")
+
+            if isActive && kind != .focus {
+                Button(action: onSkipBreak) {
+                    Image(systemName: "forward.end.fill")
+                }
+                .buttonStyle(HomeRoundControlStyle(style: style))
+                .accessibilityLabel(Text(.homeTimerActionSkipBreak))
+                .accessibilityIdentifier("home.timer.skip")
+            }
+        }
     }
 
     private var controlLayout: AnyLayout {
         dynamicTypeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(spacing: 16))
-            : AnyLayout(HStackLayout(spacing: 16))
+            ? AnyLayout(VStackLayout(spacing: 12))
+            : AnyLayout(HStackLayout(spacing: 12))
     }
 
     private var primaryLabelLayout: AnyLayout {
         dynamicTypeSize.isAccessibilitySize
             ? AnyLayout(VStackLayout(spacing: 8))
-            : AnyLayout(HStackLayout(spacing: 8))
+            : AnyLayout(HStackLayout(spacing: 10))
     }
 
     private var isActive: Bool {
@@ -176,17 +122,77 @@ struct HomeTimerCard: View {
             "play.fill"
         }
     }
+}
 
-    private func modeButton(_ mode: SessionKind) -> some View {
-        Button {
-            onSelectMode(mode)
-        } label: {
-            Label {
-                Text(mode.title)
-            } icon: {
-                Image(systemName: mode == kind ? "checkmark" : "circle")
-            }
+/// Focus, Short break and Long break as three always-visible segments.
+private struct HomeModePicker: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    let selection: SessionKind
+    let onSelect: (SessionKind) -> Void
+
+    var body: some View {
+        layout {
+            segment(.focus)
+            segment(.shortBreak)
+            segment(.longBreak)
         }
+        .padding(4)
+        .background(
+            RitliTheme.sand,
+            in: RoundedRectangle(cornerRadius: RitliTheme.controlRadius, style: .continuous)
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("home.timer.mode")
+    }
+
+    private var layout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: 4))
+            : AnyLayout(HStackLayout(spacing: 4))
+    }
+
+    private func segment(_ mode: SessionKind) -> some View {
+        let isSelected = mode == selection
+        return Button {
+            onSelect(mode)
+        } label: {
+            Text(mode.title)
+                .font(.subheadline.weight(isSelected ? .semibold : .medium))
+                .foregroundStyle(isSelected ? RitliTheme.ink : RitliTheme.stone)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                .minimumScaleFactor(0.75)
+                .padding(.horizontal, 8)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .background {
+                    if isSelected {
+                        Capsule().fill(RitliTheme.surface)
+                    }
+                }
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier("home.timer.mode.option.\(mode.rawValue)")
+    }
+}
+
+/// Cancel and Skip: a round control the same height as the primary button.
+private struct HomeRoundControlStyle: ButtonStyle {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    let style: HomeStyle
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 18, weight: .bold))
+            .foregroundStyle(style.foreground)
+            .frame(
+                width: dynamicTypeSize.isAccessibilitySize ? nil : RitliTheme.controlHeight,
+                height: RitliTheme.controlHeight
+            )
+            .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil)
+            .background(style.controlFill, in: Capsule())
+            .opacity(configuration.isPressed ? 0.7 : 1)
+            .contentShape(Capsule())
     }
 }

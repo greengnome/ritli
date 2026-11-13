@@ -185,33 +185,17 @@ class RitliUITestCase: XCTestCase {
         _ kind: String,
         titled title: String,
         in app: XCUIApplication,
-        menuOpenDuration: TimeInterval = 0,
         file: StaticString = #filePath,
         line: UInt = #line
     ) {
-        let menu = app.buttons["home.timer.mode"]
-        XCTAssertTrue(scrollToElement(menu, in: app), file: file, line: line)
-        XCTAssertTrue(waitForEnabled(true, of: menu), file: file, line: line)
-        menu.tap()
-        // The menu trigger has the selected mode's label too. After Focus
-        // completes it already says "Short break", so a label query can tap
-        // the trigger again instead of selecting (and dismissing) the menu.
+        // The modes are always-visible segments; each carries its own id.
         let option = app.buttons["home.timer.mode.option.\(kind)"]
-        let ready = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "exists == true AND isHittable == true"),
-            object: option
-        )
-        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed, file: file, line: line)
-        if menuOpenDuration > 0 {
-            _ = XCTWaiter.wait(
-                for: [XCTestExpectation(description: "Keep the mode menu open")],
-                timeout: menuOpenDuration
-            )
-        }
+        XCTAssertTrue(scrollToElement(option, in: app), file: file, line: line)
+        XCTAssertTrue(waitForEnabled(true, of: option), file: file, line: line)
+        XCTAssertEqual(option.label, title, file: file, line: line)
         option.tap()
-        XCTAssertTrue(option.waitForNonExistence(timeout: 5), "Mode menu must close", file: file, line: line)
         let selected = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "label == %@", title), object: menu
+            predicate: NSPredicate(format: "isSelected == true"), object: option
         )
         XCTAssertEqual(XCTWaiter.wait(for: [selected], timeout: 5), .completed, file: file, line: line)
     }

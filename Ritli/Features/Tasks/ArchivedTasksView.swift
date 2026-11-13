@@ -30,16 +30,20 @@ struct ArchivedTasksView: View {
                 }
             } else {
                 List(archivedTasks) { task in
-                    VStack(alignment: .leading, spacing: 5) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(task.title)
-                            .font(.headline)
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(RitliTheme.ink)
 
                         if let category = task.category {
                             Text(verbatim: category.displayName)
                                 .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(RitliTheme.stone)
                         }
                     }
+                    .padding(.vertical, 6)
+                    .listRowBackground(RitliTheme.paper)
+                    .listRowSeparatorTint(RitliTheme.hairline)
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         Button(role: .destructive) {
                             taskPendingDeletion = task
@@ -64,13 +68,16 @@ struct ArchivedTasksView: View {
                                 systemImage: "arrow.uturn.backward"
                             )
                         }
-                        .tint(.blue)
+                        .tint(RitliTheme.stone)
                     }
                     .accessibilityIdentifier("tasks.archived.row.\(task.id)")
                 }
                 .listStyle(.plain)
+                .scrollContentBackground(.hidden)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(RitliTheme.paper)
         .navigationTitle(
             String(
                 localized: "tasks.archived.title",

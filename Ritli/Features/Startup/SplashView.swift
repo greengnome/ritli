@@ -57,26 +57,12 @@ struct SplashView: View {
 /// "Ritli" set with dotless i's whose dots drop in like the ticks of a clock;
 /// the last dot is the tilted accent hand from the app icon.
 private struct SplashWordmark: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     let isRevealed: Bool
     let animates: Bool
 
     private static let fontSize: CGFloat = 64
     private static let letters: [Character] = ["R", "ı", "t", "l", "ı"]
     private static let dotIndices = [1, 4]
-
-    private var letterColors: [Color] {
-        colorScheme == .dark
-            ? [Color(red: 1, green: 0.976, blue: 0.941), Color(red: 0.945, green: 0.871, blue: 0.808)]
-            : [Color(red: 1, green: 0.475, blue: 0.376), Color(red: 1, green: 0.275, blue: 0.204)]
-    }
-
-    private static let accentGradient = LinearGradient(
-        colors: [Color(red: 1, green: 0.69, blue: 0.28), Color(red: 1, green: 0.42, blue: 0.15)],
-        startPoint: .top,
-        endPoint: .bottom
-    )
 
     var body: some View {
         HStack(spacing: 0) {
@@ -92,10 +78,8 @@ private struct SplashWordmark: View {
                     }
             }
         }
-        .font(.system(size: Self.fontSize, weight: .bold, design: .rounded))
-        .foregroundStyle(
-            LinearGradient(colors: letterColors, startPoint: .topLeading, endPoint: .bottomTrailing)
-        )
+        .font(.system(size: Self.fontSize, weight: .heavy, design: .rounded))
+        .foregroundStyle(RitliTheme.ink)
     }
 
     @ViewBuilder
@@ -104,12 +88,12 @@ private struct SplashWordmark: View {
         Group {
             if isAccent {
                 Capsule()
-                    .fill(Self.accentGradient)
+                    .fill(RitliTheme.tomato)
                     .frame(width: 10, height: 22)
                     .rotationEffect(.degrees(isRevealed ? 40 : 4))
             } else {
                 Circle()
-                    .fill(Self.accentGradient)
+                    .fill(RitliTheme.tomato)
                     .frame(width: 13, height: 13)
             }
         }

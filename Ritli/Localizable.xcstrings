@@ -1,6 +1,24 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "settings.timer.minutes_unit" : {
+      "comment" : "Unit shown under a duration number on the Settings timer tiles.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "min"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "хв"
+          }
+        }
+      }
+    },
     "settings.cycle.long_break_frequency" : {
       "comment" : "Picker label for how many focus sessions come before a long break.",
       "extractionState" : "manual",
