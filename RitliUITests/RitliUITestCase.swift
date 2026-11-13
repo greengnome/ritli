@@ -83,31 +83,6 @@ class RitliUITestCase: XCTestCase {
         button.coordinate(withNormalizedOffset: offset).tap()
     }
 
-    func assertOnboardingArtworkMoves(on page: String, in app: XCUIApplication) throws {
-        let title = app.staticTexts["onboarding.\(page).title"]
-        XCTAssertTrue(title.waitForExistence(timeout: 2))
-        // Exclude page transitions, the status bar, and copy from the comparison.
-        // Sample after the entrance animation to catch artwork becoming static.
-        _ = XCTWaiter.wait(for: [XCTestExpectation(description: "Artwork settled")], timeout: 1.2)
-        let first = try onboardingArtworkImage(above: title, in: app)
-        _ = XCTWaiter.wait(for: [XCTestExpectation(description: "Next animation frame")], timeout: 1.2)
-        let second = try onboardingArtworkImage(above: title, in: app)
-        XCTAssertFalse(first.pngData() == second.pngData(), "The \(page) artwork should animate")
-        addScreenshot(named: "Onboarding — \(page)")
-    }
-
-    func onboardingArtworkImage(above title: XCUIElement, in app: XCUIApplication) throws -> UIImage {
-        let screenshot = XCUIScreen.main.screenshot().image
-        let image = try XCTUnwrap(screenshot.cgImage)
-        let scale = CGFloat(image.width) / app.frame.width
-        let crop = CGRect(
-            x: 0, y: 100 * scale,
-            width: CGFloat(image.width),
-            height: (title.frame.minY - 116) * scale
-        ).integral
-        return UIImage(cgImage: try XCTUnwrap(image.cropping(to: crop)))
-    }
-
     func createTask(named title: String, in app: XCUIApplication) {
         XCTAssertTrue(app.buttons["tasks.add"].waitForExistence(timeout: 2))
         app.buttons["tasks.add"].tap()

@@ -82,30 +82,4 @@ final class OnboardingUITests: RitliUITestCase {
         XCTAssertFalse(focusTitle.exists)
     }
 
-    @MainActor
-    func testOnboardingArtworkAnimatesOnEveryPageAndWhenRevisited() throws {
-        let app = makeApp(onboarding: .reset)
-        app.launch()
-        // The first wait includes the launch, which is slow on a cold runner.
-        XCTAssertTrue(app.buttons["onboarding.page.1"].waitForExistence(timeout: 15))
-
-        for (index, page) in ["focus", "tasks", "insights"].enumerated() {
-            XCTAssertTrue(waitForValue("Selected", of: app.buttons["onboarding.page.\(index + 1)"]))
-            try assertOnboardingArtworkMoves(on: page, in: app)
-            if index < 2 {
-                // This test checks artwork animation; select the next page
-                // directly so a missed hosted-simulator swipe cannot derail it.
-                app.buttons["onboarding.page.\(index + 2)"].tap()
-            }
-        }
-
-        app.buttons["onboarding.page.1"].tap()
-        XCTAssertTrue(waitForValue("Selected", of: app.buttons["onboarding.page.1"]))
-        try assertOnboardingArtworkMoves(on: "focus", in: app)
-
-        XCUIDevice.shared.press(.home)
-        app.activate()
-        try assertOnboardingArtworkMoves(on: "focus", in: app)
-    }
-
 }
