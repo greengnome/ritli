@@ -19,6 +19,15 @@ struct CurrentTaskBanner: View {
                 .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
                 .fixedSize(horizontal: false, vertical: true)
 
+            if let note = task.trimmedNote {
+                Text(verbatim: note)
+                    .font(.subheadline)
+                    .foregroundStyle(style.secondary)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 2)
+            }
+
             Text(verbatim: progressText)
                 .font(.subheadline.weight(.semibold))
                 .monospacedDigit()

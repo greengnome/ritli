@@ -41,6 +41,14 @@ struct TaskRow: View {
                         Text(verbatim: metaLine)
                             .font(.subheadline)
                             .foregroundStyle(RitliTheme.stone)
+
+                        if task.hasNote {
+                            // The note itself shows in the editor and on Home while focusing.
+                            Image(systemName: "text.alignleft")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(RitliTheme.stone)
+                                .accessibilityHidden(true)
+                        }
                     }
 
                     sessionProgress
