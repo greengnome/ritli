@@ -6,6 +6,7 @@ struct HomeView: View {
     @Environment(TimerEngine.self) private var timerEngine
     @Environment(NotificationPermissionService.self) private var notificationPermissionService
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
     @Query private var sessions: [FocusSession]
     @Query private var tasks: [FocusTask]
 
@@ -66,7 +67,7 @@ struct HomeView: View {
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: style)
             .navigationTitle(Text(verbatim: "Ritli"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(style.background, for: .navigationBar)
+            .toolbarBackground(toolbarFill, for: .navigationBar)
             .toolbarBackground(isSessionActive ? .visible : .automatic, for: .navigationBar)
             .toolbarColorScheme(isSessionActive ? .dark : nil, for: .navigationBar)
             .navigationDestination(isPresented: $isHistoryPresented) {
@@ -133,6 +134,15 @@ struct HomeView: View {
         case .completed, .cancelled, .skipped, .none:
             false
         }
+    }
+
+    /// The bar is switched to a dark colour scheme during a session so its
+    /// title turns light. An adaptive colour would then resolve to its
+    /// dark-mode value there, so resolve it for the app's real appearance.
+    private var toolbarFill: Color {
+        var environment = EnvironmentValues()
+        environment.colorScheme = colorScheme
+        return Color(style.background.resolve(in: environment))
     }
 
     private var style: HomeStyle {
