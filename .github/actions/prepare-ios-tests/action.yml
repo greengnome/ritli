@@ -1,0 +1,24 @@
+name: Prepare iOS tests
+description: Select Xcode, boot a fresh test simulator and build the app and tests for it.
+
+runs:
+  using: composite
+  steps:
+    - name: Select Xcode and boot a simulator
+      shell: bash
+      run: |
+        sudo xcode-select --switch "$DEVELOPER_DIR"
+        sudo env DEVELOPER_DIR="$DEVELOPER_DIR" xcodebuild -runFirstLaunch
+        xcodebuild -version
+        bash .github/scripts/prepare-ios-simulator.sh
+
+    # Building for the booted arm64 simulator instead of the generic
+    # destination skips the unused x86_64 slice, which roughly halves the work.
+    - name: Build for testing
+      shell: bash
+      run: |
+        .github/scripts/xcodebuild-ci.sh \
+          -configuration Debug \
+          -destination "platform=iOS Simulator,arch=arm64,id=$IOS_SIMULATOR_ID" \
+          COMPILER_INDEX_STORE_ENABLE=NO \
+          build-for-testing
