@@ -76,12 +76,6 @@ struct TaskEditorView: View {
                     .tint(RitliTheme.stone)
                 }
             }
-            .task {
-                // A new task starts with the keyboard up on its name.
-                if task == nil {
-                    isTitleFocused = true
-                }
-            }
             .alert(
                 String(localized: .tasksAlertSaveFailed),
                 isPresented: errorIsPresented
