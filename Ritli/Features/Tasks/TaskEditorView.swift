@@ -40,7 +40,7 @@ struct TaskEditorView: View {
                         selection: $draft.categoryID
                     ) {
                         Text(.commonCategoryNone).tag(nil as UUID?)
-                        ForEach(categories) { category in
+                        ForEach(categories, id: \.id) { category in
                             Label {
                                 Text(verbatim: category.displayName)
                             } icon: {
@@ -168,7 +168,7 @@ struct TaskEditorView: View {
                 )
                 .tag(nil as UUID?)
 
-                ForEach(sortedRoutines) { routine in
+                ForEach(sortedRoutines, id: \.id) { routine in
                     Text(verbatim: routine.name)
                         .tag(routine.id as UUID?)
                 }

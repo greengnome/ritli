@@ -32,7 +32,7 @@ struct HomeTaskPickerView: View {
                     .listRowBackground(Color.clear)
                 } else {
                     Section {
-                        ForEach(tasks) { task in
+                        ForEach(tasks, id: \.id) { task in
                             Button {
                                 select(task.id)
                             } label: {

@@ -29,7 +29,7 @@ struct ArchivedTasksView: View {
                     )
                 }
             } else {
-                List(archivedTasks) { task in
+                List(archivedTasks, id: \.id) { task in
                     VStack(alignment: .leading, spacing: 4) {
                         Text(task.title)
                             .font(.system(size: 17, weight: .semibold))

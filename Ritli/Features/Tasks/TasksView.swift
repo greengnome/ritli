@@ -23,7 +23,7 @@ struct TasksView: View {
                     emptyState
                 } else {
                     List {
-                        ForEach(visibleTasks) { task in
+                        ForEach(visibleTasks, id: \.id) { task in
                             TaskRow(
                                 task: task,
                                 canStartFocus: canStartFocus,
@@ -126,7 +126,7 @@ struct TasksView: View {
                     filter: .all
                 )
 
-                ForEach(activeCategories) { category in
+                ForEach(activeCategories, id: \.id) { category in
                     filterButton(
                         title: category.displayName,
                         identifier: "tasks.filter.category.\(category.id)",
