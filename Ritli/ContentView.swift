@@ -80,7 +80,11 @@ struct ContentView: View {
                 }
                 .tag(AppTab.settings)
         }
-        .tint(tabBarTint)
+        // The selected tab is neutral, and its colour follows the bar, not the
+        // screen behind it: the bar is system material in the current
+        // appearance (light glass even over a session colour), so the light
+        // session text would vanish on it.
+        .tint(RitliTheme.ink)
         .preferredColorScheme(timerEngine.settings.appearance.preferredColorScheme)
         .alert(
             String(localized: .homeAlertTimerUnavailable),
@@ -102,20 +106,6 @@ struct ContentView: View {
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
             await synchronizeNotificationPreference()
-        }
-    }
-
-    /// The selected tab is always neutral: the colour of the text on the
-    /// screen behind the bar. On Home during a session that's the light text
-    /// on the session colour; everywhere else it's ink. The screen colour
-    /// already says which mode you're in.
-    private var tabBarTint: Color {
-        guard selectedTab == .home else { return RitliTheme.ink }
-        switch timerEngine.currentSession?.state {
-        case .running, .paused:
-            return RitliTheme.onAccent
-        case .completed, .cancelled, .skipped, .none:
-            return RitliTheme.ink
         }
     }
 
